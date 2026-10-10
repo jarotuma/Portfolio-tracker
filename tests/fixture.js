@@ -1,6 +1,7 @@
 // Synthetic IB Flex Query XML for testing ReportReader.
 // opts.vat: 'calc' | 'lines' | 'ib'; opts.spyFull: SPY prices cover whole period; opts.base;
 // opts.income: extra December dividend + option sell/close trades (two months of income)
+// opts.lots: IB Closed Lots for the sales (purchase dates for the time test)
 module.exports = function fixture(opts = {}) {
   const base = opts.base || 'USD';
   const days = ['20260102','20260105','20260106','20260107','20260108','20260109'];
@@ -21,8 +22,12 @@ module.exports = function fixture(opts = {}) {
   const optTrades = opts.income ? `
 <Trade levelOfDetail="EXECUTION" symbol="XYZ 260320C00050000" description="XYZ C50" assetCategory="OPT" buySell="SELL" currency="USD" fxRateToBase="1" quantity="-1" tradePrice="1.5" proceeds="150" ibCommission="-1" ibCommissionCurrency="USD" netCash="149" fifoPnlRealized="0" dateTime="20251231;150000"/>
 <Trade levelOfDetail="EXECUTION" symbol="XYZ 260320C00050000" description="XYZ C50" assetCategory="OPT" buySell="BUY" currency="USD" fxRateToBase="1" quantity="1" tradePrice="0.5" proceeds="-50" ibCommission="-1" ibCommissionCurrency="USD" netCash="-51" fifoPnlRealized="98" dateTime="20260108;150000"/>` : '';
+  const lots = opts.lots ? `
+<Lot levelOfDetail="CLOSED_LOT" symbol="SAP" assetCategory="STK" currency="EUR" fxRateToBase="1.1" buySell="SELL" quantity="-2" openDateTime="20220110;100000" cost="449" fifoPnlRealized="50" dateTime="20260108;100000"/>
+<Lot levelOfDetail="CLOSED_LOT" symbol="MSFT" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" openDateTime="20251231;100000" cost="400.1" fifoPnlRealized="9.8" dateTime="20260109;100000"/>${opts.income ? `
+<Lot levelOfDetail="CLOSED_LOT" symbol="XYZ 260320C00050000" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" openDateTime="20251231;150000" cost="-149" fifoPnlRealized="98" dateTime="20260108;150000"/>` : ''}` : '';
   const decDiv = opts.income
-    ? `<CashTransaction type="Dividends" symbol="AAPL" currency="USD" fxRateToBase="1" amount="5" description="AAPL dividend" dateTime="20251215" transactionID="V0"/>` : '';
+    ? `<CashTransaction type="Dividends" symbol="AAPL" isin="US0378331005" currency="USD" fxRateToBase="1" amount="5" description="AAPL dividend" dateTime="20251215" transactionID="V0"/>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <FlexQueryResponse queryName="test" type="AF"><FlexStatements count="1">
@@ -34,7 +39,7 @@ module.exports = function fixture(opts = {}) {
 <Trade levelOfDetail="EXECUTION" symbol="AAPL" description="APPLE INC" assetCategory="STK" buySell="BUY" currency="USD" fxRateToBase="1" quantity="5" tradePrice="200" proceeds="-1000" ibCommission="-1" ibCommissionCurrency="USD" netCash="-1001" fifoPnlRealized="0" dateTime="20260105;100000"/>
 <Trade levelOfDetail="EXECUTION" symbol="SAP" description="SAP SE" assetCategory="STK" buySell="SELL" currency="EUR" fxRateToBase="1.1" quantity="-2" tradePrice="250" proceeds="500" ibCommission="-1" ibCommissionCurrency="EUR" netCash="499" fifoPnlRealized="50" dateTime="20260108;100000"/>
 <Trade levelOfDetail="EXECUTION" symbol="MSFT" description="MICROSOFT" assetCategory="STK" buySell="BUY" currency="USD" fxRateToBase="1" quantity="1" tradePrice="400" proceeds="-400" ibCommission="-0.1" ibCommissionCurrency="USD" netCash="-400.1" fifoPnlRealized="0" dateTime="20251231;100000"/>
-<Trade levelOfDetail="EXECUTION" symbol="MSFT" description="MICROSOFT" assetCategory="STK" buySell="SELL" currency="USD" fxRateToBase="1" quantity="-1" tradePrice="410" proceeds="410" ibCommission="-0.1" ibCommissionCurrency="USD" netCash="409.9" fifoPnlRealized="9.8" dateTime="20260109;100000"/>${optTrades}
+<Trade levelOfDetail="EXECUTION" symbol="MSFT" description="MICROSOFT" assetCategory="STK" buySell="SELL" currency="USD" fxRateToBase="1" quantity="-1" tradePrice="410" proceeds="410" ibCommission="-0.1" ibCommissionCurrency="USD" netCash="409.9" fifoPnlRealized="9.8" dateTime="20260109;100000"/>${optTrades}${lots}
 </Trades>
 <OpenPositions>
 <OpenPosition levelOfDetail="SUMMARY" symbol="AAPL" assetCategory="STK" currency="USD" fxRateToBase="1" position="10" openPrice="190" markPrice="210" positionValue="2100" costBasisMoney="1900" fifoPnlUnrealized="200" percentOfNAV="13" side="Long" description="APPLE INC" isin="US0378331005"/>
@@ -47,8 +52,8 @@ module.exports = function fixture(opts = {}) {
 <CashTransactions>
 <CashTransaction type="Deposits/Withdrawals" currency="USD" fxRateToBase="1" amount="5000" description="Deposit" dateTime="20260106;100000" reportDate="20260106" transactionID="D1"/>
 <CashTransaction type="Deposits/Withdrawals" currency="USD" fxRateToBase="1" amount="-100" description="Withdrawal" dateTime="20260103;100000" reportDate="20260103" transactionID="D2"/>
-<CashTransaction type="Dividends" symbol="SAP" currency="EUR" fxRateToBase="1.1" amount="10" description="SAP dividend" dateTime="20260107" transactionID="V1"/>
-<CashTransaction type="Withholding Tax" symbol="SAP" currency="EUR" fxRateToBase="1.1" amount="-2.6" description="SAP tax" dateTime="20260107" transactionID="V2"/>
+<CashTransaction type="Dividends" symbol="SAP" isin="DE0007164600" currency="EUR" fxRateToBase="1.1" amount="10" description="SAP dividend" dateTime="20260107" transactionID="V1"/>
+<CashTransaction type="Withholding Tax" symbol="SAP" isin="DE0007164600" currency="EUR" fxRateToBase="1.1" amount="-2.6" description="SAP tax" dateTime="20260107" transactionID="V2"/>
 ${decDiv}
 ${fees.join('\n')}
 </CashTransactions>

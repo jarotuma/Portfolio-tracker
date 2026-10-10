@@ -393,6 +393,37 @@ td.neutral { color: var(--text); }
 .tbl-inc tbody tr { cursor: pointer; }
 .tbl-inc tbody tr.selected { background: rgba(96,165,250,.12); }
 
+/* Taxes */
+.tax-settings { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+.tax-lbl { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+.tax-chk { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted2); cursor: pointer; }
+.tax-sub { font-size: 11px; color: var(--muted2); line-height: 1.5; }
+.tax-rates-tbl td, .tax-rates-tbl th { text-align: center; }
+.tax-rates-tbl td:first-child { text-align: left; }
+.rate-in { width: 84px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; color: var(--text);
+           font-family: var(--mono); font-size: 12px; padding: 4px 6px; text-align: right; }
+.rate-in.missing { border-color: var(--amber); }
+.rate-in:focus { outline: none; border-color: var(--accent); }
+.rate-src { font-size: 9px; color: var(--muted); margin-top: 2px; font-family: var(--sans); }
+.tax-years { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.tax-year { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border2); text-decoration: none; color: var(--muted2); }
+.tax-year.ok { border-color: var(--green); color: var(--green); }
+.tax-year.missing { border-color: var(--amber); color: var(--amber); }
+.tax-warn { border-left: 3px solid var(--amber); background: rgba(245,158,11,.08); color: var(--text); padding: 8px 12px;
+            border-radius: 6px; font-size: 12px; margin-bottom: 8px; line-height: 1.5; }
+.warn { color: var(--amber); }
+.tax-disclaimer { font-size: 11px; color: var(--muted); line-height: 1.6; margin-top: 20px; max-width: 900px; }
+#panel-tax td.pos { color: var(--green); }
+#panel-tax .tax-lbl select { flex: none; width: 100%; }
+#panel-tax .tax-chk input { width: auto; flex: none; }
+/* Tax tables: numbers right, first column (symbol / state / date) left */
+#panel-tax table th, #panel-tax table td { text-align: right; }
+#panel-tax table th:first-child, #panel-tax table td:first-child { text-align: left; }
+#panel-tax table td:nth-child(2) { font-family: var(--mono); color: var(--muted2); }
+#tbl-tax-sec th:last-child, #tbl-tax-der th:last-child { text-align: left; }
+#panel-tax .tax-rates-tbl th, #panel-tax .tax-rates-tbl td { text-align: center; }
+#panel-tax .tax-rates-tbl th:first-child, #panel-tax .tax-rates-tbl td:first-child { text-align: left; }
+
 /* Tab panels */
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -568,6 +599,9 @@ tfoot td.tot { color: var(--amber); }
   .chart-wrap { padding: 12px 8px 8px; }
   .chart-sep { display: none; }
 
+  #panel-tax .tax-lbl { flex: 1 1 140px; min-width: 0; }
+  #panel-tax .tax-chk { flex: 1 1 100%; }
+  .tax-settings { padding: 12px; }
   .drop-zone { padding: 36px 20px; }
   .modal-box { padding: 24px 20px; }
   #chart-zoom-modal { padding: 8px !important; }
@@ -714,6 +748,7 @@ tfoot td.tot { color: var(--amber); }
     <div class="tab" onclick="showTab('trades')">Obchody</div>
     <div class="tab" onclick="showTab('pnl')">P&amp;L</div>
     <div class="tab" onclick="showTab('income')">Příjmy</div>
+    <div class="tab" onclick="showTab('tax')">Daně</div>
     <div class="tab" onclick="showTab('derivatives')">Deriváty</div>
     <div class="tab" onclick="showTab('dividends')">Dividendy &amp; Daně</div>
     <div class="tab" onclick="showTab('brokerinterest')">Úroky</div>
@@ -925,6 +960,44 @@ tfoot td.tot { color: var(--amber); }
           <tfoot id="tfoot-inc"></tfoot>
         </table>
       </div>
+    </div>
+
+    <!-- DANĚ -->
+    <div class="tab-panel" id="panel-tax">
+      <div class="tax-settings">
+        <div class="filter-bar" style="margin-bottom:6px">
+          <label class="tax-lbl">Zdaňovací období
+            <select id="tax-year" onchange="renderTax()"></select></label>
+          <label class="tax-lbl">Přepočet do Kč
+            <select id="tax-method" onchange="setTaxMethod(this.value)">
+              <option value="unified">Jednotný kurz (GFŘ)</option>
+              <option value="daily">Denní kurzy ČNB</option>
+            </select></label>
+          <label class="tax-chk"><input type="checkbox" id="tax-100k-all" onchange="setTax100k(this.checked)">
+            Do limitu 100 000 Kč započítat i prodeje po časovém testu</label>
+        </div>
+        <div id="tax-rates"></div>
+      </div>
+      <div id="tax-warnings"></div>
+      <div class="cards-grid" id="cards-tax"></div>
+
+      <div class="der-section-title">Prodeje cenných papírů — § 10</div>
+      <div class="table-wrap"><table id="tbl-tax-sec"></table></div>
+      <div class="tax-sub" id="tax-sec-note" style="margin:8px 2px 24px"></div>
+
+      <div class="der-section-title">Opce a ostatní deriváty — § 10</div>
+      <div class="table-wrap" style="margin-bottom:24px"><table id="tbl-tax-der"></table></div>
+
+      <div class="der-section-title">Dividendy podle státu zdroje — § 8, příloha č. 3</div>
+      <div class="table-wrap" style="margin-bottom:16px;max-height:none"><table id="tbl-tax-divc"></table></div>
+      <div class="table-wrap"><table id="tbl-tax-div"></table></div>
+
+      <p class="tax-disclaimer">Orientační výpočet pro fyzickou osobu, která nevede účetnictví a nemá cenné papíry v obchodním majetku. Nenahrazuje daňového poradce.
+        Časový test: osvobozen je prodej cenných papírů držených déle než 3 roky (od roku 2025 nejvýše 40 mil. Kč ročně).
+        Limit: prodeje jsou osvobozené, pokud jejich úhrn za rok nepřesáhne 100 000 Kč. Výklady se liší v tom, zda se do úhrnu počítají prodeje po časovém testu.
+        Jednotný kurz se používá pro celý rok a metody se v jednom roce nemíchají. Na opce se časový test nevztahuje.
+        Ztrátu z prodejů lze započíst jen proti zisku z ostatních příjmů podle § 10 téhož roku.
+        Pravidla pro rok 2026 si ověřte.</p>
     </div>
 
     <!-- DERIVÁTY -->
@@ -1147,21 +1220,21 @@ function buildSampleFlexXML() {
   const first = days[0], last = days.at(-1);
   const dayOf = ymd => days.find(d => d >= ymd) || last;
 
-  // Stocks: start price, daily volatility, drift, quantity and cost at period start
+  // Stocks: start price, daily volatility, drift, quantity, cost and purchase date (od) at period start
   const STK = [
-    { sym: 'AAPL', name: 'APPLE INC',              ccy: 'USD', isin: 'US0378331005', p: 245, vol: .017, dr: .0007,  q: 40,  cost: 180 },
-    { sym: 'MSFT', name: 'MICROSOFT CORP',         ccy: 'USD', isin: 'US5949181045', p: 430, vol: .015, dr: .0006,  q: 20,  cost: 330 },
-    { sym: 'KO',   name: 'COCA-COLA CO',           ccy: 'USD', isin: 'US1912161007', p: 68,  vol: .009, dr: .0002,  q: 150, cost: 58 },
-    { sym: 'JNJ',  name: 'JOHNSON & JOHNSON',      ccy: 'USD', isin: 'US4781601046', p: 155, vol: .010, dr: -.0002, q: 60,  cost: 160 },
-    { sym: 'SPY',  name: 'SPDR S&P 500 ETF TRUST', ccy: 'USD', isin: 'US78462F1030', p: 600, vol: .009, dr: .0004,  q: 15,  cost: 520 },
-    { sym: 'SAP',  name: 'SAP SE',                 ccy: 'EUR', isin: 'DE0007164600', p: 240, vol: .016, dr: .0005,  q: 30,  cost: 190 },
-    { sym: 'ASML', name: 'ASML HOLDING NV',        ccy: 'EUR', isin: 'NL0010273215', p: 720, vol: .022, dr: -.0004, q: 8,   cost: 650 },
+    { sym: 'AAPL', name: 'APPLE INC',              ccy: 'USD', isin: 'US0378331005', p: 245, vol: .017, dr: .0007,  q: 40,  cost: 180, od: '20220901' },
+    { sym: 'MSFT', name: 'MICROSOFT CORP',         ccy: 'USD', isin: 'US5949181045', p: 430, vol: .015, dr: .0006,  q: 20,  cost: 330, od: '20230615' },
+    { sym: 'KO',   name: 'COCA-COLA CO',           ccy: 'USD', isin: 'US1912161007', p: 68,  vol: .009, dr: .0002,  q: 150, cost: 58, od: '20220315' },
+    { sym: 'JNJ',  name: 'JOHNSON & JOHNSON',      ccy: 'USD', isin: 'US4781601046', p: 155, vol: .010, dr: -.0002, q: 60,  cost: 160, od: '20220110' },
+    { sym: 'SPY',  name: 'SPDR S&P 500 ETF TRUST', ccy: 'USD', isin: 'US78462F1030', p: 600, vol: .009, dr: .0004,  q: 15,  cost: 520, od: '20221102' },
+    { sym: 'SAP',  name: 'SAP SE',                 ccy: 'EUR', isin: 'DE0007164600', p: 240, vol: .016, dr: .0005,  q: 30,  cost: 190, od: '20240220' },
+    { sym: 'ASML', name: 'ASML HOLDING NV',        ccy: 'EUR', isin: 'NL0010273215', p: 720, vol: .022, dr: -.0004, q: 8,   cost: 650, od: '20230112' },
   ];
   const S = Object.fromEntries(STK.map(s => [s.sym, s]));
   STK.forEach(s => {
     let p = s.p; s.px = {};
     days.forEach(d => { p *= 1 + s.dr + (rnd() - .5) * 2 * s.vol; s.px[d] = r2(p); });
-    s.lots = [{ q: s.q, price: s.cost }];
+    s.lots = [{ q: s.q, price: s.cost, date: s.od }];
     s.realized = 0;
   });
   let fx = 1.08; const eur = {};
@@ -1169,7 +1242,7 @@ function buildSampleFlexXML() {
   const fxOn = (ccy, d) => ccy === 'EUR' ? eur[d] : 1;
 
   let cash = 8000;                                      // base (USD)
-  const trades = [], cashTx = [];
+  const trades = [], cashTx = [], closedLots = [];
   let txn = 1000, conid = 500000;
   const comm = { stk: 1, opt: .65 };
   const sum = { dividends: 0, wht: 0, commissions: 0, interest: 0, fees: 0 };
@@ -1179,12 +1252,16 @@ function buildSampleFlexXML() {
     const s = S[sym], d = D(i), price = s.px[d], f = fxOn(s.ccy, d);
     const proceeds = r2(-qty * price), c = -comm.stk;
     let pnl = 0;
-    if (qty > 0) s.lots.push({ q: qty, price });
+    if (qty > 0) s.lots.push({ q: qty, price, date: d });
     else {
       let left = -qty;
       while (left > 0) {
         const lot = s.lots[0], take = Math.min(lot.q, left);
         pnl += (price - lot.price) * take;
+        closedLots.push({ levelOfDetail: 'CLOSED_LOT', symbol: sym, description: s.name, assetCategory: 'STK',
+          currency: s.ccy, fxRateToBase: f, buySell: 'SELL', quantity: -take, tradePrice: price,
+          openDateTime: `${lot.date};100000`, cost: r2(take * lot.price),
+          fifoPnlRealized: r2((price - lot.price) * take + c * take / -qty), dateTime: `${d};153000`, isin: s.isin });
         lot.q -= take; left -= take;
         if (!lot.q) s.lots.shift();
       }
@@ -1207,10 +1284,14 @@ function buildSampleFlexXML() {
     const d = D(i), f = fxOn(o.ccy, d), c = expiry ? 0 : r2(-comm.opt * Math.abs(qty));
     const proceeds = r2(-qty * prem * 100);
     let pnl = 0;
-    if (o.openQty === 0) { o.openQty = qty; o.openPrem = prem; o.openComm = c; }
+    if (o.openQty === 0) { o.openQty = qty; o.openPrem = prem; o.openComm = c; o.openDate = d; }
     else {
       // closing / expiry: (close − open premium) × open qty × 100, minus both commissions
       pnl = r2((prem - o.openPrem) * o.openQty * 100 + o.openComm + c);
+      closedLots.push({ levelOfDetail: 'CLOSED_LOT', symbol: o.symbol, description: o.desc, assetCategory: 'OPT',
+        currency: o.ccy, fxRateToBase: f, buySell: qty > 0 ? 'BUY' : 'SELL', quantity: qty, tradePrice: prem, multiplier: 100,
+        openDateTime: `${o.openDate};154500`, cost: r2(o.openQty * o.openPrem * 100 - o.openComm),
+        fifoPnlRealized: pnl, dateTime: `${d};${expiry ? '162000' : '154500'}` });
       o.openQty += qty; o.realized += pnl * f;
     }
     trades.push({ d, i, attrs: {
@@ -1239,9 +1320,9 @@ function buildSampleFlexXML() {
       const q = s.lots.reduce((a, l) => a + l.q, 0);
       if (!q) return;
       const gross = r2(q * perShare), tax = r2(-gross * whtRate);
-      cashTx.push({ type: 'Dividends', symbol: sym, ccy: s.ccy, f, amount: gross, d,
+      cashTx.push({ type: 'Dividends', symbol: sym, ccy: s.ccy, f, amount: gross, d, isin: s.isin,
                     desc: `${sym}(${s.isin}) CASH DIVIDEND ${s.ccy} ${perShare} PER SHARE (Ordinary Dividend)` });
-      cashTx.push({ type: 'Withholding Tax', symbol: sym, ccy: s.ccy, f, amount: tax, d,
+      cashTx.push({ type: 'Withholding Tax', symbol: sym, ccy: s.ccy, f, amount: tax, d, isin: s.isin,
                     desc: `${sym}(${s.isin}) CASH DIVIDEND ${s.ccy} ${perShare} PER SHARE - ${s.ccy === 'USD' ? 'US' : sym === 'SAP' ? 'DE' : 'NL'} TAX` });
       sum.dividends += gross * f; sum.wht += tax * f;
       cash += (gross + tax) * f;
@@ -1373,12 +1454,13 @@ ${el('CashReportCurrency', { currency: 'BASE_SUMMARY', startingCash: r2(startCas
 </CashReport>
 <Trades>
 ${trades.sort((a, b) => a.i - b.i).map(t => el('Trade', t.attrs)).join('\n')}
+${closedLots.map(l => el('Lot', l)).join('\n')}
 </Trades>
 <OpenPositions>
 ${pos.map(p => el('OpenPosition', p)).join('\n')}
 </OpenPositions>
 <CashTransactions>
-${cashTx.map(c => el('CashTransaction', { type: c.type, ...(c.symbol ? { symbol: c.symbol } : {}), currency: c.ccy,
+${cashTx.map(c => el('CashTransaction', { type: c.type, ...(c.symbol ? { symbol: c.symbol } : {}), ...(c.isin ? { isin: c.isin } : {}), currency: c.ccy,
   fxRateToBase: c.f, amount: c.amount, description: c.desc, dateTime: c.d, reportDate: c.d, transactionID: ++txn })).join('\n')}
 </CashTransactions>
 <FIFOPerformanceSummaryInBase>
@@ -1520,11 +1602,15 @@ function handleFile(file) {
   if (!file || !file.name.endsWith('.xml')) {
     alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
   }
+  G.sampleUnified = null;
   readXML(file);   // parse first so the rate dialog knows the account's base currency
 }
 
 // ── Sample data ─────────────────────────────────────────────────────
 function loadSample() {
+  // The 2026 unified rate is not published yet; the sample uses an illustrative value
+  // (labelled "ukázka", kept in memory only and dropped when a real report is opened).
+  G.sampleUnified = { 2026: { USD: 21.20, EUR: 24.40 } };
   const doc = new DOMParser().parseFromString(buildSampleFlexXML(), 'application/xml');
   G.pendingData = parseDoc(doc);
   askRate(false);
@@ -1644,6 +1730,11 @@ function parseDoc(doc) {
         comm:    toBase(attr(t,'ibCommission'), fxOf(t, attr(t,'ibCommissionCurrency'))),
         net:     toBase(attr(t,'netCash'), fx),
         pnl:     toBase(attr(t,'fifoPnlRealized'), fx),
+        // native currency (for tax: converted by ČNB rates, not by IB's fx)
+        proceedsLoc: parseFloat(attr(t,'proceeds') || 0),
+        commLoc:     parseFloat(attr(t,'ibCommission') || 0),
+        commCcy:     attr(t,'ibCommissionCurrency') || attr(t,'currency') || base,
+        dateTimeRaw: attr(t,'dateTime') || attr(t,'tradeDate'),
       };
     });
 
@@ -1679,8 +1770,27 @@ function parseDoc(doc) {
     type:    attr(c,'type'),
     currency:attr(c,'currency') || base,
     amount:  toBase(attr(c,'amount'), fxOf(c)),
+    amountLoc: parseFloat(attr(c,'amount') || 0),
+    isin:    attr(c,'isin') || ((attr(c,'description').match(/\(([A-Z]{2}[A-Z0-9]{9}\d)\)/) || [])[1] || ''),
     txId:    attr(c,'transactionID'),
   }));
+
+  // Closed lots (Flex Query → Trades → "Closed Lots"): which purchase each sale closed.
+  // Newer Flex versions use <Lot>, older ones <Trade levelOfDetail="CLOSED_LOT">.
+  const closedLots = [...doc.querySelectorAll('Lot, Trade')]
+    .filter(l => attr(l,'levelOfDetail') === 'CLOSED_LOT')
+    .map(l => ({
+      symbol:   attr(l,'symbol'),
+      desc:     attr(l,'description'),
+      type:     attr(l,'assetCategory'),
+      currency: attr(l,'currency') || base,
+      qty:      parseFloat(attr(l,'quantity') || 0),
+      openDate: rawDate(attr(l,'openDateTime')),
+      closeDate:rawDate(attr(l,'dateTime') || attr(l,'tradeDate')),
+      closeDateTimeRaw: attr(l,'dateTime') || attr(l,'tradeDate'),
+      cost:     parseFloat(attr(l,'cost') || 0),          // native, + paid for a long lot, − received for a short
+      pnl:      parseFloat(attr(l,'fifoPnlRealized') || 0),
+    }));
 
   // External cash flows (deposits/withdrawals) in base currency by date — for daily TWR
   const flowsByDate = {};
@@ -1838,7 +1948,7 @@ function parseDoc(doc) {
   account.missingFx = [...missingFx];
 
   return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices,
-           flowsByDate, salesTaxByTx, vatMode };
+           flowsByDate, salesTaxByTx, vatMode, closedLots };
 }
 
 // ── Render ──────────────────────────────────────────────────────────
@@ -1882,6 +1992,7 @@ function renderAll() {
   renderTrades();
   renderPnl();
   renderIncome();
+  renderTax();
   renderDivs();
   renderPositions();
   renderBI();
@@ -3160,6 +3271,384 @@ function filterIncome() {
   </tr>` : '';
 }
 
+// ── Taxes (CZ): ČNB rates, time test, 100 000 Kč limit ─────────────────
+// Unified rates (jednotný kurz) from GFŘ instructions, CZK per 1 unit. Only values
+// verified against the published instructions are listed; others are entered by hand.
+//   2022 GFŘ-D-60 · 2023 GFŘ-D-63 · 2024 GFŘ-D-65/66 · 2025 GFŘ-D-75
+const UNIFIED_RATES = {
+  2022: { EUR: 24.54, USD: 23.41 },
+  2023: { EUR: 23.97, USD: 22.14, GBP: 27.59 },
+  2024: { EUR: 25.16, USD: 23.28 },
+  2025: { EUR: 24.66, USD: 21.84 },
+};
+const TAX_LIMIT_100K = 100000;
+const TAX_CAP_TIME_TEST = 40000000;      // from 2025: time-test exemption capped at 40 mil. Kč a year
+const DERIV_TYPES = ['OPT', 'FOP', 'FUT', 'WAR'];
+const COUNTRY_CS = {
+  US: 'Spojené státy', DE: 'Německo', NL: 'Nizozemsko', IE: 'Irsko', GB: 'Velká Británie', FR: 'Francie',
+  CH: 'Švýcarsko', CA: 'Kanada', LU: 'Lucembursko', DK: 'Dánsko', SE: 'Švédsko', NO: 'Norsko', FI: 'Finsko',
+  ES: 'Španělsko', IT: 'Itálie', BE: 'Belgie', AT: 'Rakousko', JP: 'Japonsko', AU: 'Austrálie', HK: 'Hongkong',
+  CN: 'Čína', BM: 'Bermudy', KY: 'Kajmanské ostrovy', JE: 'Jersey', PL: 'Polsko', CZ: 'Česko',
+};
+
+// Settings and rate data live in the viewer's browser only (wrapped: storage may be blocked)
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const TAX = {
+  method:   store.get('rr-tax-method', 'unified'),      // 'unified' | 'daily'
+  all100k:  store.get('rr-tax-100k-all', false),
+  unified:  store.get('rr-unified', {}),                // user-entered { year: { ccy: rate } }
+  daily:    store.get('rr-cnb-daily', {}),              // { ccy: { YYYYMMDD: rate } }
+};
+let _dailySorted = {};                                  // ccy → sorted [date, rate] for lookups
+function indexDaily() {
+  _dailySorted = {};
+  for (const [ccy, m] of Object.entries(TAX.daily)) _dailySorted[ccy] = Object.entries(m).sort((a, b) => a[0].localeCompare(b[0]));
+}
+indexDaily();
+
+// Unified rate: user value > sample value (sample report only, never stored) > GFŘ table
+function unifiedRate(ccy, year) {
+  const u = TAX.unified[year]?.[ccy];
+  if (u > 0) return { rate: u, src: 'vlastní' };
+  const s = G.sampleUnified?.[year]?.[ccy];
+  if (s > 0) return { rate: s, src: 'ukázka' };
+  const g = UNIFIED_RATES[year]?.[ccy];
+  return g ? { rate: g, src: 'GFŘ' } : null;
+}
+// ČNB daily rate valid on a day = the last fixing on or before it (weekends, holidays)
+function dailyRate(ccy, ymd) {
+  const a = _dailySorted[ccy];
+  if (!a?.length || ymd < a[0][0]) return null;
+  let lo = 0, hi = a.length - 1;
+  while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (a[mid][0] <= ymd) lo = mid; else hi = mid - 1; }
+  // a fixing more than 10 days old means the year is not loaded
+  const gap = (Date.UTC(+ymd.slice(0,4), +ymd.slice(4,6)-1, +ymd.slice(6,8)) -
+               Date.UTC(+a[lo][0].slice(0,4), +a[lo][0].slice(4,6)-1, +a[lo][0].slice(6,8))) / 864e5;
+  return gap <= 10 ? { rate: a[lo][1], date: a[lo][0] } : null;
+}
+function czkRate(ccy, ymd) {
+  if (ccy === 'CZK') return 1;
+  if (!ymd) return null;
+  if (TAX.method === 'daily') return dailyRate(ccy, ymd)?.rate ?? null;
+  return unifiedRate(ccy, ymd.slice(0, 4))?.rate ?? null;
+}
+
+// Parse ČNB "rok.txt" (Datum|1 AUD|…|100 JPY|…), header may repeat when the currency list changes
+function parseCnbYear(text) {
+  let cols = null, n = 0;
+  for (const line of text.split(/\r?\n/)) {
+    const p = line.trim().split('|');
+    if (p[0] === 'Datum') { cols = p.slice(1).map(h => { const [amt, ccy] = h.trim().split(/\s+/); return { amt: +amt, ccy }; }); continue; }
+    const dm = p[0].match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (!cols || !dm) continue;
+    const ymd = dm[3] + dm[2] + dm[1];
+    cols.forEach((c, i) => {
+      const v = parseFloat((p[i + 1] || '').replace(',', '.'));
+      if (v > 0 && c.ccy) { (TAX.daily[c.ccy] ||= {})[ymd] = v / c.amt; n++; }
+    });
+  }
+  return n;
+}
+function loadCnbFiles(files) {
+  const status = document.getElementById('tax-cnb-status');
+  Promise.all([...files].map(f => f.text().then(parseCnbYear))).then(counts => {
+    store.set('rr-cnb-daily', TAX.daily);
+    indexDaily();
+    const n = counts.reduce((a, b) => a + b, 0);
+    if (status) status.textContent = n ? '' : 'Soubor nevypadá jako kurzy ČNB (rok.txt) — zkontrolujte, co jste stáhli.';
+    renderTax();
+  });
+}
+function setTaxMethod(m) { TAX.method = m; store.set('rr-tax-method', m); renderTax(); }
+function setTax100k(v)   { TAX.all100k = v; store.set('rr-tax-100k-all', v); renderTax(); }
+function setUnified(inp) {
+  const { year, ccy } = inp.dataset, v = parseFloat(inp.value.replace(',', '.'));
+  TAX.unified[year] ||= {};
+  if (v > 0) TAX.unified[year][ccy] = v; else delete TAX.unified[year][ccy];
+  store.set('rr-unified', TAX.unified);
+  renderTax();
+}
+
+// Lots for tax: every closed position part with its open and close cash legs (native currency).
+// From IB's Closed Lots when the report has them, else matched FIFO from the trades in the report.
+function taxLots() {
+  const d = G.data;
+  const execs = {};
+  d.trades.forEach(t => { (execs[t.symbol + '|' + t.dateTimeRaw] ||= []).push(t); });
+  if (d.closedLots.length) {
+    return { source: 'ib', lots: d.closedLots.map(l => {
+      // gross proceeds and commission of this lot's share of the closing execution
+      const ex = (execs[l.symbol + '|' + l.closeDateTimeRaw] || [])[0];
+      const net = l.pnl + l.cost;
+      let gross = net, comm = 0;
+      if (ex && parseFloat(ex.qty) && ex.commCcy === l.currency) {
+        const share = Math.abs(l.qty) / Math.abs(parseFloat(ex.qty));
+        gross = ex.proceedsLoc * share; comm = ex.commLoc * share;
+        if (Math.abs(gross + comm - net) > Math.max(0.05, Math.abs(net) * 0.001)) { gross = net; comm = 0; }
+      }
+      return { symbol: l.symbol, desc: l.desc, type: l.type, currency: l.currency, qty: Math.abs(l.qty),
+               long: l.cost >= 0, openDate: l.openDate, closeDate: l.closeDate,
+               legs: [[-l.cost, l.openDate], [gross, l.closeDate], [comm, l.closeDate]] };
+    }) };
+  }
+  // FIFO fallback over the trades in this report
+  const lots = [], open = {};
+  [...d.trades].sort((a, b) => (a.rawDate || '').localeCompare(b.rawDate || '')).forEach(t => {
+    const q = parseFloat(t.qty || 0);
+    if (!q || !['STK', ...DERIV_TYPES].includes(t.type)) return;
+    const unitCash = t.proceedsLoc / Math.abs(q), unitComm = (t.commCcy === t.currency ? t.commLoc : 0) / Math.abs(q);
+    const queue = open[t.symbol] ||= [];
+    let left = Math.abs(q);
+    while (left > 1e-9 && queue.length && Math.sign(queue[0].qty) !== Math.sign(q)) {
+      const lot = queue[0], take = Math.min(left, Math.abs(lot.qty)), frac = take / Math.abs(lot.qty);
+      lots.push({ symbol: t.symbol, desc: t.desc, type: t.type, currency: t.currency, qty: take, long: lot.qty > 0,
+                  openDate: lot.date, closeDate: t.rawDate,
+                  legs: [[lot.cash * frac, lot.date], [unitCash * take, t.rawDate], [unitComm * take, t.rawDate]] });
+      lot.cash -= lot.cash * frac; lot.qty -= Math.sign(lot.qty) * take; left -= take;
+      if (Math.abs(lot.qty) < 1e-9) queue.shift();
+    }
+    if (left <= 1e-9) return;
+    if (t.type === 'STK' && q < 0) {
+      // a stock sale without a purchase in this report: bought earlier, date and cost unknown
+      lots.push({ symbol: t.symbol, desc: t.desc, type: t.type, currency: t.currency, qty: left, long: true,
+                  openDate: null, closeDate: t.rawDate, unknownOpen: true,
+                  legs: [[unitCash * left, t.rawDate], [unitComm * left, t.rawDate]] });
+    } else {
+      queue.push({ qty: Math.sign(q) * left, date: t.rawDate, cash: (unitCash + unitComm) * left });
+    }
+  });
+  return { source: 'fifo', lots };
+}
+
+const addYears = (ymd, n) => String(+ymd.slice(0, 4) + n) + ymd.slice(4);
+const ymdDays = (a, b) => Math.round((Date.UTC(+b.slice(0,4), +b.slice(4,6)-1, +b.slice(6,8)) -
+                                      Date.UTC(+a.slice(0,4), +a.slice(4,6)-1, +a.slice(6,8))) / 864e5);
+const fmtYmd = ymd => ymd ? `${ymd.slice(6,8)}.${ymd.slice(4,6)}.${ymd.slice(0,4)}` : '—';
+function heldLabel(days) {
+  const y = Math.floor(days / 365.25), m = Math.floor((days - y * 365.25) / 30.44);
+  return y ? `${y} r ${m} m` : m ? `${m} m` : `${days} d`;
+}
+
+function taxYears() {
+  const ys = new Set();
+  taxLots().lots.forEach(l => l.closeDate && ys.add(l.closeDate.slice(0, 4)));
+  G.data.cashTxns.forEach(c => DIV_TYPES.includes(c.type) && c.payDate && ys.add(c.payDate.slice(0, 4)));
+  return [...ys].sort();
+}
+
+function computeTax(year) {
+  const missing = new Map();   // "CCY year" or "CCY date" → true
+  const conv = (amt, ccy, ymd) => {
+    if (!amt) return 0;
+    const r = czkRate(ccy, ymd);
+    if (r == null) { missing.set(`${ccy}|${TAX.method === 'daily' ? ymd.slice(0, 4) : ymd.slice(0, 4)}`, true); return null; }
+    return amt * r;
+  };
+  const { source, lots } = taxLots();
+  const rows = lots.filter(l => l.closeDate?.startsWith(year)).map(l => {
+    let income = 0, expense = 0, ok = !l.unknownOpen;
+    l.legs.forEach(([amt, date]) => {
+      if (!date) return;
+      const v = conv(amt, l.currency, date);
+      if (v == null) { ok = false; return; }
+      if (v > 0) income += v; else expense -= v;
+    });
+    const sec = l.type === 'STK';
+    const days = l.openDate ? ymdDays(l.openDate, l.closeDate) : null;
+    const timeTest = sec && l.long && l.openDate ? l.closeDate > addYears(l.openDate, 3) : (sec && !l.openDate ? null : false);
+    return { ...l, sec, income, expense, profit: income - expense, complete: ok, days, timeTest };
+  });
+
+  // Securities: time test first, then the 100 000 Kč limit on gross proceeds
+  const sec = rows.filter(r => r.sec), der = rows.filter(r => DERIV_TYPES.includes(r.type));
+  const done = sec.filter(r => r.complete);
+  const ttRows = done.filter(r => r.timeTest === true);
+  const ttIncome = ttRows.reduce((a, r) => a + r.income, 0);
+  const limitBase = done.filter(r => TAX.all100k || r.timeTest !== true).reduce((a, r) => a + r.income, 0);
+  const under100k = limitBase <= TAX_LIMIT_100K;
+  sec.forEach(r => {
+    r.status = !r.complete ? (r.unknownOpen ? 'unknown' : 'norate')
+             : r.timeTest === true ? 'timetest'
+             : under100k ? 'limit' : 'taxable';
+  });
+  const taxable = sec.filter(r => r.status === 'taxable');
+  const secT = {
+    income: taxable.reduce((a, r) => a + r.income, 0),
+    expense: taxable.reduce((a, r) => a + r.expense, 0),
+    exemptTT: ttIncome, exemptLimit: sec.filter(r => r.status === 'limit').reduce((a, r) => a + r.income, 0),
+    allIncome: done.reduce((a, r) => a + r.income, 0), limitBase, under100k,
+  };
+  secT.profit = secT.income - secT.expense;
+  der.forEach(r => { r.status = r.complete ? 'taxable' : 'norate'; });
+  const derOk = der.filter(r => r.complete);
+  const derT = { income: derOk.reduce((a, r) => a + r.income, 0), expense: derOk.reduce((a, r) => a + r.expense, 0) };
+  derT.profit = derT.income - derT.expense;
+
+  // Dividends (§ 8): one row per payment (dividend + its withholding tax), by country of the ISIN
+  const pay = {};
+  G.data.cashTxns.filter(c => DIV_TYPES.includes(c.type) && c.payDate?.startsWith(year)).forEach(c => {
+    const k = `${c.payDate}|${c.symbol}|${c.currency}`;
+    const p = pay[k] ||= { date: c.payDate, symbol: c.symbol, currency: c.currency, isin: '', grossLoc: 0, whtLoc: 0 };
+    if (c.isin) p.isin = c.isin;
+    if (c.type === 'Withholding Tax') p.whtLoc += c.amountLoc; else p.grossLoc += c.amountLoc;
+  });
+  const divRows = Object.values(pay).sort((a, b) => a.date.localeCompare(b.date)).map(p => {
+    const r = czkRate(p.currency, p.date);
+    if (r == null) missing.set(`${p.currency}|${p.date.slice(0, 4)}`, true);
+    const country = p.isin ? p.isin.slice(0, 2) : '??';
+    return { ...p, country, rate: r, gross: r == null ? null : p.grossLoc * r, wht: r == null ? null : p.whtLoc * r };
+  });
+  const byCountry = {};
+  divRows.filter(r => r.gross != null).forEach(r => {
+    const c = byCountry[r.country] ||= { country: r.country, gross: 0, wht: 0 };
+    c.gross += r.gross; c.wht += r.wht;
+  });
+  const divT = Object.values(byCountry).reduce((a, c) => ({ gross: a.gross + c.gross, wht: a.wht + c.wht }), { gross: 0, wht: 0 });
+
+  return { year, source, sec, der, secT, derT, divRows, byCountry: Object.values(byCountry).sort((a, b) => b.gross - a.gross),
+           divT, missing: [...missing.keys()].map(k => k.split('|')), capExceeded: ttIncome > TAX_CAP_TIME_TEST };
+}
+
+// Currencies × years that the selected year's calculation needs a rate for
+function neededRates(year) {
+  const need = new Set();
+  taxLots().lots.filter(l => l.closeDate?.startsWith(year)).forEach(l =>
+    l.legs.forEach(([amt, date]) => { if (amt && date && l.currency !== 'CZK') need.add(`${l.currency}|${date.slice(0, 4)}`); }));
+  G.data.cashTxns.filter(c => DIV_TYPES.includes(c.type) && c.payDate?.startsWith(year) && c.currency !== 'CZK')
+    .forEach(c => need.add(`${c.currency}|${c.payDate.slice(0, 4)}`));
+  return [...need].map(k => k.split('|')).sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
+}
+
+let _tax = null;
+function renderTax() {
+  if (!G.data) return;
+  const sel = document.getElementById('tax-year');
+  const years = taxYears();
+  const cur = sel.value;
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('') || '<option value="">—</option>';
+  sel.value = years.includes(cur) ? cur : (years.at(-1) || '');
+  document.getElementById('tax-method').value = TAX.method;
+  document.getElementById('tax-100k-all').checked = TAX.all100k;
+  const year = sel.value;
+  if (!year) {
+    ['tax-rates', 'cards-tax', 'tbl-tax-sec', 'tbl-tax-der', 'tbl-tax-divc', 'tbl-tax-div', 'tax-sec-note']
+      .forEach(id => { document.getElementById(id).innerHTML = ''; });
+    document.getElementById('tax-warnings').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>V reportu nejsou žádné prodeje ani dividendy.</div>';
+    return;
+  }
+  renderTaxRates(year);
+  const T = _tax = computeTax(year);
+  const k = v => v == null ? '—' : fmtN(v, 0);
+  const kc = v => v == null ? '—' : fmtN(v, 0) + ' Kč';
+
+  // Warnings
+  const warn = [];
+  if (T.source === 'fifo' && T.sec.length + T.der.length) warn.push(`Report neobsahuje <b>Closed Lots</b>, takže datum nákupu znám jen u nákupů v tomto reportu. Pro správný časový test přidejte do Flex Query v sekci <i>Trades</i> volbu <i>Closed Lots</i> a report vygenerujte za celé období.`);
+  if (T.sec.some(r => r.status === 'unknown')) warn.push(`${T.sec.filter(r => r.status === 'unknown').length}× prodej akcií bez nákupu v reportu — chybí datum a cena nákupu, prodej není ve výpočtu.`);
+  if (T.missing.length) warn.push(`Chybí kurz pro ${[...new Set(T.missing.map(([c, y]) => `${c} ${y}`))].join(', ')} — položky v těchto měnách a letech nejsou započtené. ${TAX.method === 'unified' ? 'Doplňte jednotný kurz výše.' : 'Nahrajte kurzy ČNB za tyto roky výše.'}`);
+  if (T.capExceeded) warn.push(`Příjmy osvobozené časovým testem přesahují 40 mil. Kč — od roku 2025 je osvobození omezené a částka nad limit se daní.`);
+  document.getElementById('tax-warnings').innerHTML = warn.map(w => `<div class="tax-warn">${w}</div>`).join('');
+
+  const card = (label, v, sub, cls = '') => `<div class="card"><div class="card-label">${label}</div>
+    <div class="card-value ${cls}">${kc(v)}</div>${sub ? `<div class="card-sub">${sub}</div>` : ''}</div>`;
+  const S = T.secT, D = T.derT;
+  document.getElementById('cards-tax').innerHTML = [
+    card('Dividendy hrubé (§ 8)', T.divT.gross, `sražená daň ${kc(-T.divT.wht)}`),
+    card('Cenné papíry – zdanitelné příjmy', S.income, `výdaje ${kc(S.expense)}`),
+    card('Cenné papíry – zisk / ztráta', S.profit, S.under100k ? 'limit 100 000 Kč nepřekročen' : 'limit 100 000 Kč překročen', colorClass(S.profit)),
+    card('Osvobozeno časovým testem', S.exemptTT, 'příjmy z prodejů po 3 letech'),
+    card('Deriváty – příjmy', D.income, `výdaje ${kc(D.expense)}`),
+    card('Deriváty – zisk / ztráta', D.profit, 'opce, futures', colorClass(D.profit)),
+  ].join('');
+
+  const STATUS = {
+    timetest: ['Osvobozeno – časový test', 'pos'], limit: ['Osvobozeno – limit 100 000 Kč', 'pos'],
+    taxable: ['Zdanitelné', ''], norate: ['Chybí kurz', 'warn'], unknown: ['Neznámý nákup', 'warn'],
+  };
+  const lotRow = (r, deriv) => `<tr>
+    <td class="left">${r.symbol}</td>
+    <td>${fmtYmd(r.openDate)}</td><td>${fmtYmd(r.closeDate)}</td>
+    <td>${fmtN(r.qty, r.qty % 1 ? 4 : 0)}</td>
+    ${deriv ? `<td>${r.long ? 'Long' : 'Short'}</td>` : `<td>${r.days == null ? '—' : heldLabel(r.days)}</td>
+    <td>${r.timeTest === true ? '<span class="pos">✓ splněn</span>' : r.timeTest === false ? '✗' : '?'}</td>`}
+    <td class="neutral">${r.complete ? k(r.income) : '—'}</td>
+    <td class="neutral">${r.complete ? k(r.expense) : '—'}</td>
+    <td class="${r.complete ? colorClass(r.profit) : ''}">${r.complete ? (r.profit >= 0 ? '+' : '') + k(r.profit) : '—'}</td>
+    <td style="text-align:left;font-family:var(--sans)" class="${STATUS[r.status][1]}">${STATUS[r.status][0]}</td>
+  </tr>`;
+  const head = cols => `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>`;
+  const empty = (n, t) => `<tr><td colspan="${n}"><div class="empty">${t}</div></td></tr>`;
+  const totalRow = (n, label, inc, exp) => `<tfoot><tr><td colspan="${n}">${label}</td>
+    <td class="tot">${k(inc)}</td><td class="tot">${k(exp)}</td>
+    <td class="${colorClass(inc - exp)} tot">${(inc - exp >= 0 ? '+' : '') + k(inc - exp)}</td><td></td></tr></tfoot>`;
+
+  document.getElementById('tbl-tax-sec').innerHTML =
+    head(['Symbol', 'Nakoupeno', 'Prodáno', 'Množství', 'Držba', 'Časový test', 'Příjem Kč', 'Výdaj Kč', 'Zisk Kč', 'Režim']) +
+    `<tbody>${T.sec.map(r => lotRow(r, false)).join('') || empty(10, 'Žádné prodeje akcií v tomto roce.')}</tbody>` +
+    (T.sec.length ? totalRow(6, 'Zdanitelné celkem', S.income, S.expense) : '');
+  document.getElementById('tax-sec-note').innerHTML = T.sec.length ? `Úhrn příjmů z prodejů posuzovaný pro limit 100 000 Kč: <b>${kc(S.limitBase)}</b>
+    ${TAX.all100k ? '(včetně prodejů po časovém testu)' : '(bez prodejů po časovém testu)'} · všechny prodeje: ${kc(S.allIncome)}` : '';
+
+  document.getElementById('tbl-tax-der').innerHTML =
+    head(['Symbol', 'Otevřeno', 'Uzavřeno', 'Množství', 'Pozice', 'Příjem Kč', 'Výdaj Kč', 'Zisk Kč', 'Režim']) +
+    `<tbody>${T.der.map(r => lotRow(r, true)).join('') || empty(9, 'Žádné uzavřené deriváty v tomto roce.')}</tbody>` +
+    (T.der.length ? totalRow(5, 'Celkem', D.income, D.expense) : '');
+
+  document.getElementById('tbl-tax-divc').innerHTML =
+    head(['Stát zdroje', 'Hrubé dividendy Kč', 'Sražená daň Kč', 'Sazba', 'Čistě Kč']) +
+    `<tbody>${T.byCountry.map(c => `<tr>
+      <td class="left">${COUNTRY_CS[c.country] || c.country} <span style="color:var(--muted)">${c.country}</span></td>
+      <td class="neutral">${k(c.gross)}</td><td class="neg">${k(c.wht)}</td>
+      <td>${c.gross ? fmtN(-c.wht / c.gross * 100, 1) + ' %' : '—'}</td>
+      <td class="neutral">${k(c.gross + c.wht)}</td></tr>`).join('') || empty(5, 'Žádné dividendy v tomto roce.')}</tbody>` +
+    (T.byCountry.length ? `<tfoot><tr><td>Celkem</td><td class="tot">${k(T.divT.gross)}</td><td class="tot">${k(T.divT.wht)}</td>
+      <td>${T.divT.gross ? fmtN(-T.divT.wht / T.divT.gross * 100, 1) + ' %' : ''}</td><td class="tot">${k(T.divT.gross + T.divT.wht)}</td></tr></tfoot>` : '');
+
+  document.getElementById('tbl-tax-div').innerHTML =
+    head(['Datum', 'Symbol', 'Stát', 'Měna', 'Hrubě', 'Daň', 'Kurz', 'Hrubě Kč', 'Daň Kč']) +
+    `<tbody>${T.divRows.map(r => `<tr>
+      <td class="left" style="font-family:var(--sans)">${fmtYmd(r.date)}</td><td class="left">${r.symbol || '—'}</td>
+      <td>${r.country}</td><td>${r.currency}</td>
+      <td>${fmtN(r.grossLoc)}</td><td class="neg">${fmtN(r.whtLoc)}</td>
+      <td>${r.rate == null ? '<span class="warn">chybí</span>' : fmtN(r.rate, 3)}</td>
+      <td class="neutral">${k(r.gross)}</td><td class="neg">${k(r.wht)}</td></tr>`).join('') || empty(9, 'Žádné dividendy v tomto roce.')}</tbody>`;
+}
+
+function renderTaxRates(year) {
+  const box = document.getElementById('tax-rates');
+  const need = neededRates(year);
+  if (TAX.method === 'unified') {
+    const years = [...new Set(need.map(n => n[1]))], ccys = [...new Set(need.map(n => n[0]))];
+    box.innerHTML = !need.length ? '' : `
+      <div class="tax-sub">Jednotné kurzy (Kč za 1 jednotku). Výdaje se přepočítávají kurzem roku, kdy vznikly — proto jsou potřeba i roky nákupů.
+        Předvyplněné hodnoty jsou z pokynů GFŘ, ostatní doplňte podle pokynu GFŘ pro daný rok.</div>
+      <div class="table-wrap" style="max-height:none;margin-top:8px"><table class="tax-rates-tbl">
+        <thead><tr><th>Měna</th>${years.map(y => `<th>${y}</th>`).join('')}</tr></thead>
+        <tbody>${ccys.map(c => `<tr><td class="left">${c}</td>${years.map(y => {
+          if (!need.some(n => n[0] === c && n[1] === y)) return '<td></td>';
+          const u = unifiedRate(c, y);
+          return `<td><input class="rate-in${u ? '' : ' missing'}" inputmode="decimal" data-ccy="${c}" data-year="${y}"
+            value="${u ? String(u.rate).replace('.', ',') : ''}" placeholder="doplnit" onchange="setUnified(this)"
+            aria-label="Jednotný kurz ${c} ${y}">
+            <div class="rate-src">${u ? u.src : 'chybí'}</div></td>`;
+        }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  } else {
+    const years = [...new Set(need.map(n => n[1]))];
+    const have = y => need.filter(n => n[1] === y).every(([c]) => Object.keys(TAX.daily[c] || {}).some(d => d.startsWith(y)));
+    box.innerHTML = `
+      <div class="tax-sub">Denní kurzy ČNB: stáhněte roční soubor za každý potřebný rok a nahrajte ho sem (lze víc souborů najednou).
+        Použije se kurz platný v den příjmu nebo výdaje.</div>
+      <div class="tax-years">${years.map(y => `<a href="https://www.cnb.cz/cs/financni-trhy/devizovy-trh/kurzy-devizoveho-trhu/kurzy-devizoveho-trhu/rok.txt?rok=${y}"
+        target="_blank" rel="noopener" class="tax-year ${have(y) ? 'ok' : 'missing'}">${y} ${have(y) ? '✓ načteno' : '— stáhnout z ČNB'}</a>`).join('')}</div>
+      <label class="btn" style="display:inline-block;margin-top:8px;cursor:pointer">Nahrát kurzy ČNB (rok.txt)
+        <input type="file" accept=".txt,text/plain" multiple style="display:none" onchange="loadCnbFiles(this.files)"></label>
+      <span id="tax-cnb-status" class="warn" style="margin-left:8px;font-size:11px"></span>`;
+  }
+}
+
 // ── Dividends ────────────────────────────────────────────────────────
 const DIV_TYPES = ['Dividends','Withholding Tax','Payment In Lieu Of Dividends'];
 const BI_TYPES  = ['Broker Interest Paid','Broker Interest Received','Bond Interest Paid','Bond Interest Received'];
@@ -3777,7 +4266,7 @@ function filterPos() {
 function showTab(id) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  const tabs = ['summary','positions','trades','pnl','income','derivatives','dividends','brokerinterest','otherfees','deposits'];
+  const tabs = ['summary','positions','trades','pnl','income','tax','derivatives','dividends','brokerinterest','otherfees','deposits'];
   document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if (id === 'summary' && G.data) { drawChart(); drawPerfChart(); drawPieChart(); }
@@ -4008,6 +4497,53 @@ function exportXLSX() {
   addSheet('Obchody',          sheetObchody);
   addSheet('PnL',              sheetPnl);
 
+  // ── Daně (vybraný rok) ──
+  const taxYear = document.getElementById('tax-year')?.value;
+  if (taxYear) {
+    const T = computeTax(taxYear);
+    const n0 = v => v == null ? '' : Math.round(v);
+    const lotX = l => [l.symbol, fmtYmd(l.openDate), fmtYmd(l.closeDate), l.qty,
+      l.sec ? (l.days == null ? '' : l.days) : (l.long ? 'Long' : 'Short'),
+      l.sec ? (l.timeTest === true ? 'splněn' : l.timeTest === false ? 'ne' : '?') : '',
+      l.complete ? n0(l.income) : '', l.complete ? n0(l.expense) : '', l.complete ? n0(l.profit) : '',
+      { timetest: 'Osvobozeno – časový test', limit: 'Osvobozeno – limit 100 000 Kč', taxable: 'Zdanitelné',
+        norate: 'Chybí kurz', unknown: 'Neznámý nákup' }[l.status]];
+    addSheet(`Daně ${taxYear}`, [
+      [`Daňový přehled ${taxYear} (orientační)`],
+      ['Přepočet', TAX.method === 'daily' ? 'Denní kurzy ČNB' : 'Jednotný kurz GFŘ'],
+      ['Limit 100 000 Kč', TAX.all100k ? 'včetně prodejů po časovém testu' : 'bez prodejů po časovém testu'],
+      [],
+      ['Souhrn', 'Kč'],
+      ['Dividendy hrubé (§ 8)', n0(T.divT.gross)],
+      ['Sražená daň v zahraničí', n0(-T.divT.wht)],
+      ['Cenné papíry – zdanitelné příjmy (§ 10)', n0(T.secT.income)],
+      ['Cenné papíry – výdaje (§ 10)', n0(T.secT.expense)],
+      ['Cenné papíry – osvobozeno časovým testem (příjmy)', n0(T.secT.exemptTT)],
+      ['Cenné papíry – osvobozeno limitem 100 000 Kč (příjmy)', n0(T.secT.exemptLimit)],
+      ['Úhrn příjmů posuzovaný pro limit 100 000 Kč', n0(T.secT.limitBase)],
+      ['Deriváty – příjmy (§ 10)', n0(T.derT.income)],
+      ['Deriváty – výdaje (§ 10)', n0(T.derT.expense)],
+      ...(T.missing.length ? [['Chybí kurz', [...new Set(T.missing.map(([c, y]) => `${c} ${y}`))].join(', ')]] : []),
+      [],
+      ['PRODEJE CENNÝCH PAPÍRŮ'],
+      ['Symbol', 'Nakoupeno', 'Prodáno', 'Množství', 'Držba (dny)', 'Časový test', 'Příjem Kč', 'Výdaj Kč', 'Zisk Kč', 'Režim'],
+      ...T.sec.map(lotX),
+      [],
+      ['DERIVÁTY'],
+      ['Symbol', 'Otevřeno', 'Uzavřeno', 'Množství', 'Pozice', '', 'Příjem Kč', 'Výdaj Kč', 'Zisk Kč', 'Režim'],
+      ...T.der.map(lotX),
+      [],
+      ['DIVIDENDY PODLE STÁTU'],
+      ['Stát', 'Kód', 'Hrubé Kč', 'Sražená daň Kč', 'Čistě Kč'],
+      ...T.byCountry.map(c => [COUNTRY_CS[c.country] || c.country, c.country, n0(c.gross), n0(c.wht), n0(c.gross + c.wht)]),
+      [],
+      ['VÝPLATY DIVIDEND'],
+      ['Datum', 'Symbol', 'Stát', 'Měna', 'Hrubě', 'Daň', 'Kurz', 'Hrubě Kč', 'Daň Kč'],
+      ...T.divRows.map(r => [fmtYmd(r.date), r.symbol, r.country, r.currency, +r.grossLoc.toFixed(2), +r.whtLoc.toFixed(2),
+                             r.rate ?? '', n0(r.gross), n0(r.wht)]),
+    ]);
+  }
+
   // ── Příjmy po měsících ──
   const incItemsX = incomeItems();
   const incMonthsX = incomeByMonth(incItemsX);
@@ -4189,6 +4725,7 @@ async function printPDF() {
       ['panel-trades',         'Obchody'],
       ['panel-pnl',            'P&L'],
       ['panel-income',         'Příjmy po měsících'],
+      ['panel-tax',            'Daně'],
       ['panel-derivatives',    'Deriváty'],
       ['panel-dividends',      'Dividendy & Daně'],
       ['panel-brokerinterest', 'Úroky'],

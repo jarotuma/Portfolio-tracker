@@ -271,6 +271,92 @@ async function open(browser, opts, rate = '23') {
     await page.close();
   }
 
+  // ── Taxes: unified rates, time test, 100 000 Kč limit, options, dividends by country ──
+  {
+    const { page, errors } = await open(browser, { income: true, lots: true });
+    await page.evaluate(() => { localStorage.clear(); TAX.unified = {}; TAX.daily = {}; indexDaily(); TAX.method = 'unified'; TAX.all100k = false; });
+    await page.click('.tab:has-text("Daně")');
+    const years = await page.$$eval('#tax-year option', o => o.map(x => x.value));
+    check('tax: years from sales and dividends, latest selected', JSON.stringify(years) === JSON.stringify(['2025', '2026']) &&
+      await page.inputValue('#tax-year') === '2026', years);
+    // GFŘ values prefilled for 2022 EUR and 2025 USD, 2026 missing
+    const src = await page.$$eval('.rate-in', i => i.map(x => `${x.dataset.ccy}${x.dataset.year}=${x.value}`));
+    check('tax: unified rates prefilled from GFŘ, 2026 empty', src.includes('EUR2022=24,54') && src.includes('USD2025=21,84') &&
+      src.includes('EUR2026=') && src.includes('USD2026='), src);
+    const warn0 = await page.textContent('#tax-warnings');
+    check('tax: missing 2026 rate reported', warn0.includes('EUR 2026') && warn0.includes('USD 2026'), warn0);
+    await page.fill('.rate-in[data-ccy="EUR"][data-year="2026"]', '24');
+    await page.dispatchEvent('.rate-in[data-ccy="EUR"][data-year="2026"]', 'change');
+    await page.fill('.rate-in[data-ccy="USD"][data-year="2026"]', '21');
+    await page.dispatchEvent('.rate-in[data-ccy="USD"][data-year="2026"]', 'change');
+    const T = await page.evaluate(() => {
+      const t = _tax;
+      const lot = s => t.sec.concat(t.der).find(r => r.symbol.startsWith(s));
+      const pick = r => ({ income: r.income, expense: r.expense, profit: r.profit, tt: r.timeTest, status: r.status });
+      return { source: t.source, sap: pick(lot('SAP')), msft: pick(lot('MSFT')), opt: pick(lot('XYZ')),
+               limitBase: t.secT.limitBase, taxable: t.secT.income, div: t.byCountry, missing: t.missing };
+    });
+    check('tax: closed lots from IB used', T.source === 'ib', T.source);
+    check('tax: SAP bought 2022 — time test passed, exempt; income 12 000, expense 11 042,46 (buy at 2022 rate)',
+      T.sap.tt === true && T.sap.status === 'timetest' && near(T.sap.income, 12000) && near(T.sap.expense, 11042.46), T.sap);
+    check('tax: MSFT held 9 days — no time test, exempt by 100 000 Kč limit; expense uses 2025 rate',
+      T.msft.tt === false && T.msft.status === 'limit' && near(T.msft.income, 8610) && near(T.msft.expense, 8740.284), T.msft);
+    check('tax: limit base excludes time-tested sale (8 610 Kč), nothing taxable', near(T.limitBase, 8610) && T.taxable === 0, T);
+    check('tax: short option — premium 149 USD at 2025 rate is income, buy-back at 2026 rate is expense, profit 2 183,16',
+      near(T.opt.income, 3254.16) && near(T.opt.expense, 1071) && near(T.opt.profit, 2183.16) && T.opt.status === 'taxable', T.opt);
+    check('tax: dividends by country — DE gross 240, tax −62,4', T.div.length === 1 && T.div[0].country === 'DE' &&
+      near(T.div[0].gross, 240) && near(T.div[0].wht, -62.4), T.div);
+    check('tax: no missing rates after entering 2026', T.missing.length === 0, T.missing);
+    await page.check('#tax-100k-all');
+    const lb = await page.evaluate(() => _tax.secT.limitBase);
+    check('tax: limit option includes time-tested sales (20 610 Kč)', near(lb, 20610), lb);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rr-unified')));
+    check('tax: entered unified rates remembered in the browser', saved?.['2026']?.USD === 21 && saved?.['2026']?.EUR === 24, saved);
+
+    // Daily ČNB rates from an uploaded rok.txt (synthetic test file in ČNB format)
+    await page.selectOption('#tax-method', 'daily');
+    const cnb = path.join(OUT, 'rok2026.txt');
+    fs.writeFileSync(cnb, 'Datum|1 EUR|100 JPY|1 USD\n06.01.2026|24,500|13,600|21,500\n07.01.2026|24,100|13,500|21,100\n08.01.2026|24,200|13,400|21,200\n09.01.2026|24,300|13,300|21,300\n');
+    await page.setInputFiles('#tax-rates input[type=file]', cnb);
+    await page.waitForFunction(() => _dailySorted.USD?.length === 4);
+    const D = await page.evaluate(() => ({ jpy: dailyRate('JPY', '20260107')?.rate, sat: dailyRate('USD', '20260110')?.rate,
+      div: _tax.divRows.find(r => r.symbol === 'SAP'), sap: _tax.sec.find(r => r.symbol === 'SAP'), missing: _tax.missing }));
+    check('tax daily: "100 JPY" column divided by 100', near(D.jpy, 0.135, 1e-9), D.jpy);
+    check('tax daily: weekend uses the last fixing (Sat 10.01. → 09.01.)', near(D.sat, 21.3, 1e-9), D.sat);
+    check('tax daily: dividend 07.01. at 24,100 → 241 Kč', near(D.div.gross, 241) && near(D.div.rate, 24.1, 1e-9), D.div);
+    check('tax daily: missing 2022 and 2025 rates reported, SAP lot not counted',
+      D.sap.status === 'norate' && D.missing.some(([c, y]) => c === 'EUR' && y === '2022'), D);
+    const yrs = await page.$$eval('.tax-year', a => a.map(x => x.textContent.trim()));
+    check('tax daily: needed years with ČNB download links and status', yrs.some(y => y.startsWith('2026') && y.includes('načteno')) &&
+      yrs.some(y => y.startsWith('2022') && y.includes('stáhnout')), yrs);
+    await page.selectOption('#tax-method', 'unified');
+
+    const dl = page.waitForEvent('download');
+    await page.click('button:has-text("Excel export")');
+    const file = path.join(OUT, 'export_tax.xlsx');
+    await (await dl).saveAs(file);
+    const sh = XLSXN.readFile(file).Sheets['Daně 2026'];
+    const rows = sh ? XLSXN.utils.sheet_to_json(sh, { header: 1 }) : [];
+    const der = rows.find(r => r[0] === 'Deriváty – příjmy (§ 10)');
+    check('tax: Excel sheet "Daně 2026" with derivatives income 3 254', der && der[1] === 3254, der);
+    check('no page errors', errors.length === 0, errors);
+    await page.evaluate(() => localStorage.clear());
+    await page.close();
+  }
+
+  // ── Taxes without Closed Lots: FIFO from the report, unknown purchases flagged ──
+  {
+    const { page, errors } = await open(browser, {});
+    await page.evaluate(() => { localStorage.clear(); TAX.unified = {}; TAX.method = 'unified'; });
+    await page.click('.tab:has-text("Daně")');
+    const T = await page.evaluate(() => ({ source: _tax.source, st: _tax.sec.map(r => `${r.symbol}:${r.status}`), warn: document.getElementById('tax-warnings').textContent }));
+    check('tax fallback: FIFO from trades, SAP sale without purchase flagged, MSFT matched to its buy',
+      T.source === 'fifo' && T.st.includes('SAP:unknown') && T.st.some(x => x.startsWith('MSFT:')) && !T.st.includes('MSFT:unknown'), T.st);
+    check('tax fallback: warning asks for Closed Lots', T.warn.includes('Closed Lots'), T.warn);
+    check('no page errors', errors.length === 0, errors);
+    await page.close();
+  }
+
   // ── EUR base account → labels follow the base currency ──
   {
     const { page, errors, title } = await open(browser, { base: 'EUR' }, '25');

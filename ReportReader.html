@@ -1657,14 +1657,14 @@ function loadSample() {
   // (labelled "ukázka", kept in memory only and dropped when a real report is opened).
   G.sampleUnified = { 2026: { USD: 21.20, EUR: 24.40 } };
   G.isSample = true;
-  G.pendingXml = null;
   // demo salary and rent (in memory only), so the sample shows a complete overview
   MANUAL.sample = {};
   [['202601', 62000, 15000], ['202602', 62000, 15000], ['202603', 98000, 15000],
    ['202604', 62000, 16500], ['202605', 62000, 16500], ['202606', 64000, 16500]]
     .forEach(([m, salary, rent]) => { MANUAL.sample[m] = { salary, rent }; });
-  const doc = new DOMParser().parseFromString(buildSampleFlexXML(), 'application/xml');
-  G.pendingData = parseDoc(doc);
+  const xmlText = buildSampleFlexXML();
+  G.pendingXml = xmlText;                                    // kept for the re-parse; never saved (G.isSample)
+  G.pendingData = parseDoc(new DOMParser().parseFromString(xmlText, 'application/xml'));
   askRate(false);
 }
 function downloadSample() {
@@ -1694,9 +1694,13 @@ function confirmRate() {
   if (G.pendingData) {
     G.data = G.pendingData; G.pendingData = null; G._rerender = false;
     const xml = G.pendingXml; G.pendingXml = null; G.openKey = null;
+    if (xml) { G.rawXml = xml; G.data = reparse(); }          // again, now that the rate is known
     showApp();
     if (xml && !G.isSample) persistCurrentReport(xml);
-  } else if (G._rerender && G.data) { renderAll(); G._rerender = false; saveRate(); }
+  } else if (G._rerender && G.data) {
+    if (G.rawXml) G.data = reparse();                        // CZK amounts follow the new rate
+    renderAll(); G._rerender = false; saveRate();
+  }
   document.getElementById('hdr-rate').textContent = `${BASE()}/CZK ${G.rate.toFixed(4)}`;
 }
 document.getElementById('rate-input').addEventListener('keydown', e => {
@@ -1720,19 +1724,47 @@ function readXML(file) {
   reader.readAsText(file, 'UTF-8');
 }
 
+// Parse the loaded report with the current USD/CZK-type rate (used as a fallback for CZK amounts)
+function reparse() {
+  return parseDoc(new DOMParser().parseFromString(G.rawXml, 'application/xml'), { czkPerBase: G.rate });
+}
 function attr(el, a) { return el ? (el.getAttribute(a) || '') : ''; }
 
-function parseDoc(doc) {
-  const stmt = doc.querySelector('FlexStatement');
-  const info = doc.querySelector('AccountInformation');
+// A report can hold several accounts (one <FlexStatement> each); they are merged into one portfolio.
+const lvlOk = (el, level) => { const v = attr(el, 'levelOfDetail'); return !v || v === level; };   // level of detail missing in the query → accept
 
-  const base = attr(info, 'currency') || 'USD';
+// Cash transaction type, when the Flex Query was built without the "Type" field: from the description
+function inferCashType(desc) {
+  const d = (desc || '').toUpperCase();
+  if (/\bTAX\b|WITHHOLD/.test(d))                                  return 'Withholding Tax';
+  if (/PAYMENT IN LIEU/.test(d))                                   return 'Payment In Lieu Of Dividends';
+  if (/CASH DIVIDEND|\bDIVIDEND\b/.test(d))                        return 'Dividends';
+  if (/\bFEE\b|OPRA|MARKET DATA|SNAPSHOT|^CANCEL\[/.test(d))        return 'Other Fees';
+  if (/ELECTRONIC FUND|DISBURSEMENT|CASH RECEIPT|WIRE|DEPOSIT|WITHDRAW/.test(d)) return 'Deposits/Withdrawals';
+  if (/CREDIT INT/.test(d))                                        return 'Broker Interest Received';
+  if (/DEBIT INT/.test(d))                                         return 'Broker Interest Paid';
+  if (/BOND.*INT|COUPON/.test(d))                                  return 'Bond Interest Received';
+  return '';
+}
+
+function parseDoc(doc, opts = {}) {
+  const stmts = [...doc.querySelectorAll('FlexStatement')];
+  const infos = [...doc.querySelectorAll('AccountInformation')];
+  const uniq = a => [...new Set(a.filter(Boolean))];
+
+  const base = attr(infos[0], 'currency') || 'USD';
+  const ids  = uniq([...stmts.map(s => attr(s, 'accountId')), ...infos.map(i => attr(i, 'accountId'))]);
+  const fromD = stmts.map(s => attr(s, 'fromDate')).filter(Boolean).sort()[0] || '';
+  const toD   = stmts.map(s => attr(s, 'toDate')).filter(Boolean).sort().at(-1) || '';
   const account = {
-    id:   attr(info, 'accountId'),
-    name: attr(info, 'name'),
+    id:   ids.join(' + '),
+    ids,
+    accounts: Math.max(1, ids.length),
+    name: uniq(infos.map(i => attr(i, 'name'))).join(' + '),
     base,
-    from: parseDate(attr(stmt, 'fromDate')),
-    to:   parseDate(attr(stmt, 'toDate')),
+    baseMismatch: infos.some(i => (attr(i, 'currency') || base) !== base),
+    from: parseDate(fromD),
+    to:   parseDate(toD),
   };
 
   // ── FX to base currency ──
@@ -1751,6 +1783,7 @@ function parseDoc(doc) {
     });
   });
   const missingFx = new Set();
+  let czkFallback = false;
   // fx of an element's own currency, or of another currency (e.g. commission currency)
   const fxOf = (el, ccy) => {
     const c = ccy || attr(el,'currency');
@@ -1760,18 +1793,24 @@ function parseDoc(doc) {
       if (r > 0) return r;
     }
     if (fxByCcy[c] != null) return fxByCcy[c];
+    // no rate in the report: CZK can use the rate entered by the viewer (CZK per 1 base unit)
+    if (c === 'CZK' && opts.czkPerBase > 0) { czkFallback = true; return 1 / opts.czkPerBase; }
     missingFx.add(c);
     return 1;
   };
   const toBase = (v, fx) => { const n = parseFloat(v); return isNaN(n) ? '' : n * fx; };
   const rawDate = s => (s || '').replace(/\D/g, '').slice(0, 8);   // → YYYYMMDD
+  const num = (el, a) => parseFloat(attr(el, a)) || 0;
+  // account of an element: its own accountId, else the FlexStatement it sits in
+  const acctOf = el => attr(el, 'accountId') || attr(el.closest('FlexStatement'), 'accountId');
 
-  // Trades — levelOfDetail=EXECUTION (money columns converted to base)
+  // Trades — executions (money columns converted to base)
   const trades = [...doc.querySelectorAll('Trade')]
-    .filter(t => attr(t,'levelOfDetail') === 'EXECUTION')
+    .filter(t => lvlOk(t, 'EXECUTION'))
     .map(t => {
       const fx = fxOf(t);
       return {
+        acct:    acctOf(t),
         date:    parseDate(attr(t,'dateTime') || attr(t,'tradeDate')),
         rawDate: rawDate(attr(t,'dateTime') || attr(t,'tradeDate')),
         symbol:  attr(t,'symbol'),
@@ -1793,9 +1832,9 @@ function parseDoc(doc) {
       };
     });
 
-  // Open Positions — levelOfDetail=SUMMARY (money columns converted to base)
-  const positions = [...doc.querySelectorAll('OpenPosition')]
-    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY')
+  // Open Positions — summary level (money columns converted to base)
+  const positionsRaw = [...doc.querySelectorAll('OpenPosition')]
+    .filter(p => lvlOk(p, 'SUMMARY'))
     .map(p => {
       const fx = fxOf(p);
       return {
@@ -1814,27 +1853,48 @@ function parseDoc(doc) {
         side:     attr(p,'side'),
       };
     });
+  // The same security held in several accounts is one line in the combined portfolio
+  const positions = (() => {
+    if (account.accounts < 2) return positionsRaw;
+    const m = new Map();
+    positionsRaw.forEach(p => {
+      const k = `${p.type}|${p.symbol}|${p.currency}`, q = parseFloat(p.qty) || 0, w = Math.abs(q);
+      const a = m.get(k);
+      if (!a) { m.set(k, { ...p, qty: q, _w: w, _open: (parseFloat(p.openP) || 0) * w }); return; }
+      a.qty += q; a._w += w; a._open += (parseFloat(p.openP) || 0) * w;
+      ['mktVal', 'cost', 'unreal'].forEach(f => { a[f] = (+a[f] || 0) + (+p[f] || 0); });
+      a.desc ||= p.desc; a.isin ||= p.isin;
+    });
+    return [...m.values()].map(({ _w, _open, ...p }) => ({ ...p, openP: _w ? _open / _w : p.openP, side: p.qty < 0 ? 'Short' : 'Long' }));
+  })();
 
   // Cash transactions (amount converted to base)
-  const cashTxns = [...doc.querySelectorAll('CashTransaction')].map(c => ({
-    date:    parseDate(attr(c,'dateTime')),
-    rawDate: rawDate(attr(c,'reportDate') || attr(c,'dateTime')),
-    payDate: rawDate(attr(c,'dateTime') || attr(c,'reportDate')),   // for monthly income
-    symbol:  attr(c,'symbol'),
-    desc:    attr(c,'description'),
-    type:    attr(c,'type'),
-    currency:attr(c,'currency') || base,
-    amount:  toBase(attr(c,'amount'), fxOf(c)),
-    amountLoc: parseFloat(attr(c,'amount') || 0),
-    isin:    attr(c,'isin') || ((attr(c,'description').match(/\(([A-Z]{2}[A-Z0-9]{9}\d)\)/) || [])[1] || ''),
-    txId:    attr(c,'transactionID'),
-  }));
+  const cashTxns = [...doc.querySelectorAll('CashTransaction')].map(c => {
+    const type = attr(c,'type');
+    return {
+      acct:    acctOf(c),
+      date:    parseDate(attr(c,'dateTime')),
+      rawDate: rawDate(attr(c,'reportDate') || attr(c,'dateTime')),
+      payDate: rawDate(attr(c,'dateTime') || attr(c,'reportDate')),   // for monthly income
+      symbol:  attr(c,'symbol'),
+      desc:    attr(c,'description'),
+      type:    type || inferCashType(attr(c,'description')),
+      typeInferred: !type,
+      currency:attr(c,'currency') || base,
+      amount:  toBase(attr(c,'amount'), fxOf(c)),
+      amountLoc: parseFloat(attr(c,'amount') || 0),
+      isin:    attr(c,'isin') || ((attr(c,'description').match(/\(([A-Z]{2}[A-Z0-9]{9}\d)\)/) || [])[1] || ''),
+      txId:    attr(c,'transactionID'),
+    };
+  });
+  account.cashTypesInferred = cashTxns.some(c => c.typeInferred);
 
   // Closed lots (Flex Query → Trades → "Closed Lots"): which purchase each sale closed.
   // Newer Flex versions use <Lot>, older ones <Trade levelOfDetail="CLOSED_LOT">.
   const closedLots = [...doc.querySelectorAll('Lot, Trade')]
-    .filter(l => attr(l,'levelOfDetail') === 'CLOSED_LOT')
+    .filter(l => l.tagName === 'Lot' || attr(l,'levelOfDetail') === 'CLOSED_LOT')
     .map(l => ({
+      acct:     acctOf(l),
       symbol:   attr(l,'symbol'),
       desc:     attr(l,'description'),
       type:     attr(l,'assetCategory'),
@@ -1847,11 +1907,21 @@ function parseDoc(doc) {
       pnl:      parseFloat(attr(l,'fifoPnlRealized') || 0),
     }));
 
-  // External cash flows (deposits/withdrawals) in base currency by date — for daily TWR
+  // External flows in base currency by date — for daily TWR: cash deposits/withdrawals and
+  // position transfers (ACATS / FOP / between accounts; IN positive, OUT negative)
   const flowsByDate = {};
   cashTxns
     .filter(c => c.type === 'Deposits/Withdrawals' && c.rawDate)
     .forEach(c => { flowsByDate[c.rawDate] = (flowsByDate[c.rawDate] || 0) + parseFloat(c.amount || 0); });
+  const transfers = [...doc.querySelectorAll('Transfer')].map(t => {
+    const dir = attr(t, 'direction').toUpperCase(), fx = fxOf(t);
+    let v = parseFloat(attr(t, 'positionAmountInBase'));
+    if (isNaN(v)) v = (parseFloat(attr(t, 'positionAmount')) || 0) * fx;
+    v += (parseFloat(attr(t, 'cashTransfer')) || 0) * fx;
+    if (dir) v = Math.abs(v) * (dir === 'OUT' ? -1 : 1);
+    return { date: rawDate(attr(t, 'date') || attr(t, 'dateTime') || attr(t, 'reportDate')), value: v, symbol: attr(t, 'symbol'), dir };
+  }).filter(t => t.date && t.value);
+  transfers.forEach(t => { flowsByDate[t.date] = (flowsByDate[t.date] || 0) + t.value; });
 
   // VAT on fees. 'lines' = IB already booked VAT as its own Other Fees rows,
   // 'ib' = VAT from the Sales Tax Details section, 'calc' = no VAT data → 21 % estimate.
@@ -1865,38 +1935,33 @@ function parseDoc(doc) {
   const vatMode = cashTxns.some(c => c.type === 'Other Fees' && isVatLine(c)) ? 'lines'
                 : salesTaxEls.length ? 'ib' : 'calc';
 
-  // FIFO P&L
-  const pnl = [...doc.querySelectorAll('FIFOPerformanceSummaryUnderlying')]
+  // FIFO P&L — one row per security, summed over accounts
+  const pnlMap = new Map();
+  [...doc.querySelectorAll('FIFOPerformanceSummaryUnderlying')]
     .filter(f => attr(f,'symbol'))
-    .map(f => ({
-      symbol:   attr(f,'symbol'),
-      desc:     attr(f,'description'),
-      type:     attr(f,'assetCategory'),
-      realST:   attr(f,'realizedSTProfit'),
-      realSTL:  attr(f,'realizedSTLoss'),
-      realLT:   attr(f,'realizedLTProfit'),
-      realLTL:  attr(f,'realizedLTLoss'),
-      totalReal:attr(f,'totalRealizedPnl'),
-      unreal:   attr(f,'totalUnrealizedPnl'),
-      total:    attr(f,'totalFifoPnl'),
-    }));
+    .forEach(f => {
+      const k = `${attr(f,'assetCategory')}|${attr(f,'symbol')}`;
+      const r = pnlMap.get(k) || { symbol: attr(f,'symbol'), desc: '', type: attr(f,'assetCategory'),
+        realST: 0, realSTL: 0, realLT: 0, realLTL: 0, totalReal: 0, unreal: 0, total: 0 };
+      r.desc ||= attr(f,'description');
+      r.realST += num(f,'realizedSTProfit');  r.realSTL += num(f,'realizedSTLoss');
+      r.realLT += num(f,'realizedLTProfit');  r.realLTL += num(f,'realizedLTLoss');
+      r.totalReal += num(f,'totalRealizedPnl'); r.unreal += num(f,'totalUnrealizedPnl'); r.total += num(f,'totalFifoPnl');
+      pnlMap.set(k, r);
+    });
+  const pnl = [...pnlMap.values()];
 
-  // MTM valuations — start/end of period per symbol
+  // MTM valuations — start/end of period per symbol (summed over accounts)
   const mtmMap = {};
   [...doc.querySelectorAll('MTMPerformanceSummaryUnderlying')]
     .filter(m => attr(m,'symbol') && ['STK','OPT'].includes(attr(m,'assetCategory')))
     .forEach(m => {
       const sym   = attr(m,'symbol');
       const mult  = parseFloat(attr(m,'multiplier')||1) || 1;
-      const prevQ = parseFloat(attr(m,'prevCloseQuantity')||0);
-      const prevP = parseFloat(attr(m,'prevClosePrice')||0);
-      const clQ   = parseFloat(attr(m,'closeQuantity')||0);
-      const clP   = parseFloat(attr(m,'closePrice')||0);
       const fx    = fxOf(m);   // prices are in the instrument's currency
-      mtmMap[sym] = {
-        startVal: prevQ * prevP * mult * fx,
-        endVal:   clQ   * clP   * mult * fx,
-      };
+      const t = mtmMap[sym] ||= { startVal: 0, endVal: 0 };
+      t.startVal += num(m,'prevCloseQuantity') * num(m,'prevClosePrice') * mult * fx;
+      t.endVal   += num(m,'closeQuantity')     * num(m,'closePrice')     * mult * fx;
     });
 
   // Merge MTM valuations into pnl rows
@@ -1906,27 +1971,37 @@ function parseDoc(doc) {
     p.endVal   = m.endVal;
   });
 
-  // Summary
-  const cr = doc.querySelector('CashReportCurrency[currency="BASE_SUMMARY"]');
-  const summary = cr ? {
-    dividends:  attr(cr,'dividends'),
-    withholding:attr(cr,'withholdingTax'),
-    commissions:attr(cr,'commissions'),
-    brokerInt:  attr(cr,'brokerInterest'),
-    otherFees:  attr(cr,'otherFees'),
-    endCash:    attr(cr,'endingCash'),
-    startCash:  attr(cr,'startingCash'),
-  } : {};
+  // Summary: Cash Report (base currency) summed over accounts. A figure the query leaves out of an
+  // account's Cash Report is derived from that account's own cash transactions / trades.
+  const byType = (types, acct) => cashTxns.filter(c => types.includes(c.type) && (!c.acct || acct === undefined || c.acct === acct))
+                                          .reduce((s, c) => s + (parseFloat(c.amount) || 0), 0);
+  const crField = (a, fallback) => {
+    if (!stmts.length) return fallback(undefined);
+    return stmts.reduce((sum, st) => {
+      const cr = [...st.querySelectorAll('CashReportCurrency')].find(c => attr(c, 'currency') === 'BASE_SUMMARY');
+      const v = cr ? attr(cr, a) : '';
+      return sum + (v !== '' ? parseFloat(v) : fallback(attr(st, 'accountId')));
+    }, 0);
+  };
+  const summary = {
+    dividends:   crField('dividends',      acct => byType(['Dividends','Payment In Lieu Of Dividends'], acct)),
+    withholding: crField('withholdingTax', acct => byType(['Withholding Tax'], acct)),
+    commissions: crField('commissions',    acct => trades.filter(t => !t.acct || acct === undefined || t.acct === acct).reduce((s,t) => s + (parseFloat(t.comm) || 0), 0)),
+    brokerInt:   crField('brokerInterest', acct => byType(['Broker Interest Received','Broker Interest Paid'], acct)),
+    otherFees:   crField('otherFees',      acct => byType(['Other Fees'], acct)),
+    endCash:     crField('endingCash',     () => 0),
+    startCash:   crField('startingCash',   () => 0),
+  };
 
   // Underlying price map from STK OpenPosition markPrice
   const underlyingPrices = {};
   [...doc.querySelectorAll('OpenPosition')]
-    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY' && attr(p,'assetCategory') === 'STK')
+    .filter(p => lvlOk(p, 'SUMMARY') && attr(p,'assetCategory') === 'STK')
     .forEach(p => { underlyingPrices[attr(p,'symbol')] = attr(p,'markPrice'); });
 
   // Derivatives — OPT open positions with full contract details
   const derivatives = [...doc.querySelectorAll('OpenPosition')]
-    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY' && attr(p,'assetCategory') === 'OPT')
+    .filter(p => lvlOk(p, 'SUMMARY') && attr(p,'assetCategory') === 'OPT')
     .map(p => ({
       currency:        attr(p,'currency') || base,
       fx:              fxOf(p),
@@ -1947,46 +2022,56 @@ function parseDoc(doc) {
       desc:            attr(p,'description'),
     }));
 
-  // ChangeInNAV — contains TWR and cash flow breakdown
-  const nav = doc.querySelector('ChangeInNAV');
-  const changeInNAV = nav ? {
-    twr:               parseFloat(attr(nav,'twr')||0),
-    mtm:               parseFloat(attr(nav,'mtm')||0),
-    depositsWithdrawals: parseFloat(attr(nav,'depositsWithdrawals')||0),
-    startingValue:     parseFloat(attr(nav,'startingValue')||0),
-    endingValue:       parseFloat(attr(nav,'endingValue')||0),
+  // ChangeInNAV — values summed over accounts; IB's TWR only exists per account, so only for one
+  const navs = [...doc.querySelectorAll('ChangeInNAV')];
+  const sumNav = a => navs.reduce((s, n) => s + num(n, a), 0);
+  const changeInNAV = navs.length ? {
+    twr:               navs.length === 1 && attr(navs[0], 'twr') !== '' ? parseFloat(attr(navs[0], 'twr')) : null,
+    mtm:               sumNav('mtm'),
+    depositsWithdrawals: sumNav('depositsWithdrawals'),
+    startingValue:     sumNav('startingValue'),
+    endingValue:       sumNav('endingValue'),
   } : null;
 
-  // EquitySummaryByReportDateInBase — daily portfolio value
-  const equitySeries = [...doc.querySelectorAll('EquitySummaryByReportDateInBase')]
-    .map(e => ({
-      date:    attr(e,'reportDate'),            // YYYYMMDD
-      stocks:  parseFloat(attr(e,'stock')||0),
-      options: parseFloat(attr(e,'options')||0),
-      total:   parseFloat(attr(e,'total')||0),
-    }))
-    .filter(e => e.date)
-    .sort((a,b) => a.date.localeCompare(b.date));
+  // EquitySummaryByReportDateInBase — daily value, summed over accounts
+  // (an account without a row on a day keeps its last known value; before it exists it counts 0)
+  const eqByAcct = {};
+  [...doc.querySelectorAll('EquitySummaryByReportDateInBase')].forEach(e => {
+    const d = attr(e,'reportDate');
+    if (d) (eqByAcct[acctOf(e)] ||= {})[d] = { stocks: num(e,'stock'), options: num(e,'options'), total: num(e,'total') };
+  });
+  const eqDates = [...new Set(Object.values(eqByAcct).flatMap(m => Object.keys(m)))].sort();
+  const lastEq = {};
+  const equitySeries = eqDates.map(date => {
+    const row = { date, stocks: 0, options: 0, total: 0 };
+    for (const [acc, m] of Object.entries(eqByAcct)) {
+      const v = m[date] || lastEq[acc];
+      if (m[date]) lastEq[acc] = v;
+      if (v) { row.stocks += v.stocks; row.options += v.options; row.total += v.total; }
+    }
+    return row;
+  });
+  // % of NAV of a combined portfolio is relative to the combined value
+  if (account.accounts > 1 && equitySeries.length) {
+    const tot = equitySeries.at(-1).total;
+    positions.forEach(p => { p.pctNav = tot ? ((+p.mktVal || 0) / tot * 100) : ''; });
+  }
 
-  // Per-stock % performance from MTM (STK only, both periods must have price)
-  const stockPerf = [...doc.querySelectorAll('MTMPerformanceSummaryUnderlying')]
+  // Per-stock % performance from MTM (STK only, both periods must have price); one bar per symbol
+  const perfBySym = new Map();
+  [...doc.querySelectorAll('MTMPerformanceSummaryUnderlying')]
     .filter(m => attr(m,'assetCategory') === 'STK' && attr(m,'symbol'))
-    .map(m => {
+    .forEach(m => {
       const prevP = parseFloat(attr(m,'prevClosePrice')||0);
       const clP   = parseFloat(attr(m,'closePrice')||0);
       const prevQ = parseFloat(attr(m,'prevCloseQuantity')||0);
       const clQ   = parseFloat(attr(m,'closeQuantity')||0);
-      return {
-        symbol: attr(m,'symbol'),
-        currency: attr(m,'currency') || base,
-        pct:    prevP > 0 && clQ !== 0 ? ((clP - prevP) / prevP) * 100 : null,
-        startP: prevP,
-        endP:   clP,
-        qty:    Math.abs(prevQ),
-      };
-    })
-    .filter(s => s.pct !== null)
-    .sort((a,b) => a.pct - b.pct);   // ascending: worst left, best right
+      const pct = prevP > 0 && clQ !== 0 ? ((clP - prevP) / prevP) * 100 : null;
+      if (pct === null || perfBySym.has(attr(m,'symbol'))) return;
+      perfBySym.set(attr(m,'symbol'), { symbol: attr(m,'symbol'), currency: attr(m,'currency') || base,
+                                         pct, startP: prevP, endP: clP, qty: Math.abs(prevQ) });
+    });
+  const stockPerf = [...perfBySym.values()].sort((a,b) => a.pct - b.pct);   // ascending: worst left, best right
 
   // PriorPeriodPosition — daily prices for SPY and QQQ (benchmark data from XML)
   const priorPrices = {};
@@ -2001,9 +2086,10 @@ function parseDoc(doc) {
   });
 
   account.missingFx = [...missingFx];
+  account.czkFallback = czkFallback ? opts.czkPerBase : 0;
 
   return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices,
-           flowsByDate, salesTaxByTx, vatMode, closedLots };
+           flowsByDate, salesTaxByTx, vatMode, closedLots, transfers };
 }
 
 // ── Render ──────────────────────────────────────────────────────────
@@ -2088,22 +2174,34 @@ function renderSummary() {
     mkCard('Cash na účtu', money(endCash), fmtN(endCash*r,0)),
   ].join('');
 
-  // TWR card in second row (+ warning when an FX rate to base was not found)
+  // TWR card in second row (+ warnings: missing FX rate, accounts with different base currencies, inferred types)
   const nav = G.data.changeInNAV;
-  const twrPct    = nav ? nav.twr : null;
+  const twrIb     = nav ? nav.twr : null;                 // IB's own figure exists for a single account only
   const eq        = G.data.equitySeries;
   const twrDaily  = eq.length > 1 ? dailyTWR(eq, G.data.flowsByDate).at(-1) : null;
-  const missing   = G.data.account.missingFx || [];
-  document.getElementById('cards-czk').innerHTML = (nav ? `
-    <div class="card" style="border-left: 3px solid var(--accent)">
-      <div class="card-label">TWR (dle IB) — eliminuje vliv vkladů/výběrů</div>
-      <div class="card-value ${twrPct >= 0 ? 'pos' : 'neg'}">${twrPct >= 0 ? '+' : ''}${twrPct.toFixed(2)} %</div>
-      ${twrDaily != null ? `<div class="card-sub">z denních hodnot (graf): ${twrDaily >= 0 ? '+' : ''}${twrDaily.toFixed(2)} %</div>` : ''}
-    </div>` : '') + (missing.length ? `
+  const twrMain   = twrIb ?? twrDaily;
+  const acc       = G.data.account;
+  const missing   = acc.missingFx || [];
+  const pct = v => `${v >= 0 ? '+' : ''}${v.toFixed(2)} %`;
+  const jumps = unexplainedJumps(eq, G.data.flowsByDate);
+  const warnCard = (title, text) => `
     <div class="card" style="border-left: 3px solid var(--amber)">
-      <div class="card-label">Chybí kurz do ${BASE()}</div>
-      <div class="card-sub" style="color:var(--amber)">Pro ${missing.join(', ')} report neobsahuje fxRateToBase ani Conversion Rates — částky v těchto měnách nejsou přepočtené. Přidejte do Flex Query sekci Conversion Rates.</div>
-    </div>` : '');
+      <div class="card-label">${title}</div>
+      <div class="card-sub" style="color:var(--amber)">${text}</div>
+    </div>`;
+  document.getElementById('cards-czk').innerHTML = (twrMain != null ? `
+    <div class="card" style="border-left: 3px solid var(--accent)">
+      <div class="card-label">${twrIb != null ? 'TWR (dle IB)' : 'TWR z denních hodnot'} — eliminuje vliv vkladů/výběrů</div>
+      <div class="card-value ${twrMain >= 0 ? 'pos' : 'neg'}">${pct(twrMain)}</div>
+      ${twrIb != null && twrDaily != null ? `<div class="card-sub">z denních hodnot (graf): ${pct(twrDaily)}</div>` : ''}
+      ${acc.accounts > 1 ? `<div class="card-sub">sloučeno ${acc.accounts} účtů</div>` : ''}
+    </div>` : '') + (missing.length
+      ? warnCard(`Chybí kurz do ${BASE()}`, `Pro ${missing.join(', ')} report neobsahuje fxRateToBase ani Conversion Rates — částky v těchto měnách nejsou přepočtené. Přidejte do Flex Query pole FX Rate To Base a sekci Conversion Rates.`) : '')
+    + (acc.czkFallback ? warnCard('CZK přepočten vaším kurzem', `Report neobsahuje kurz pro CZK, proto jsou částky v korunách přepočtené jedním kurzem ${acc.czkFallback} Kč za 1 ${BASE()} (ten, který jste zadal). Je to přibližné; přesnější je pole FX Rate To Base v Flex Query.`) : '')
+    + (jumps.length ? warnCard('Skok hodnoty bez vkladu — TWR a graf jsou zkreslené',
+        `${jumps.slice(0, 3).map(j => `${fmtDate(j.date)}: ${j.amount >= 0 ? '+' : ''}${fmtN(j.amount, 0)} ${BASE()} (${j.pct >= 0 ? '+' : ''}${fmtN(j.pct, 0)} %)`).join(', ')}${jumps.length > 3 ? ` a ${jumps.length - 3} další` : ''}. Hodnota účtu se změnila, aniž by v reportu byl odpovídající vklad. Nejspíš jde o převod pozic z jiného brokera nebo mezi účty — přidejte do Flex Query sekci Transfers.`) : '')
+    + (acc.baseMismatch ? warnCard('Různé základní měny účtů', 'Sloučené účty mají různou základní měnu, takže součty nejsou správné.') : '')
+    + (acc.cashTypesInferred ? warnCard('Typ transakcí odvozen z popisu', 'Flex Query neobsahuje pole Type u Cash Transactions, dividendy, daně a poplatky jsem poznal podle popisu. Pro jistotu pole Type do dotazu přidejte.') : '');
   initChart();
 }
 
@@ -2140,18 +2238,36 @@ function toPercent(vals) {
 //   r_t = (V_t − CF_t) / V_{t−1} − 1
 // where CF_t are deposits/withdrawals booked on day t (end-of-day convention).
 // A flow on a non-trading day is assigned to the next day in the series.
-function dailyTWR(eq, flowsByDate) {
+// External flows assigned to the day they show up in the value series (a flow on a
+// non-trading day goes to the next day; a flow on day 0 is already in the starting value)
+function flowsPerDay(eq, flowsByDate) {
   const cf = new Array(eq.length).fill(0);
   for (const [d, amt] of Object.entries(flowsByDate || {})) {
     const i = eq.findIndex(e => e.date >= d);
-    if (i > 0) cf[i] += amt;    // a flow on day 0 is already in the starting value
+    if (i > 0) cf[i] += amt;
   }
+  return cf;
+}
+function dailyTWR(eq, flowsByDate) {
+  const cf = flowsPerDay(eq, flowsByDate);
   let idx = 1;
   const out = [0];
   for (let i = 1; i < eq.length; i++) {
     const prev = eq[i-1].total;
     if (prev > 0) idx *= (eq[i].total - cf[i]) / prev;
     out.push((idx - 1) * 100);
+  }
+  return out;
+}
+// Days where the value moved by more than 25 % although no recorded deposit, withdrawal or
+// transfer explains it — typically a position transfer the Flex Query does not contain
+function unexplainedJumps(eq, flowsByDate, limit = 0.25) {
+  const cf = flowsPerDay(eq, flowsByDate), out = [];
+  for (let i = 1; i < eq.length; i++) {
+    const prev = eq[i-1].total;
+    if (!(prev > 0)) continue;
+    const move = eq[i].total - cf[i] - prev;
+    if (Math.abs(move) / prev > limit) out.push({ date: eq[i].date, amount: move, pct: move / prev * 100 });
   }
   return out;
 }
@@ -3524,11 +3640,11 @@ function setUnified(inp) {
 function taxLots() {
   const d = G.data;
   const execs = {};
-  d.trades.forEach(t => { (execs[t.symbol + '|' + t.dateTimeRaw] ||= []).push(t); });
+  d.trades.forEach(t => { (execs[t.acct + '|' + t.symbol + '|' + t.dateTimeRaw] ||= []).push(t); });
   if (d.closedLots.length) {
     return { source: 'ib', lots: d.closedLots.map(l => {
       // gross proceeds and commission of this lot's share of the closing execution
-      const ex = (execs[l.symbol + '|' + l.closeDateTimeRaw] || [])[0];
+      const ex = (execs[l.acct + '|' + l.symbol + '|' + l.closeDateTimeRaw] || [])[0];
       const net = l.pnl + l.cost;
       let gross = net, comm = 0;
       if (ex && parseFloat(ex.qty) && ex.commCcy === l.currency) {
@@ -3537,7 +3653,8 @@ function taxLots() {
         if (Math.abs(gross + comm - net) > Math.max(0.05, Math.abs(net) * 0.001)) { gross = net; comm = 0; }
       }
       return { symbol: l.symbol, desc: l.desc, type: l.type, currency: l.currency, qty: Math.abs(l.qty),
-               long: l.cost >= 0, openDate: l.openDate, closeDate: l.closeDate,
+               long: l.cost >= 0, openDate: l.openDate, closeDate: l.closeDate, acct: l.acct,
+               unknownOpen: l.type === 'STK' && !l.openDate,
                legs: [[-l.cost, l.openDate], [gross, l.closeDate], [comm, l.closeDate]] };
     }) };
   }
@@ -3547,7 +3664,7 @@ function taxLots() {
     const q = parseFloat(t.qty || 0);
     if (!q || !['STK', ...DERIV_TYPES].includes(t.type)) return;
     const unitCash = t.proceedsLoc / Math.abs(q), unitComm = (t.commCcy === t.currency ? t.commLoc : 0) / Math.abs(q);
-    const queue = open[t.symbol] ||= [];
+    const queue = open[t.acct + '|' + t.symbol] ||= [];
     let left = Math.abs(q);
     while (left > 1e-9 && queue.length && Math.sign(queue[0].qty) !== Math.sign(q)) {
       const lot = queue[0], take = Math.min(left, Math.abs(lot.qty)), frac = take / Math.abs(lot.qty);
@@ -3694,7 +3811,7 @@ function renderTax() {
   // Warnings
   const warn = [];
   if (T.source === 'fifo' && T.sec.length + T.der.length) warn.push(`Report neobsahuje <b>Closed Lots</b>, takže datum nákupu znám jen u nákupů v tomto reportu. Pro správný časový test přidejte do Flex Query v sekci <i>Trades</i> volbu <i>Closed Lots</i> a report vygenerujte za celé období.`);
-  if (T.sec.some(r => r.status === 'unknown')) warn.push(`${T.sec.filter(r => r.status === 'unknown').length}× prodej akcií bez nákupu v reportu — chybí datum a cena nákupu, prodej není ve výpočtu.`);
+  if (T.sec.some(r => r.status === 'unknown')) warn.push(`${T.sec.filter(r => r.status === 'unknown').length}× prodej akcií bez známého data nákupu (nákup není v reportu, nebo Closed Lots nemají pole Open Date/Time) — prodej není ve výpočtu.`);
   if (T.missing.length) warn.push(`Chybí kurz pro ${[...new Set(T.missing.map(([c, y]) => `${c} ${y}`))].join(', ')} — položky v těchto měnách a letech nejsou započtené. ${TAX.method === 'unified' ? 'Doplňte jednotný kurz výše.' : 'Nahrajte kurzy ČNB za tyto roky výše.'}`);
   if (T.capExceeded) warn.push(`Příjmy osvobozené časovým testem přesahují 40 mil. Kč — od roku 2025 je osvobození omezené a částka nad limit se daní.`);
   document.getElementById('tax-warnings').innerHTML = warn.map(w => `<div class="tax-warn">${w}</div>`).join('');
@@ -5143,11 +5260,12 @@ async function openSaved(key) {
   try {
     const meta = await idb.get('meta', key), b64 = await localGetBlob(key);
     if (!meta || meta.deleted || !b64) throw new Error('report v úložišti chybí');
-    const doc = new DOMParser().parseFromString(await unpackText(meta.enc, b64), 'application/xml');
-    if (doc.querySelector('parsererror')) throw new Error('uložený soubor je poškozený');
+    const xmlText = await unpackText(meta.enc, b64);
+    if (new DOMParser().parseFromString(xmlText, 'application/xml').querySelector('parsererror')) throw new Error('uložený soubor je poškozený');
     G.sampleUnified = null; G.isSample = false; G.pendingData = null; G.pendingXml = null;
-    G.data = parseDoc(doc);
     if (meta.rate > 0) G.rate = meta.rate;
+    G.rawXml = xmlText;
+    G.data = reparse();
     G.openKey = key;
     store.set('rr-last', key); touchSettings();
     showApp();

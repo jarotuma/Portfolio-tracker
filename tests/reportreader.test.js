@@ -574,6 +574,53 @@ async function open(browser, opts, rate = '23') {
     await A.ctx.close(); await B.ctx.close();
   }
 
+  // ── Two accounts in one report → one combined portfolio ──
+  {
+    const { page, errors } = await open(browser, { second: true, lots: true });
+    const d = await page.evaluate(() => {
+      const t = G.data, eq = Object.fromEntries(t.equitySeries.map(e => [e.date, e.total]));
+      const types = {}; t.cashTxns.forEach(c => types[c.type] = (types[c.type] || 0) + 1);
+      const sap = t.positions.filter(p => p.symbol === 'SAP');
+      return { ids: t.account.ids, id: t.account.id, name: t.account.name, accounts: t.account.accounts,
+        eq0106: eq['20260106'], eq0107: eq['20260107'], eq0109: eq['20260109'],
+        nav: t.changeInNAV, trades: t.trades.length, sapRows: sap.length, sapQty: sap[0]?.qty, sapVal: sap[0]?.mktVal, sapPct: sap[0]?.pctNav,
+        types, inferred: t.account.cashTypesInferred, flows: t.flowsByDate, lots: t.closedLots.length,
+        summary: t.summary };
+    });
+    check('two accounts: both ids, one name', d.accounts === 2 && d.ids.join() === 'U1234567,U7654321' && d.name === 'Test User', d);
+    check('two accounts: daily value = sum (account 2 counts 0 before it exists, last known value after)',
+      near(d.eq0106, 15150) && near(d.eq0107, 15000 + 1100) && near(d.eq0109, 15453 + 1150), [d.eq0106, d.eq0107, d.eq0109]);
+    check('two accounts: Change in NAV summed, IB TWR dropped (only exists per account)',
+      near(d.nav.endingValue, 15453 + 1150) && near(d.nav.depositsWithdrawals, 4900 + 1000) && d.nav.twr === null, d.nav);
+    check('two accounts: trade without Level of Detail counted', d.trades === 4 + 1, d.trades);   // 4 trades of account 1 + the one of account 2
+    check('two accounts: same security in both accounts is one position line, % NAV vs combined value',
+      d.sapRows === 1 && d.sapQty === 9 && near(d.sapVal, (960 + 120) * 1.1) && near(d.sapPct, (960 + 120) * 1.1 / (15453 + 1150) * 100, 0.001), d);
+    check('two accounts: cash type inferred from the description (dividend, tax, fee, deposit)',
+      d.inferred && d.types['Withholding Tax'] === 2 && d.types['Dividends'] === 2 && d.types['Other Fees'] === 3 && d.types['Deposits/Withdrawals'] === 4, d.types);
+    check('two accounts: deposit + incoming position transfer are external flows (1000 + 500), outgoing transfer is negative',
+      near(d.flows['20260107'], 1000 + 500) && near(d.flows['20260108'], -100), d.flows);
+    const jmp = await page.evaluate(() => {
+      const eq = [100, 110, 300, 305].map((t, i) => ({ date: '2026010' + (i + 1), total: t }));
+      return { none: unexplainedJumps(eq, { '20260103': 190 }).length, one: unexplainedJumps(eq, {}).map(j => [j.date, Math.round(j.amount)]) };
+    });
+    check('jump detector: a 190 move on day 3 is explained by a flow, otherwise reported', jmp.none === 0 && JSON.stringify(jmp.one) === '[["20260103",190]]', jmp);
+    const czk = await page.evaluate(() => ({ flow: G.data.flowsByDate['20260109'], missing: G.data.account.missingFx, fb: G.data.account.czkFallback, card: document.getElementById('cards-czk').textContent }));
+    check('two accounts: CZK deposit without a rate in the report uses the entered rate (50 000 / 23)', near(czk.flow, 50000 / 23, 0.01) && !czk.missing.includes('CZK') && czk.fb === 23 && czk.card.includes('CZK přepočten vaším kurzem'), czk);
+    await page.click('#hdr-rate'); await page.fill('#rate-input', '25'); await page.click('#rate-modal button');
+    const czk2 = await page.evaluate(() => G.data.flowsByDate['20260109']);
+    check('two accounts: changing the rate re-converts the CZK amounts (50 000 / 25)', near(czk2, 2000, 0.01), czk2);
+    check('two accounts: summary derives what the Cash Report lacks (tax from account 2 included)', near(d.summary.withholding, -2.86 - 0.45) && near(d.summary.dividends, 11 + 3), d.summary);
+    const cards = (await page.textContent('#cards-czk')).replace(/\s+/g, ' ');
+    check('two accounts: TWR card says combined and uses the daily figure', cards.includes('sloučeno 2 účtů') && cards.includes('TWR z denních hodnot'), cards);
+    const hdr = await page.textContent('#hdr-account');
+    check('two accounts: header names both accounts', hdr.includes('U1234567 + U7654321'), hdr);
+    await page.click('.tab:has-text("Daně")');
+    const warn = await page.textContent('#tax-warnings');
+    check('two accounts: lot without Open Date/Time is flagged, not silently taxed', warn.includes('Open Date/Time'), warn);
+    check('no page errors', errors.length === 0, errors);
+    await page.close();
+  }
+
   // ── EUR base account → labels follow the base currency ──
   {
     const { page, errors, title } = await open(browser, { base: 'EUR' }, '25');

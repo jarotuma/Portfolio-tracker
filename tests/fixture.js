@@ -2,6 +2,7 @@
 // opts.vat: 'calc' | 'lines' | 'ib'; opts.spyFull: SPY prices cover whole period; opts.base;
 // opts.income: extra December dividend + option sell/close trades (two months of income)
 // opts.lots: IB Closed Lots for the sales (purchase dates for the time test)
+// opts.second: a second account (own FlexStatement) with a query that lacks Level of Detail, cash Type and Open Date/Time
 module.exports = function fixture(opts = {}) {
   const base = opts.base || 'USD';
   const days = ['20260102','20260105','20260106','20260107','20260108','20260109'];
@@ -29,7 +30,7 @@ module.exports = function fixture(opts = {}) {
   const decDiv = opts.income
     ? `<CashTransaction type="Dividends" symbol="AAPL" isin="US0378331005" currency="USD" fxRateToBase="1" amount="5" description="AAPL dividend" dateTime="20251215" transactionID="V0"/>` : '';
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <FlexQueryResponse queryName="test" type="AF"><FlexStatements count="1">
 <FlexStatement accountId="U1234567" fromDate="20260102" toDate="20260109">
 <AccountInformation accountId="U1234567" name="Test User" currency="${base}"/>
@@ -73,4 +74,34 @@ ${eq}
 ${spy}
 </PriorPeriodPositions>
 </FlexStatement></FlexStatements></FlexQueryResponse>`;
+
+  if (!opts.second) return xml;
+  const B = 'U7654321';
+  const second = `<FlexStatement accountId="${B}" fromDate="20260102" toDate="20260109" period="Custom">
+<AccountInformation accountId="${B}" name="Test User" currency="${base}"/>
+<ChangeInNAV accountId="${B}" startingValue="0" endingValue="1150" depositsWithdrawals="1000" mtm="150"/>
+<Trades>
+<Trade accountId="${B}" symbol="SAP" assetCategory="STK" currency="EUR" fxRateToBase="1.1" buySell="BUY" quantity="1" tradePrice="250" proceeds="-250" ibCommission="-1" netCash="-251" fifoPnlRealized="0" dateTime="20260107;100000" tradeDate="20260107"/>
+<Lot accountId="${B}" symbol="KO" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" tradePrice="65" proceeds="65" ibCommission="-1" netCash="64" cost="60" fifoPnlRealized="4" dateTime="20260108;100000" tradeDate="20260108"/>
+</Trades>
+<OpenPositions>
+<OpenPosition accountId="${B}" symbol="SAP" assetCategory="STK" currency="EUR" fxRateToBase="1.1" position="1" markPrice="120" positionValue="120" costBasisMoney="100" fifoPnlUnrealized="20" percentOfNAV="10"/>
+</OpenPositions>
+<CashTransactions>
+<CashTransaction accountId="${B}" currency="USD" fxRateToBase="1" amount="1000" description="CASH RECEIPTS / ELECTRONIC FUND TRANSFERS" dateTime="20260107" reportDate="20260107"/>
+<CashTransaction accountId="${B}" currency="CZK" amount="50000" description="CASH RECEIPTS / ELECTRONIC FUND TRANSFERS" dateTime="20260109" reportDate="20260109"/>
+<CashTransaction accountId="${B}" symbol="KO" currency="USD" fxRateToBase="1" amount="3" description="KO(US1912161007) CASH DIVIDEND USD 0.1 PER SHARE (Ordinary Dividend)" dateTime="20260108" reportDate="20260108"/>
+<CashTransaction accountId="${B}" symbol="KO" currency="USD" fxRateToBase="1" amount="-0.45" description="KO(US1912161007) CASH DIVIDEND USD 0.1 PER SHARE - US TAX" dateTime="20260108" reportDate="20260108"/>
+<CashTransaction accountId="${B}" currency="USD" fxRateToBase="1" amount="-5" description="NYSE MARKET DATA FEE FOR JAN 2026" dateTime="20260108" reportDate="20260108"/>
+</CashTransactions>
+<Transfers>
+<Transfer accountId="${B}" currency="USD" fxRateToBase="1" date="20260107" direction="IN" symbol="KO" positionAmountInBase="500" type="ACATS"/>
+<Transfer accountId="${B}" currency="USD" fxRateToBase="1" date="20260108" direction="OUT" symbol="KO" positionAmountInBase="100" type="FOP"/>
+</Transfers>
+<EquitySummaryInBase>
+<EquitySummaryByReportDateInBase accountId="${B}" reportDate="20260107" stock="100" options="0" total="1100"/>
+<EquitySummaryByReportDateInBase accountId="${B}" reportDate="20260108" stock="100" options="0" total="1150"/>
+</EquitySummaryInBase>
+</FlexStatement>`;
+  return xml.replace('<FlexStatements count="1">', '<FlexStatements count="2">').replace('</FlexStatements>', second + '\n</FlexStatements>');
 };

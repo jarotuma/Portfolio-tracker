@@ -385,6 +385,11 @@ td.neutral { color: var(--text); }
 .filter-bar select option { background: var(--surface2); }
 .filter-count { font-size: 11px; color: var(--muted); margin-left: auto; }
 
+/* Income tables: numeric 2nd column, clickable month rows */
+.tbl-inc td:nth-child(2) { text-align: right; font-family: var(--mono); }
+.tbl-inc tbody tr { cursor: pointer; }
+.tbl-inc tbody tr.selected { background: rgba(96,165,250,.12); }
+
 /* Tab panels */
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -651,6 +656,7 @@ tfoot td.tot { color: var(--amber); }
     <div class="tab" onclick="showTab('positions')">Pozice</div>
     <div class="tab" onclick="showTab('trades')">Obchody</div>
     <div class="tab" onclick="showTab('pnl')">P&amp;L</div>
+    <div class="tab" onclick="showTab('income')">Příjmy</div>
     <div class="tab" onclick="showTab('derivatives')">Deriváty</div>
     <div class="tab" onclick="showTab('dividends')">Dividendy &amp; Daně</div>
     <div class="tab" onclick="showTab('brokerinterest')">Úroky</div>
@@ -801,6 +807,62 @@ tfoot td.tot { color: var(--amber); }
           </tr></thead>
           <tbody></tbody>
           <tfoot id="tfoot-pnl"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- PŘÍJMY PO MĚSÍCÍCH -->
+    <div class="tab-panel" id="panel-income">
+      <div class="filter-bar">
+        <select id="filter-inc-month" onchange="filterIncome()" title="Měsíc">
+          <option value="">Celé období</option>
+        </select>
+        <select id="filter-inc-kind" onchange="filterIncome()" title="Druh příjmu (seznam transakcí)">
+          <option value="">Všechny příjmy</option>
+          <option value="div">Dividendy a daň</option>
+          <option value="stk">Prodeje akcií</option>
+          <option value="opt">Opce</option>
+        </select>
+        <span class="filter-count" id="count-inc"></span>
+      </div>
+      <div class="der-section-title" id="inc-period">Celé období</div>
+      <div class="cards-grid" id="cards-inc"></div>
+
+      <div class="der-section-title">Přehled po měsících <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">— kliknutím na řádek vyberete měsíc</span></div>
+      <div class="table-wrap" style="margin-bottom:24px;max-height:none">
+        <table id="tbl-inc-month" class="tbl-inc">
+          <thead><tr>
+            <th>Měsíc</th>
+            <th title="Dividendy a platby místo dividend">Dividendy hrubé USD</th>
+            <th>Srážková daň USD</th>
+            <th title="Prodejní cena (proceeds) prodaných akcií">Tržby z prodeje akcií USD</th>
+            <th title="Realizovaný zisk/ztráta FIFO z obchodů s akciemi">Zisk z akcií USD</th>
+            <th title="Prémie z prodaných opcí">Opční prémie přijaté USD</th>
+            <th title="Prémie za koupené opce">Opční prémie placené USD</th>
+            <th title="Realizovaný zisk/ztráta FIFO z obchodů s opcemi (vč. expirací)">Zisk z opcí USD</th>
+            <th title="Dividendy čisté + zisk z akcií + zisk z opcí">Čistý příjem USD</th>
+            <th>Čistý příjem CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-inc-month"></tfoot>
+        </table>
+      </div>
+
+      <div class="der-section-title">Transakce</div>
+      <div class="table-wrap">
+        <table id="tbl-inc">
+          <thead><tr>
+            <th onclick="sortTable('tbl-inc',0)">Datum</th>
+            <th onclick="sortTable('tbl-inc',1)">Druh</th>
+            <th onclick="sortTable('tbl-inc',2)">Symbol</th>
+            <th style="text-align:left">Popis</th>
+            <th onclick="sortTable('tbl-inc',4)" title="Dividenda / daň, tržba z prodeje akcie, opční prémie">Částka USD</th>
+            <th onclick="sortTable('tbl-inc',5)">Realiz. zisk USD</th>
+            <th onclick="sortTable('tbl-inc',6)">Částka CZK</th>
+            <th onclick="sortTable('tbl-inc',7)">Realiz. zisk CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-inc"></tfoot>
         </table>
       </div>
     </div>
@@ -1211,6 +1273,7 @@ function parseDoc(doc) {
       const fx = fxOf(t);
       return {
         date:    parseDate(attr(t,'dateTime') || attr(t,'tradeDate')),
+        rawDate: rawDate(attr(t,'dateTime') || attr(t,'tradeDate')),
         symbol:  attr(t,'symbol'),
         desc:    attr(t,'description'),
         type:    attr(t,'assetCategory'),
@@ -1251,6 +1314,7 @@ function parseDoc(doc) {
   const cashTxns = [...doc.querySelectorAll('CashTransaction')].map(c => ({
     date:    parseDate(attr(c,'dateTime')),
     rawDate: rawDate(attr(c,'reportDate') || attr(c,'dateTime')),
+    payDate: rawDate(attr(c,'dateTime') || attr(c,'reportDate')),   // for monthly income
     symbol:  attr(c,'symbol'),
     desc:    attr(c,'description'),
     type:    attr(c,'type'),
@@ -1458,6 +1522,7 @@ function renderAll() {
   renderSummary();
   renderTrades();
   renderPnl();
+  renderIncome();
   renderDivs();
   renderPositions();
   renderBI();
@@ -2581,6 +2646,148 @@ function filterPnl() {
   </tr>`;
 }
 
+// ── Income by month (dividends, stock sales, options) ────────────────
+const INC_KINDS = { div: 'Dividenda', wht: 'Srážková daň', stk: 'Prodej akcií', opt: 'Opce' };
+const monthLabel = m => new Date(+m.slice(0,4), +m.slice(4,6) - 1, 1)
+  .toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
+
+// One row per income event, amounts in base currency.
+//   div/wht: dividend or withholding tax (amount)
+//   stk:     stock sale → amount = proceeds, pnl = realized FIFO P&L
+//            (buy-to-cover with realized P&L is included with amount 0)
+//   opt:     any option trade incl. expiry → amount = premium (+ received / − paid), pnl = realized
+function incomeItems() {
+  const items = [];
+  G.data.cashTxns.forEach(c => {
+    const kind = (c.type === 'Dividends' || c.type === 'Payment In Lieu Of Dividends') ? 'div'
+               : c.type === 'Withholding Tax' ? 'wht' : null;
+    if (!kind || !c.payDate) return;
+    items.push({ kind, raw: c.payDate, date: c.date, symbol: c.symbol, desc: c.desc,
+                 amount: parseFloat(c.amount || 0), pnl: null });
+  });
+  G.data.trades.forEach(t => {
+    const pnl = parseFloat(t.pnl || 0);
+    const kind = t.type === 'STK' && (t.side === 'SELL' || pnl !== 0) ? 'stk'
+               : (t.type === 'OPT' || t.type === 'FOP') ? 'opt' : null;
+    if (!kind || !t.rawDate) return;
+    const proceeds = parseFloat(t.proceeds || 0);
+    items.push({ kind, raw: t.rawDate, date: t.date, symbol: t.symbol, desc: t.desc, side: t.side,
+                 amount: kind === 'stk' && t.side !== 'SELL' ? 0 : proceeds, pnl });
+  });
+  items.forEach(i => { i.month = i.raw.slice(0, 6); });
+  return items.sort((a, b) => a.raw.localeCompare(b.raw));
+}
+
+function incomeByMonth(items) {
+  const byMonth = {};
+  items.forEach(i => {
+    const r = byMonth[i.month] ||= { month: i.month, divGross: 0, wht: 0, stkProceeds: 0, stkPnl: 0,
+                                     optRecv: 0, optPaid: 0, optPnl: 0 };
+    if (i.kind === 'div')      r.divGross += i.amount;
+    else if (i.kind === 'wht') r.wht += i.amount;
+    else if (i.kind === 'stk') { r.stkProceeds += i.amount; r.stkPnl += i.pnl; }
+    else {
+      if (i.amount > 0) r.optRecv += i.amount; else r.optPaid += i.amount;
+      r.optPnl += i.pnl;
+    }
+  });
+  const rows = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+  rows.forEach(r => { r.net = r.divGross + r.wht + r.stkPnl + r.optPnl; });
+  return rows;
+}
+
+const INC_COLS = ['divGross','wht','stkProceeds','stkPnl','optRecv','optPaid','optPnl','net'];
+const sumIncome = rows => INC_COLS.reduce((a, k) => (a[k] = rows.reduce((s, r) => s + r[k], 0), a), {});
+
+let _incItems = [], _incMonths = [];
+function renderIncome() {
+  _incItems  = incomeItems();
+  _incMonths = incomeByMonth(_incItems);
+  const sel = document.getElementById('filter-inc-month');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Celé období</option>' +
+    _incMonths.map(r => `<option value="${r.month}">${monthLabel(r.month)}</option>`).join('');
+  sel.value = _incMonths.some(r => r.month === cur) ? cur : '';
+  filterIncome();
+}
+
+// Click on a month row: select it, click again to go back to the whole period
+function selectIncomeMonth(m) {
+  const sel = document.getElementById('filter-inc-month');
+  sel.value = sel.value === m ? '' : m;
+  filterIncome();
+}
+
+function filterIncome() {
+  const month = document.getElementById('filter-inc-month').value;
+  const kind  = document.getElementById('filter-inc-kind').value;
+  const r = G.rate;
+  const sgn = v => (v >= 0 ? '+' : '') + fmtN(v);
+
+  // Cards for the selected month (or whole period)
+  const t = sumIncome(_incMonths.filter(m => !month || m.month === month));
+  document.getElementById('inc-period').textContent = month ? monthLabel(month) : 'Celé období';
+  const card = (label, v, cls = colorClass(v), accent = false) => `
+    <div class="card"${accent ? ' style="border-left:3px solid var(--accent)"' : ''}>
+      <div class="card-label">${label}</div>
+      <div class="card-value ${cls}">${money(v, 2, cls !== '')}</div>
+      <div class="card-sub">Kč ${fmtN(v * r, 0)}</div>
+    </div>`;
+  document.getElementById('cards-inc').innerHTML = [
+    card('Dividendy hrubé', t.divGross),
+    card('Srážková daň', t.wht, t.wht < 0 ? 'neg' : ''),
+    card('Dividendy čisté', t.divGross + t.wht),
+    card('Tržby z prodeje akcií', t.stkProceeds, ''),
+    card('Zisk / ztráta z akcií', t.stkPnl),
+    card('Opční prémie přijaté', t.optRecv),
+    card('Zisk / ztráta z opcí', t.optPnl),
+    card('Čistý příjem', t.net, colorClass(t.net), true),
+  ].join('');
+
+  // Monthly overview
+  const cells = m => `
+      <td class="${colorClass(m.divGross)}">${sgn(m.divGross)}</td>
+      <td class="${m.wht < 0 ? 'neg' : ''}">${fmtN(m.wht)}</td>
+      <td class="neutral">${fmtN(m.stkProceeds)}</td>
+      <td class="${colorClass(m.stkPnl)}">${sgn(m.stkPnl)}</td>
+      <td class="${colorClass(m.optRecv)}">${sgn(m.optRecv)}</td>
+      <td class="${m.optPaid < 0 ? 'neg' : ''}">${fmtN(m.optPaid)}</td>
+      <td class="${colorClass(m.optPnl)}">${sgn(m.optPnl)}</td>
+      <td class="${colorClass(m.net)} tot">${sgn(m.net)}</td>
+      <td class="${colorClass(m.net)} tot">${(m.net >= 0 ? '+' : '') + fmtN(m.net * r, 0)}</td>`;
+  document.querySelector('#tbl-inc-month tbody').innerHTML = _incMonths.map(m => `
+    <tr class="${m.month === month ? 'selected' : ''}" onclick="selectIncomeMonth('${m.month}')">
+      <td class="left">${monthLabel(m.month)}</td>${cells(m)}
+    </tr>`).join('') || '<tr><td colspan="10"><div class="empty"><div class="empty-icon">🔍</div>Žádné příjmy v reportu</div></td></tr>';
+  document.getElementById('tfoot-inc-month').innerHTML = _incMonths.length
+    ? `<tr><td>Celkem za období</td>${cells(sumIncome(_incMonths))}</tr>` : '';
+
+  // Transactions of the selected month and kind
+  const rows = _incItems.filter(i =>
+    (!month || i.month === month) &&
+    (!kind || i.kind === kind || (kind === 'div' && i.kind === 'wht')));
+  document.getElementById('count-inc').textContent = `${rows.length} transakcí`;
+  document.querySelector('#tbl-inc tbody').innerHTML = rows.map(i => `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${i.date}</td>
+      <td style="text-align:left;font-family:var(--sans)">${INC_KINDS[i.kind]}${i.kind === 'opt' ? ' ' + sideBadge(i.side) : ''}</td>
+      <td class="left">${i.symbol || '—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${(i.desc || '').slice(0, 45)}</td>
+      <td class="${colorClass(i.amount)}">${sgn(i.amount)}</td>
+      <td class="${i.pnl == null ? '' : colorClass(i.pnl)}">${i.pnl == null ? '—' : sgn(i.pnl)}</td>
+      <td class="${colorClass(i.amount)}">${(i.amount >= 0 ? '+' : '') + fmtN(i.amount * r, 0)}</td>
+      <td class="${i.pnl == null ? '' : colorClass(i.pnl)}">${i.pnl == null ? '—' : (i.pnl >= 0 ? '+' : '') + fmtN(i.pnl * r, 0)}</td>
+    </tr>`).join('') || '<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+  const sA = rows.reduce((s, i) => s + i.amount, 0);
+  const sP = rows.reduce((s, i) => s + (i.pnl || 0), 0);
+  document.getElementById('tfoot-inc').innerHTML = rows.length ? `<tr>
+    <td colspan="4">Celkem</td>
+    <td class="${colorClass(sA)} tot">${sgn(sA)}</td>
+    <td class="${colorClass(sP)} tot">${sgn(sP)}</td>
+    <td class="${colorClass(sA)} tot">${(sA >= 0 ? '+' : '') + fmtN(sA * r, 0)}</td>
+    <td class="${colorClass(sP)} tot">${(sP >= 0 ? '+' : '') + fmtN(sP * r, 0)}</td>
+  </tr>` : '';
+}
+
 // ── Dividends ────────────────────────────────────────────────────────
 const DIV_TYPES = ['Dividends','Withholding Tax','Payment In Lieu Of Dividends'];
 const BI_TYPES  = ['Broker Interest Paid','Broker Interest Received','Bond Interest Paid','Bond Interest Received'];
@@ -3193,7 +3400,7 @@ function filterPos() {
 function showTab(id) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  const tabs = ['summary','positions','trades','pnl','derivatives','dividends','brokerinterest','otherfees','deposits'];
+  const tabs = ['summary','positions','trades','pnl','income','derivatives','dividends','brokerinterest','otherfees','deposits'];
   document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
   if (id === 'summary' && G.data) { drawChart(); drawPerfChart(); drawPieChart(); }
@@ -3423,6 +3630,26 @@ function exportXLSX() {
   addSheet('Pozice',           sheetPozice);
   addSheet('Obchody',          sheetObchody);
   addSheet('PnL',              sheetPnl);
+
+  // ── Příjmy po měsících ──
+  const incItemsX = incomeItems();
+  const incMonthsX = incomeByMonth(incItemsX);
+  const incRow = (label, m) => [label, ...INC_COLS.map(k => +m[k].toFixed(2)), +(m.net * r).toFixed(2)];
+  addSheet('Příjmy po měsících', [
+    ['Měsíc','Dividendy hrubé USD','Srážková daň USD','Tržby z prodeje akcií USD','Zisk z akcií USD',
+     'Opční prémie přijaté USD','Opční prémie placené USD','Zisk z opcí USD','Čistý příjem USD','Čistý příjem CZK'],
+    ...incMonthsX.map(m => incRow(monthLabel(m.month), m)),
+    incRow('Celkem', sumIncome(incMonthsX)),
+    [],
+    ['TRANSAKCE'],
+    ['Datum','Měsíc','Druh','Symbol','Popis','Částka USD','Realiz. zisk USD','Částka CZK','Realiz. zisk CZK'],
+    ...incItemsX.map(i => [
+      i.date, monthLabel(i.month), INC_KINDS[i.kind] + (i.kind === 'opt' ? ' ' + i.side : ''),
+      i.symbol || '', i.desc,
+      +i.amount.toFixed(2), i.pnl == null ? '' : +i.pnl.toFixed(2),
+      +(i.amount * r).toFixed(2), i.pnl == null ? '' : +(i.pnl * r).toFixed(2),
+    ]),
+  ]);
   // ── Deriváty — vše na jednom listu ──
   const derRows = derivatives || [];
 
@@ -3584,6 +3811,7 @@ async function printPDF() {
       ['panel-positions',      'Pozice'],
       ['panel-trades',         'Obchody'],
       ['panel-pnl',            'P&L'],
+      ['panel-income',         'Příjmy po měsících'],
       ['panel-derivatives',    'Deriváty'],
       ['panel-dividends',      'Dividendy & Daně'],
       ['panel-brokerinterest', 'Úroky'],

@@ -15,7 +15,7 @@ const check = (name, ok, got) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}
 const near = (a, b, eps = 0.01) => Math.abs(a - b) < eps;
 
 async function open(browser, opts, rate = '23') {
-  const xmlPath = path.join(OUT, `fx_${opts.vat || 'calc'}_${opts.spyFull ? 'full' : 'part'}_${opts.base || 'USD'}.xml`);
+  const xmlPath = path.join(OUT, `fx_${opts.vat || 'calc'}_${opts.spyFull ? 'full' : 'part'}_${opts.base || 'USD'}${opts.income ? '_inc' : ''}.xml`);
   fs.writeFileSync(xmlPath, fixture(opts));
   const page = await browser.newPage({ acceptDownloads: true });
   const errors = [];
@@ -149,6 +149,48 @@ async function open(browser, opts, rate = '23') {
     const { page, errors } = await open(browser, { vat: 'ib' });
     const vat = await page.evaluate(() => _ofRows.map(c => ofVat(c)));
     check('7: ib mode — VAT matched by transaction (-2.1, 0)', near(vat[0], -2.1) && near(vat[1], 0), vat);
+    check('no page errors', errors.length === 0, errors);
+    await page.close();
+  }
+
+  // ── Income by month: dividends, stock sales, options ──
+  {
+    const { page, errors } = await open(browser, { income: true });
+    await page.click('.tab:has-text("Příjmy")');
+    const months = await page.$$eval('#tbl-inc-month tbody td:first-child', tds => tds.map(t => t.textContent.trim()));
+    check('income: two months listed', JSON.stringify(months) === JSON.stringify(['prosinec 2025', 'leden 2026']), months);
+    const agg = await page.evaluate(() => _incMonths);
+    const [dec, jan] = agg;
+    check('income: December — dividend 5, option premium 150, net 5',
+      near(dec.divGross, 5) && near(dec.optRecv, 150) && near(dec.optPnl, 0) && near(dec.net, 5), dec);
+    check('income: January — div 11, tax −2.86, stock proceeds 960 (SAP in EUR + MSFT), stock P&L 64.8',
+      near(jan.divGross, 11) && near(jan.wht, -2.86) && near(jan.stkProceeds, 960) && near(jan.stkPnl, 64.8), jan);
+    check('income: January — option premium paid −50, option P&L 98, net 170.94',
+      near(jan.optPaid, -50) && near(jan.optPnl, 98) && near(jan.net, 170.94), jan);
+
+    await page.click('#tbl-inc-month tbody tr:has-text("leden 2026")');
+    const sel = await page.inputValue('#filter-inc-month');
+    check('income: clicking a month row selects it', sel === '202601', sel);
+    const period = await page.textContent('#inc-period');
+    const cards = (await page.textContent('#cards-inc')).replace(/\s+/g, ' ');
+    check('income: cards show January net income', period === 'leden 2026' && cards.includes('+170,94 USD'), cards);
+    const nTx = await page.$$eval('#tbl-inc tbody tr', trs => trs.length);
+    check('income: January transactions (div, tax, 2 stock sales, 1 option) = 5', nTx === 5, nTx);
+    await page.selectOption('#filter-inc-kind', 'opt');
+    const optRows = await page.$$eval('#tbl-inc tbody tr td:nth-child(3)', tds => tds.map(t => t.textContent.trim()));
+    check('income: kind filter "Opce" in January → 1 option trade', optRows.length === 1 && optRows[0].startsWith('XYZ'), optRows);
+    await page.click('#tbl-inc-month tbody tr:has-text("leden 2026")');
+    const sel2 = await page.inputValue('#filter-inc-month');
+    const nOpt = await page.$$eval('#tbl-inc tbody tr', trs => trs.length);
+    check('income: clicking the month again → whole period (2 option trades)', sel2 === '' && nOpt === 2, [sel2, nOpt]);
+
+    const dl = page.waitForEvent('download');
+    await page.click('button:has-text("Excel export")');
+    const file = path.join(OUT, 'export_income.xlsx');
+    await (await dl).saveAs(file);
+    const inc = XLSXN.utils.sheet_to_json(XLSXN.readFile(file).Sheets['Příjmy po měsících'], { header: 1 });
+    const total = inc.find(r => r[0] === 'Celkem');
+    check('income: Excel sheet total net income 175.94 (CZK × 23 = 4 046.62)', total && near(total[8], 175.94) && near(total[9], 4046.62), total);
     check('no page errors', errors.length === 0, errors);
     await page.close();
   }

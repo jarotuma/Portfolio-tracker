@@ -2,6 +2,15 @@
 
 `ReportReader.html` je samostatná stránka pro prohlížení **Flex Query XML reportů z Interactive Brokers**: přehled, pozice, obchody, P&L, deriváty, dividendy, úroky, poplatky a vklady s přepočtem do CZK, grafy a export do Excelu / PDF. Vše běží lokálně v prohlížeči — stačí soubor otevřít a přetáhnout do něj XML.
 
+## Ukládání dat
+
+Nahrané reporty se ukládají, takže je nemusíte nahrávat pokaždé znovu. Stránka při otevření sama otevře naposledy použitý report i s vaším kurzem; ostatní uložené reporty jsou na úvodní obrazovce (tlačítko **Uložené reporty** v hlavičce).
+
+- **V prohlížeči** (vždy): IndexedDB. Report se ukládá jako původní XML, komprimovaný (gzip), a při otevření se znovu zpracuje. Spolu s ním kurz, ruční příjmy (výplata, nájem), kurzy ČNB a nastavení daní.
+- **V účtu Claude** (jen ve zveřejněné stránce po přihlášení): totéž se zrcadlí do soukromé části databáze artefaktu `data/users/<vaše id>/…`, kterou nevidí nikdo jiný ani majitel stránky. Díky tomu jsou data na každém zařízení. Velké reporty se dělí na kousky (limit dokumentu je 256 KiB). Synchronizaci jde vypnout; při souběžných změnách na dvou zařízeních vyhrává novější zápis.
+- Zapisovat do účtu nemůže viz-only sdílení; stránka pak funguje jen s ukládáním v prohlížeči.
+- Ukázková data se nikdy neukládají. Ukládání reportů lze vypnout na úvodní obrazovce.
+
 ## Příjmy po měsících
 
 Záložka **Příjmy** ukazuje dividendy, prodeje akcií a opce po měsících, s výběrem měsíce. K tomu si do tabulky můžete ručně zadat **výplatu** a **příjem z nájmu** (v Kč) za každý měsíc reportu — součet za měsíc i za celé období pak ukazuje celkový příjem (investice + výplata + nájem). Ručně zadané částky se ukládají jen v prohlížeči (localStorage), nikam se neodesílají a platí pro daný kalendářní měsíc i v dalších reportech. Jsou i v Excel exportu.

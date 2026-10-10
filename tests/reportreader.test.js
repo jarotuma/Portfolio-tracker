@@ -198,7 +198,7 @@ async function open(browser, opts, rate = '23') {
   // ── Manual salary and rent per month ──
   {
     const { page, errors } = await open(browser, { income: true });
-    await page.evaluate(() => { localStorage.clear(); MANUAL.saved = {}; });
+    await page.evaluate(() => { localStorage.removeItem('rr-income-manual'); MANUAL.saved = {}; });
     await page.click('.tab:has-text("Příjmy")');
     const z = await page.evaluate(() => incomeByMonth([], ['202603', '202604']).map(r => [r.month, r.net, r.salary, r.rent]));
     check('manual income: months without investment income get a row', JSON.stringify(z) === JSON.stringify([['202603', 0, 0, 0], ['202604', 0, 0, 0]]), z);
@@ -221,9 +221,9 @@ async function open(browser, opts, rate = '23') {
     check('manual income: other month untouched', dec.salary === 0, dec);
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rr-income-manual')));
     check('manual income: saved in the browser', saved?.['202601']?.salary === 60000 && saved?.['202601']?.rent === 15000.5, saved);
+    await page.evaluate(async () => { for (let i = 0; i < 50 && !(await localMetas()).some(m => m.kind === 'report'); i++) await new Promise(r => setTimeout(r, 100)); });
     await page.reload();
-    await page.setInputFiles('#file-input', path.join(OUT, 'fx_calc_part_USD_inc.xml'));
-    await page.click('#rate-modal button');
+    await page.waitForSelector('#app.visible');               // the saved report opens by itself
     await page.click('.tab:has-text("Příjmy")');
     const again = await page.inputValue(`.man-in${jan}[data-k="salary"]`);
     check('manual income: remembered after reload', again.replace(/\s/g, '') === '60000', again);
@@ -239,7 +239,6 @@ async function open(browser, opts, rate = '23') {
     const hdr = inc[0], total = inc.find(r => r[0] === 'Celkem');
     check('manual income: Excel has salary, rent and total columns', hdr.slice(-3).join() === 'Výplata Kč,Nájem Kč,Příjem celkem Kč' && total[11] === 15000.5, [hdr.slice(-3), total]);
     check('no page errors', errors.length === 0, errors);
-    await page.evaluate(() => localStorage.clear());
     await page.close();
   }
 
@@ -411,6 +410,168 @@ async function open(browser, opts, rate = '23') {
     check('tax fallback: warning asks for Closed Lots', T.warn.includes('Closed Lots'), T.warn);
     check('no page errors', errors.length === 0, errors);
     await page.close();
+  }
+
+  // ── Saved reports: browser storage (IndexedDB) ──
+  {
+    const ctx = await browser.newContext();                       // one context: storage survives reloads
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+    const xml = path.join(OUT, 'persist.xml');
+    fs.writeFileSync(xml, fixture({ income: true, lots: true }));
+    const upload = async rate => {
+      await page.setInputFiles('#file-input', xml);
+      await page.fill('#rate-input', String(rate));
+      await page.click('#rate-modal button');
+      await page.waitForSelector('#app.visible');
+    };
+    const metas = () => page.evaluate(async () => (await localMetas()).filter(m => m.kind === 'report').map(m => ({ key: m.key, rate: m.rate, enc: m.enc, deleted: !!m.deleted, size: m.size })));
+    const settle = () => page.evaluate(async () => { for (let i = 0; i < 50 && !(await localMetas()).length; i++) await new Promise(r => setTimeout(r, 100)); });
+    await page.goto('file://' + PAGE);
+    check('saved: nothing saved at first, list hidden', (await metas()).length === 0 && await page.isHidden('#saved-box'));
+    await upload(21.5); await settle();
+    let m = await metas();
+    check('saved: uploaded report stored compressed with its rate', m.length === 1 && m[0].rate === 21.5 && m[0].enc === 'gzip' && m[0].key.startsWith('rep_U1234567_'), m);
+    const nTrades = await page.evaluate(() => G.data.trades.length);
+    await page.reload();
+    await page.waitForSelector('#app.visible');
+    const hdr = await page.textContent('#hdr-rate');
+    const nAfter = await page.evaluate(() => G.data.trades.length);
+    check('saved: after reload the report opens by itself with the saved rate', hdr.includes('21.5000') && nAfter === nTrades && nTrades > 0, [hdr, nAfter, nTrades]);
+    await page.click('button:has-text("Uložené reporty")');
+    const rows = await page.$$eval('.saved-row .nm', r => r.map(x => x.textContent));
+    check('saved: list on the start screen shows the account', rows.length === 1 && rows[0].includes('Test User'), rows);
+    check('saved: back button available while a report is open', await page.isVisible('#btn-back'));
+    await page.click('#btn-back');
+    await upload(23);
+    await page.evaluate(() => new Promise(r => setTimeout(r, 300)));
+    m = await metas();
+    check('saved: uploading the same period again replaces it (still one, rate 23)', m.length === 1 && m[0].rate === 23, m);
+    await page.click('#hdr-rate'); await page.fill('#rate-input', '25'); await page.click('#rate-modal button');
+    await page.evaluate(() => new Promise(r => setTimeout(r, 300)));
+    m = await metas();
+    check('saved: changing the rate updates the saved report', m[0].rate === 25, m);
+    await page.click('button:has-text("Uložené reporty")');
+    await page.click('.saved-open');
+    check('saved: opening from the list works', await page.isVisible('#app.visible') && (await page.textContent('#hdr-rate')).includes('25.0000'));
+    // ČNB rates persist across reloads
+    await page.click('.tab:has-text("Daně")');
+    await page.selectOption('#tax-method', 'daily');
+    const cnb = path.join(OUT, 'rok2026p.txt');
+    fs.writeFileSync(cnb, 'Datum|1 EUR|1 USD\n06.01.2026|24,500|21,500\n07.01.2026|24,100|21,100\n08.01.2026|24,200|21,200\n09.01.2026|24,300|21,300\n');
+    await page.setInputFiles('#tax-rates input[type=file]', cnb);
+    await page.waitForFunction(() => _dailySorted.USD?.length === 4);
+    await page.evaluate(() => new Promise(r => setTimeout(r, 400)));
+    await page.reload(); await page.waitForSelector('#app.visible');
+    await page.waitForFunction(() => _dailySorted.USD?.length === 4);
+    check('saved: ČNB daily rates remembered after reload', true);
+    // sample is never saved
+    await page.click('button:has-text("Uložené reporty")');
+    await page.click('button:has-text("Vyzkoušet na ukázkových datech")'); await page.click('#rate-modal button');
+    await page.evaluate(() => new Promise(r => setTimeout(r, 300)));
+    check('saved: the sample report is not saved', (await metas()).length === 1, await metas());
+    // delete: two clicks, then no auto-open
+    await page.click('button:has-text("Uložené reporty")');
+    await page.click('.saved-del');
+    check('saved: first click on Smazat only asks to confirm', (await metas()).every(x => !x.deleted) && await page.isVisible('.saved-del.confirm'));
+    await page.click('.saved-del');
+    await page.waitForFunction(() => document.getElementById('saved-box').hidden);
+    m = await metas();
+    check('saved: confirmed delete removes the report (tombstone kept for sync)', m.length === 1 && m[0].deleted && m[0].size === undefined, m);
+    await page.reload();
+    await page.waitForTimeout(600);
+    check('saved: after delete nothing opens by itself', await page.isHidden('#app') || !(await page.evaluate(() => !!G.data)));
+    // saving can be switched off
+    await page.uncheck('#opt-save');
+    await upload(22);
+    await page.evaluate(() => new Promise(r => setTimeout(r, 300)));
+    check('saved: with "Ukládat" off nothing new is stored', (await metas()).every(x => x.deleted), await metas());
+    check('no page errors', errors.length === 0, errors);
+    await ctx.close();
+  }
+
+  // ── Saved reports: private cloud sync (database mocked, shared by two "devices") ──
+  {
+    const cloud = new Map();
+    let maxDoc = 0;
+    const cloudOp = (op, p, d) => {
+      if (op === 'get') return cloud.has(p) ? cloud.get(p) : null;
+      if (op === 'set') { const j = JSON.stringify(d); maxDoc = Math.max(maxDoc, j.length); if (j.length > 262144) throw new Error('over 256 KiB'); cloud.set(p, JSON.parse(j)); return null; }
+      if (op === 'delete') { cloud.delete(p); return null; }
+      if (op === 'list') return [...cloud].filter(([k]) => k.startsWith(p + '/') && !k.slice(p.length + 1).includes('/')).map(([k, v]) => [k.split('/').pop(), v]);
+    };
+    const device = async () => {
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      page.errors = [];
+      page.on('pageerror', e => page.errors.push(e.message));
+      await page.exposeFunction('__cloud', cloudOp);
+      await page.addInitScript(() => {
+        const ref = p => ({ id: p.split('/').pop(), path: p,
+          get: async () => { const d = await window.__cloud('get', p); return { id: p.split('/').pop(), exists: d != null, data: () => d ?? undefined }; },
+          set: d => window.__cloud('set', p, JSON.parse(JSON.stringify(d))), delete: () => window.__cloud('delete', p),
+          collection: c => col(p + '/' + c) });
+        const col = p => ({ path: p, doc: id => ref(p + '/' + id),
+          get: async () => { const rows = await window.__cloud('list', p); return { docs: rows.map(([id, d]) => ({ id, exists: true, data: () => d })), size: rows.length }; } });
+        window.claude = { use: async n => n === 'user' ? { id: async () => 'u_test1' } : n === 'db' ? { doc: ref, collection: col } : null };
+      });
+      await page.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+      await page.goto('file://' + PAGE);
+      await page.waitForFunction(() => PERSIST.cloudState !== 'checking');
+      return { ctx, page };
+    };
+    const flush = page => page.evaluate(async () => { clearTimeout(_syncTimer); await syncAll(); });
+
+    // Device A: big report (incompressible padding → several chunks) + salary
+    const big = fixture({ income: true, lots: true }).replace('</FlexQueryResponse>',
+      '<!--' + require('crypto').randomBytes(300000).toString('base64') + '-->\n</FlexQueryResponse>');
+    const bigPath = path.join(OUT, 'big.xml'); fs.writeFileSync(bigPath, big);
+    const A = await device();
+    check('cloud: signed-in page offers synchronization', await A.page.evaluate(() => PERSIST.cloudState) === 'ready' && await A.page.isVisible('#opt-sync-lbl'));
+    await A.page.setInputFiles('#file-input', bigPath);
+    await A.page.fill('#rate-input', '22.75'); await A.page.click('#rate-modal button');
+    await A.page.waitForSelector('#app.visible');
+    await A.page.evaluate(async () => { for (let i = 0; i < 50 && !(await localMetas()).length; i++) await new Promise(r => setTimeout(r, 100)); });
+    await A.page.click('.tab:has-text("Příjmy")');
+    await A.page.fill('.man-in[data-month="202601"][data-k="salary"]', '70000');
+    await A.page.press('.man-in[data-month="202601"][data-k="salary"]', 'Tab');
+    await flush(A.page);
+    const keys = [...cloud.keys()];
+    const metaKey = keys.find(k => k.includes('/idx/meta/rep_'));
+    const meta = cloud.get(metaKey);
+    check('cloud: report stored in the private subtree data/users/<id>/', keys.length > 0 && keys.every(k => k.startsWith('data/users/u_test1/')), keys.slice(0, 3));
+    check('cloud: large report split into chunks, every document under 256 KiB', meta?.chunks >= 3 && maxDoc < 262144 &&
+      keys.filter(k => k.includes('/idx/chunks/')).length === meta.chunks, [meta?.chunks, maxDoc]);
+    const st = cloud.get('data/users/u_test1/settings');
+    check('cloud: settings doc has salary and the last opened report', st?.manual?.['202601']?.salary === 70000 && st.lastOpened === meta.key, st);
+
+    // Device B: empty browser, same account → report arrives and opens by itself
+    const B = await device();
+    await B.page.waitForSelector('#app.visible', { timeout: 20000 });
+    const b = await B.page.evaluate(() => ({ rate: G.rate, trades: G.data.trades.length, salary: MANUAL.saved['202601']?.salary, name: G.data.account.name }));
+    const a = await A.page.evaluate(() => ({ trades: G.data.trades.length }));
+    check('cloud: second device gets the report, rate and salary and opens it', b.rate === 22.75 && b.trades === a.trades && b.salary === 70000 && b.name === 'Test User', b);
+    // delete on B → gone in the cloud and on A
+    await B.page.click('button:has-text("Uložené reporty")');
+    await B.page.click('.saved-del'); await B.page.click('.saved-del');
+    await B.page.waitForFunction(() => document.getElementById('saved-box').hidden);
+    await flush(B.page);
+    const after = [...cloud.keys()];
+    check('cloud: delete removes the chunks and leaves a tombstone', after.filter(k => k.includes('/idx/chunks/')).length === 0 && cloud.get(metaKey)?.deleted === true, after);
+    await flush(A.page);
+    const aMeta = await A.page.evaluate(async () => (await localMetas()).filter(m => m.kind === 'report').map(m => !!m.deleted));
+    check('cloud: the delete reaches the first device', aMeta.length === 1 && aMeta[0] === true, aMeta);
+    // sync switched off → no cloud writes
+    await A.page.click('button:has-text("Uložené reporty")');
+    await A.page.uncheck('#opt-sync');
+    const before = JSON.stringify([...cloud]);
+    await A.page.setInputFiles('#file-input', bigPath); await A.page.fill('#rate-input', '20'); await A.page.click('#rate-modal button');
+    await A.page.evaluate(() => new Promise(r => setTimeout(r, 1800)));
+    check('cloud: with synchronization off nothing is written', JSON.stringify([...cloud]) === before);
+    check('no page errors', A.page.errors.length === 0 && B.page.errors.length === 0, [A.page.errors, B.page.errors]);
+    await A.ctx.close(); await B.ctx.close();
   }
 
   // ── EUR base account → labels follow the base currency ──

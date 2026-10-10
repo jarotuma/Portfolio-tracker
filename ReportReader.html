@@ -77,7 +77,8 @@ body {
   position: fixed; inset: 0; z-index: 1000;
   background: var(--bg);
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
+  align-items: center; justify-content: safe center;
+  overflow-y: auto; padding: 24px 0;
   gap: 24px;
   transition: opacity .3s;
 }
@@ -119,7 +120,21 @@ body {
   text-transform: uppercase;
 }
 
-.sample-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: -4px; }
+.saved-box { width: 480px; max-width: 90vw; }
+.saved-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted2); font-weight: 600; margin-bottom: 8px; }
+.saved-row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.saved-open { flex: 1; min-width: 0; text-align: left; background: var(--surface); border: 1px solid var(--border2); border-radius: 10px;
+              padding: 10px 14px; color: var(--text); cursor: pointer; font-family: var(--sans); }
+.saved-open:hover, .saved-open:focus-visible { border-color: var(--accent); outline: none; }
+.saved-open .nm { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved-open .sub { display: block; font-size: 11px; color: var(--muted2); margin-top: 2px; }
+.saved-del.confirm { border-color: var(--red); color: var(--red); }
+.store-opts { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; font-size: 12px; color: var(--muted2); padding: 0 16px; }
+.store-opts label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.store-opts[hidden], .saved-box[hidden], #btn-back[hidden], #opt-sync-lbl[hidden] { display: none; }
+#store-status { margin-top: -12px; }
+#store-status.warn { color: var(--amber); }
+.sample-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: -4px; padding: 0 16px; }
 .sample-note { color: var(--muted); font-size: 11px; text-align: center; max-width: 480px; padding: 0 16px; margin-top: -12px; }
 
 /* Rate modal */
@@ -660,6 +675,10 @@ tfoot td.tot { color: var(--amber); }
 <!-- Drop overlay -->
 <div id="drop-overlay">
   <div class="brand-title">Report Reader · Interactive Brokers</div>
+  <div class="saved-box" id="saved-box" hidden>
+    <div class="saved-title">Uložené reporty</div>
+    <div id="saved-list"></div>
+  </div>
   <div class="drop-zone" id="drop-zone">
     <div class="drop-icon">📄</div>
     <h2>Přetáhněte XML soubor</h2>
@@ -671,6 +690,12 @@ tfoot td.tot { color: var(--amber); }
     <button class="btn" onclick="downloadSample()" title="Stáhne ukázkový XML soubor, který pak můžete přetáhnout výše">Stáhnout ukázkový XML</button>
   </div>
   <div class="sample-note">Ukázka je smyšlený účet (leden–červen 2026): akcie v USD i EUR, dividendy, prodeje, opce, vklad a výběr.</div>
+  <div class="store-opts">
+    <label><input type="checkbox" id="opt-save" checked onchange="setOptSave(this.checked)"> Ukládat nahrané reporty</label>
+    <label id="opt-sync-lbl" hidden><input type="checkbox" id="opt-sync" checked onchange="setOptSync(this.checked)"> Synchronizovat s účtem Claude</label>
+  </div>
+  <div class="sample-note" id="store-status"></div>
+  <button class="btn" id="btn-back" hidden onclick="hideStart()">← Zpět do přehledu</button>
   <div style="margin-top:20px;color:var(--muted);font-size:12px;letter-spacing:.02em">
     &copy; Jiří Javorník — 2026
   </div>
@@ -744,8 +769,9 @@ tfoot td.tot { color: var(--amber); }
     <button class="btn" onclick="exportXLSX()">Excel export</button>
     <button class="btn" onclick="printPDF()">Tisk / PDF</button>
     <button class="btn" id="btn-theme" onclick="toggleTheme()" title="Přepnout světlý/tmavý režim" style="font-size:15px;padding:6px 10px">☀</button>
+    <button class="btn" onclick="showStart()" title="Uložené reporty a nahrání dalšího">Uložené reporty</button>
     <label class="btn btn-primary btn-open" style="cursor:pointer">
-      Otevřít XML<input type="file" accept=".xml" onchange="handleFile(this.files[0])" style="display:none">
+      Otevřít XML<input type="file" accept=".xml" onchange="handleFile(this.files[0]); this.value=''" style="display:none">
     </label>
   </div>
 
@@ -1613,6 +1639,7 @@ dz.addEventListener('drop', e => {
 });
 document.getElementById('file-input').addEventListener('change', e => {
   if (e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';            // so choosing the same file again fires change again
 });
 
 function handleFile(file) {
@@ -1630,6 +1657,7 @@ function loadSample() {
   // (labelled "ukázka", kept in memory only and dropped when a real report is opened).
   G.sampleUnified = { 2026: { USD: 21.20, EUR: 24.40 } };
   G.isSample = true;
+  G.pendingXml = null;
   // demo salary and rent (in memory only), so the sample shows a complete overview
   MANUAL.sample = {};
   [['202601', 62000, 15000], ['202602', 62000, 15000], ['202603', 98000, 15000],
@@ -1665,8 +1693,10 @@ function confirmRate() {
   document.getElementById('rate-modal').style.display = 'none';
   if (G.pendingData) {
     G.data = G.pendingData; G.pendingData = null; G._rerender = false;
+    const xml = G.pendingXml; G.pendingXml = null; G.openKey = null;
     showApp();
-  } else if (G._rerender && G.data) { renderAll(); G._rerender = false; }
+    if (xml && !G.isSample) persistCurrentReport(xml);
+  } else if (G._rerender && G.data) { renderAll(); G._rerender = false; saveRate(); }
   document.getElementById('hdr-rate').textContent = `${BASE()}/CZK ${G.rate.toFixed(4)}`;
 }
 document.getElementById('rate-input').addEventListener('keydown', e => {
@@ -1683,6 +1713,7 @@ function readXML(file) {
       const err = doc.querySelector('parsererror');
       if (err) { alert('Chyba XML souboru: ' + err.textContent.slice(0,200)); return; }
       G.pendingData = parseDoc(doc);
+      G.pendingXml = e.target.result;       // saved together with the rate once confirmed
       askRate(false);
     } catch(ex) { alert('Chyba zpracování: ' + ex.message); }
   };
@@ -3321,7 +3352,7 @@ function setManualIncome(inp) {
   const e = st[month] ||= {};
   if (isFinite(v) && v !== 0) e[k] = v; else delete e[k];
   if (!Object.keys(e).length) delete st[month];
-  if (!G.isSample) store.set('rr-income-manual', MANUAL.saved);
+  if (!G.isSample) { store.set('rr-income-manual', MANUAL.saved); touchSettings(); }
   const row = _incMonths.find(m => m.month === month);
   if (row) row[k] = e[k] || 0;
   inp.value = e[k] ? fmtIn(e[k]) : '';
@@ -3414,7 +3445,7 @@ const TAX = {
   method:   store.get('rr-tax-method', 'unified'),      // 'unified' | 'daily'
   all100k:  store.get('rr-tax-100k-all', false),
   unified:  store.get('rr-unified', {}),                // user-entered { year: { ccy: rate } }
-  daily:    store.get('rr-cnb-daily', {}),              // { ccy: { YYYYMMDD: rate } }
+  daily:    store.get('rr-cnb-daily', {}),              // { ccy: { YYYYMMDD: rate } } (old localStorage copy, moved to IndexedDB at start)
 };
 let _dailySorted = {};                                  // ccy → sorted [date, rate] for lookups
 function indexDaily() {
@@ -3451,7 +3482,7 @@ function czkRate(ccy, ymd) {
 }
 
 // Parse ČNB "rok.txt" (Datum|1 AUD|…|100 JPY|…), header may repeat when the currency list changes
-function parseCnbYear(text) {
+function parseCnbYear(text, years) {
   let cols = null, n = 0;
   for (const line of text.split(/\r?\n/)) {
     const p = line.trim().split('|');
@@ -3461,28 +3492,30 @@ function parseCnbYear(text) {
     const ymd = dm[3] + dm[2] + dm[1];
     cols.forEach((c, i) => {
       const v = parseFloat((p[i + 1] || '').replace(',', '.'));
-      if (v > 0 && c.ccy) { (TAX.daily[c.ccy] ||= {})[ymd] = v / c.amt; n++; }
+      if (v > 0 && c.ccy) { (TAX.daily[c.ccy] ||= {})[ymd] = v / c.amt; n++; years?.add(ymd.slice(0, 4)); }
     });
   }
   return n;
 }
 function loadCnbFiles(files) {
   const status = document.getElementById('tax-cnb-status');
-  Promise.all([...files].map(f => f.text().then(parseCnbYear))).then(counts => {
-    store.set('rr-cnb-daily', TAX.daily);
+  const years = new Set();
+  Promise.all([...files].map(f => f.text().then(t => parseCnbYear(t, years)))).then(counts => {
     indexDaily();
+    persistCnbYears([...years]);
     const n = counts.reduce((a, b) => a + b, 0);
     if (status) status.textContent = n ? '' : 'Soubor nevypadá jako kurzy ČNB (rok.txt) — zkontrolujte, co jste stáhli.';
     renderTax();
   });
 }
-function setTaxMethod(m) { TAX.method = m; store.set('rr-tax-method', m); renderTax(); }
-function setTax100k(v)   { TAX.all100k = v; store.set('rr-tax-100k-all', v); renderTax(); }
+function setTaxMethod(m) { TAX.method = m; store.set('rr-tax-method', m); touchSettings(); renderTax(); }
+function setTax100k(v)   { TAX.all100k = v; store.set('rr-tax-100k-all', v); touchSettings(); renderTax(); }
 function setUnified(inp) {
   const { year, ccy } = inp.dataset, v = parseFloat(inp.value.replace(',', '.'));
   TAX.unified[year] ||= {};
   if (v > 0) TAX.unified[year][ccy] = v; else delete TAX.unified[year][ccy];
   store.set('rr-unified', TAX.unified);
+  touchSettings();
   renderTax();
 }
 
@@ -4966,6 +4999,318 @@ function loadScript(src) {
   });
 }
 
+</script>
+
+<script id="persistence">
+// ── Persistence: reports, ČNB rates and settings ─────────────────────────────
+// Local: IndexedDB in this browser (compressed report XML + rate). Cloud: only in the
+// published page, mirrored into the viewer's PRIVATE subtree of the artifact database
+// (data/users/<id>/…, hidden even from the artifact's owner) when the viewer is signed in.
+// Reports are stored as the original XML and parsed again on open, so parser fixes
+// also apply to saved reports.
+const PERSIST = { local: true, cloud: null, uid: null, cloudState: 'checking', msg: '', warn: false, lastSync: 0 };
+
+const idb = {
+  _db: null,
+  open() {
+    return this._db ||= new Promise((res, rej) => {
+      try {
+        if (!window.indexedDB) throw new Error('IndexedDB není dostupná');
+        const r = indexedDB.open('reportreader', 1);
+        r.onupgradeneeded = () => { ['meta', 'data'].forEach(n => r.result.createObjectStore(n, { keyPath: 'key' })); };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+        r.onblocked = () => rej(new Error('IndexedDB je blokovaná'));
+      } catch (e) { rej(e); }
+    });
+  },
+  async run(store, mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const t = db.transaction(store, mode);
+      const rq = fn(t.objectStore(store));
+      t.oncomplete = () => res(rq?.result);
+      t.onerror = t.onabort = () => rej(t.error);
+    });
+  },
+  get: (s, k) => idb.run(s, 'readonly', o => o.get(k)),
+  put: (s, v) => idb.run(s, 'readwrite', o => o.put(v)),
+  del: (s, k) => idb.run(s, 'readwrite', o => o.delete(k)),
+  all: s => idb.run(s, 'readonly', o => o.getAll()),
+};
+
+// ── compression (gzip → base64), chunked for the cloud's 256 KiB document limit ──
+const b64FromBytes = u8 => {
+  let s = '';
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+};
+const bytesFromB64 = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+async function packText(text) {
+  if (typeof CompressionStream === 'function') {
+    const buf = await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
+    return { enc: 'gzip', b64: b64FromBytes(new Uint8Array(buf)) };
+  }
+  return { enc: 'raw', b64: b64FromBytes(new TextEncoder().encode(text)) };
+}
+async function unpackText(enc, b64) {
+  const bytes = bytesFromB64(b64);
+  if (enc === 'gzip') return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return new TextDecoder().decode(bytes);
+}
+
+// ── local blobs: meta { key, kind, name, from, to, rate, enc, size, contentAt, updatedAt, deleted? } + data ──
+const localMetas  = async () => { try { return await idb.all('meta'); } catch { return []; } };
+const localGetBlob = async key => (await idb.get('data', key))?.b64;
+async function localPutBlob(meta, b64) { await idb.put('data', { key: meta.key, b64 }); await idb.put('meta', meta); }
+
+// ── cloud blobs ──
+const CLOUD_CHUNK = 180000;
+function cloudRefs() {
+  const idx = PERSIST.cloud.doc(`data/users/${PERSIST.uid}/idx`);
+  return { meta: idx.collection('meta'), chunks: idx.collection('chunks'), settings: PERSIST.cloud.doc(`data/users/${PERSIST.uid}/settings`) };
+}
+async function cloudDropChunks(key, from, to) {
+  const { chunks } = cloudRefs();
+  for (let i = from; i < to; i++) await chunks.doc(`${key}_${i}`).delete();
+}
+async function cloudPutBlob(meta, b64, oldChunks = 0) {
+  const { meta: M, chunks } = cloudRefs();
+  const n = Math.max(1, Math.ceil(b64.length / CLOUD_CHUNK));
+  for (let i = 0; i < n; i++) await chunks.doc(`${meta.key}_${i}`).set({ key: meta.key, i, b64: b64.slice(i * CLOUD_CHUNK, (i + 1) * CLOUD_CHUNK) });
+  await M.doc(meta.key).set({ ...meta, chunks: n });          // meta last: its presence means the chunks are complete
+  if (oldChunks > n) await cloudDropChunks(meta.key, n, oldChunks);
+}
+async function cloudGetBlob(meta) {
+  const { chunks } = cloudRefs();
+  let out = '';
+  for (let i = 0; i < meta.chunks; i++) {
+    const d = await chunks.doc(`${meta.key}_${i}`).get();
+    if (!d.exists) throw new Error('chybí část dat v účtu');
+    out += d.data().b64;
+  }
+  return out;
+}
+
+// ── UI status ──
+const fmtTime = t => new Date(t).toLocaleString('cs-CZ', { dateStyle: 'short', timeStyle: 'short' });
+function updateStoreUI() {
+  const el = document.getElementById('store-status');
+  if (!el) return;
+  const cloud = { none: 'Synchronizace s účtem Claude funguje jen ve zveřejněné stránce po přihlášení.',
+                  checking: 'Připojuji k účtu Claude…',
+                  ready: store.get('rr-sync', true)
+                    ? 'Synchronizace s účtem Claude je zapnutá' + (PERSIST.lastSync ? ` (naposledy ${fmtTime(PERSIST.lastSync)})` : '') + '.'
+                    : 'Synchronizace s účtem Claude je vypnutá.' }[PERSIST.cloudState];
+  el.textContent = [PERSIST.local ? 'Ukládá se v tomto prohlížeči.' : 'Ukládání v prohlížeči není dostupné (soukromé okno nebo zablokovaná data stránek).',
+                    cloud, PERSIST.msg].filter(Boolean).join(' ');
+  el.classList.toggle('warn', !!PERSIST.warn || !PERSIST.local);
+  document.getElementById('opt-save').checked = store.get('rr-save', true);
+  document.getElementById('opt-sync-lbl').hidden = PERSIST.cloudState !== 'ready';
+  document.getElementById('opt-sync').checked = store.get('rr-sync', true);
+}
+function setMsg(msg, warn = false) { PERSIST.msg = msg; PERSIST.warn = warn; updateStoreUI(); }
+function setOptSave(v) { store.set('rr-save', v); updateStoreUI(); }
+function setOptSync(v) { store.set('rr-sync', v); updateStoreUI(); if (v) syncAll(); }
+const cloudErr = e => e?.code === 'quota_exceeded' ? 'Účet je plný — smažte některé uložené reporty.'
+  : e?.code === 'invalid_argument' ? 'Do tohoto účtu nelze zapisovat (například při sdílení jen pro čtení).'
+  : e?.code === 'revoked' ? 'Přístup k účtu byl odebrán.' : `Synchronizace selhala (${e?.code || e?.message || 'chyba'}).`;
+
+// ── saved reports ──
+const reportKey = a => `rep_${(a.id || 'acc').replace(/[^A-Za-z0-9_-]/g, '')}_${(a.from || '').replace(/\D/g, '')}_${(a.to || '').replace(/\D/g, '')}`;
+
+async function persistCurrentReport(xml) {
+  if (!store.get('rr-save', true) || G.isSample || !G.data) return;
+  try {
+    const a = G.data.account, key = reportKey(a), now = Date.now();
+    const { enc, b64 } = await packText(xml);
+    await localPutBlob({ key, kind: 'report', name: `${a.name || 'Účet'} · ${a.id}`, from: a.from, to: a.to, base: a.base,
+                         rate: G.rate, enc, size: b64.length, contentAt: now, updatedAt: now }, b64);
+    G.openKey = key;
+    store.set('rr-last', key); touchSettings();
+    setMsg('Report je uložený.');
+    renderSavedList(); scheduleSync();
+  } catch (e) { setMsg('Report se nepodařilo uložit: ' + (e?.name || e?.message), true); }
+}
+async function saveRate() {
+  if (G.isSample || !G.openKey) return;
+  try {
+    const m = await idb.get('meta', G.openKey);
+    if (m && !m.deleted) { await idb.put('meta', { ...m, rate: G.rate, updatedAt: Date.now() }); scheduleSync(); }
+  } catch {}
+}
+async function openSaved(key) {
+  try {
+    const meta = await idb.get('meta', key), b64 = await localGetBlob(key);
+    if (!meta || meta.deleted || !b64) throw new Error('report v úložišti chybí');
+    const doc = new DOMParser().parseFromString(await unpackText(meta.enc, b64), 'application/xml');
+    if (doc.querySelector('parsererror')) throw new Error('uložený soubor je poškozený');
+    G.sampleUnified = null; G.isSample = false; G.pendingData = null; G.pendingXml = null;
+    G.data = parseDoc(doc);
+    if (meta.rate > 0) G.rate = meta.rate;
+    G.openKey = key;
+    store.set('rr-last', key); touchSettings();
+    showApp();
+    return true;
+  } catch (e) { setMsg('Report se nepodařilo otevřít: ' + (e?.message || e), true); return false; }
+}
+async function deleteSaved(key) {
+  try {
+    const m = await idb.get('meta', key);
+    if (!m) return;
+    await idb.del('data', key);
+    await idb.put('meta', { key, kind: m.kind, name: m.name, from: m.from, to: m.to, deleted: true, updatedAt: Date.now() });
+    if (G.openKey === key) G.openKey = null;
+    if (store.get('rr-last', null) === key) store.set('rr-last', null);
+    renderSavedList(); scheduleSync();
+  } catch (e) { setMsg('Report se nepodařilo smazat: ' + (e?.message || e), true); }
+}
+async function renderSavedList() {
+  const metas = (await localMetas()).filter(m => m.kind === 'report' && !m.deleted).sort((a, b) => b.updatedAt - a.updatedAt);
+  const box = document.getElementById('saved-box'), list = document.getElementById('saved-list');
+  box.hidden = !metas.length;
+  list.replaceChildren(...metas.map(m => {
+    const row = Object.assign(document.createElement('div'), { className: 'saved-row' });
+    const open = Object.assign(document.createElement('button'), { className: 'saved-open', type: 'button' });
+    const nm = Object.assign(document.createElement('span'), { className: 'nm', textContent: m.name });      // textContent: names come from the XML
+    const sub = Object.assign(document.createElement('span'), { className: 'sub',
+      textContent: `${m.from} – ${m.to} · uloženo ${fmtTime(m.updatedAt)}` + (m.rate && m.rate !== 1 ? ` · kurz ${(+m.rate).toFixed(2)}` : '') });
+    open.append(nm, sub);
+    open.onclick = () => openSaved(m.key);
+    const del = Object.assign(document.createElement('button'), { className: 'btn saved-del', type: 'button', textContent: 'Smazat' });
+    del.onclick = () => {                                   // two clicks: the viewer blocks confirm()
+      if (del.classList.contains('confirm')) { deleteSaved(m.key); return; }
+      del.classList.add('confirm'); del.textContent = 'Opravdu?';
+      setTimeout(() => { del.classList.remove('confirm'); del.textContent = 'Smazat'; }, 3000);
+    };
+    row.append(open, del);
+    return row;
+  }));
+}
+function showStart() { document.getElementById('drop-overlay').classList.remove('hidden'); document.getElementById('btn-back').hidden = !G.data; renderSavedList(); updateStoreUI(); }
+function hideStart() { document.getElementById('drop-overlay').classList.add('hidden'); }
+
+// ── ČNB daily rates: one blob per year ──
+async function persistCnbYears(years) {
+  try {
+    for (const y of years) {
+      const rates = {};
+      for (const [ccy, m] of Object.entries(TAX.daily)) {
+        const sub = Object.fromEntries(Object.entries(m).filter(([d]) => d.startsWith(y)));
+        if (Object.keys(sub).length) rates[ccy] = sub;
+      }
+      const { enc, b64 } = await packText(JSON.stringify(rates)), now = Date.now();
+      await localPutBlob({ key: 'cnb_' + y, kind: 'cnb', name: 'Kurzy ČNB ' + y, enc, size: b64.length, contentAt: now, updatedAt: now }, b64);
+    }
+    scheduleSync();
+  } catch (e) { setMsg('Kurzy ČNB se nepodařilo uložit: ' + (e?.name || e?.message), true); }
+}
+async function loadCnbLocal() {
+  for (const m of (await localMetas()).filter(m => m.kind === 'cnb' && !m.deleted)) {
+    try {
+      const rates = JSON.parse(await unpackText(m.enc, await localGetBlob(m.key)));
+      for (const [ccy, byDay] of Object.entries(rates)) Object.assign(TAX.daily[ccy] ||= {}, byDay);
+    } catch {}
+  }
+  indexDaily();
+}
+
+// ── settings (manual income, unified rates, tax options, last opened report) ──
+const localSettings = () => ({ updatedAt: +store.get('rr-settings-at', 0), manual: MANUAL.saved, unified: TAX.unified,
+  method: TAX.method, all100k: TAX.all100k, lastOpened: store.get('rr-last', null) });
+function applySettings(s) {
+  MANUAL.saved = s.manual || {}; TAX.unified = s.unified || {}; TAX.method = s.method || 'unified'; TAX.all100k = !!s.all100k;
+  store.set('rr-income-manual', MANUAL.saved); store.set('rr-unified', TAX.unified);
+  store.set('rr-tax-method', TAX.method); store.set('rr-tax-100k-all', TAX.all100k);
+  store.set('rr-settings-at', s.updatedAt);
+  if (s.lastOpened) store.set('rr-last', s.lastOpened);
+  if (G.data) renderAll();
+}
+function touchSettings() { store.set('rr-settings-at', Date.now()); scheduleSync(); }
+
+// ── sync (last write wins per report / year / settings) ──
+let _syncTimer = null, _syncRun = null, _syncAgain = false;
+const cloudActive = () => PERSIST.cloudState === 'ready' && store.get('rr-sync', true);
+function scheduleSync() { clearTimeout(_syncTimer); if (cloudActive()) _syncTimer = setTimeout(() => syncAll(), 1200); }
+function syncAll() {
+  if (!cloudActive()) return Promise.resolve();
+  if (_syncRun) { _syncAgain = true; return _syncRun; }
+  _syncRun = (async () => {
+    try { do { _syncAgain = false; await syncOnce(); } while (_syncAgain); }
+    catch (e) { setMsg(cloudErr(e), true); }
+    finally { _syncRun = null; }
+  })();
+  return _syncRun;
+}
+async function syncOnce() {
+  const R = cloudRefs();
+  setMsg('Synchronizuji…');
+  const L = Object.fromEntries((await localMetas()).map(m => [m.key, m]));
+  const C = Object.fromEntries((await R.meta.get()).docs.map(d => [d.data().key, d.data()]));
+  let pulledCnb = false, pulledReports = false;
+  for (const key of new Set([...Object.keys(L), ...Object.keys(C)])) {
+    const l = L[key], c = C[key];
+    if (l && c && l.updatedAt === c.updatedAt) continue;
+    const toCloud = !c || (l && l.updatedAt > c.updatedAt);
+    const win = toCloud ? l : c, lose = toCloud ? c : l;
+    if (win.deleted) {
+      if (toCloud) { if (c && !c.deleted) await cloudDropChunks(key, 0, c.chunks || 0); await R.meta.doc(key).set(win); }
+      else { await idb.del('data', key); await idb.put('meta', win); }
+    } else if (!lose || lose.deleted || lose.contentAt !== win.contentAt) {
+      if (toCloud) await cloudPutBlob(win, await localGetBlob(key), c?.chunks || 0);
+      else await localPutBlob(win, await cloudGetBlob(win));
+    } else if (toCloud) await R.meta.doc(key).set({ ...win, chunks: c.chunks });   // only the rate changed
+    else await idb.put('meta', win);
+    if (!toCloud) { if (win.kind === 'cnb') pulledCnb = true; else pulledReports = true; }
+  }
+  // settings: the newer side wins as a whole
+  const cs = await R.settings.get(), cd = cs.exists ? cs.data() : null, ls = localSettings();
+  if (cd && cd.updatedAt > ls.updatedAt) applySettings(cd);
+  else if (ls.updatedAt && (!cd || cd.updatedAt < ls.updatedAt)) await R.settings.set(ls);
+  if (pulledCnb) { await loadCnbLocal(); if (G.data) renderTax(); }
+  if (pulledReports || cd) renderSavedList();
+  PERSIST.lastSync = Date.now();
+  setMsg('');
+}
+async function cloudInit() {
+  PERSIST.cloudState = 'none';
+  try {
+    if (window.claude?.use) {
+      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+      const uid = db && user ? await user.id() : null;
+      if (uid) { PERSIST.cloud = db; PERSIST.uid = uid; PERSIST.cloudState = 'ready'; }
+    }
+  } catch {}
+  updateStoreUI();
+  await syncAll();
+}
+
+// ── start: open the last report, then connect to the cloud ──
+async function autoOpenLast() {
+  const key = store.get('rr-last', null);
+  if (!key) return false;
+  const m = await idb.get('meta', key).catch(() => null);
+  return m && !m.deleted ? openSaved(key) : false;
+}
+(async function bootPersistence() {
+  try { await idb.open(); } catch { PERSIST.local = false; }
+  if (PERSIST.local) {
+    // move ČNB rates from the old localStorage copy into IndexedDB
+    const old = TAX.daily;
+    if (Object.keys(old).length) {
+      const years = new Set(Object.values(old).flatMap(m => Object.keys(m).map(d => d.slice(0, 4))));
+      await persistCnbYears([...years]);
+      try { localStorage.removeItem('rr-cnb-daily'); } catch {}
+    }
+    await loadCnbLocal();
+    await autoOpenLast();
+    await renderSavedList();
+  }
+  updateStoreUI();
+  await cloudInit();
+  // the last report may only exist in the account (new device): open it once it arrived
+  if (!G.data && !G.pendingData && PERSIST.local) { await renderSavedList(); await autoOpenLast(); }
+})();
 </script>
 
 <!-- SheetJS for proper XLSX export (loaded from CDN, optional) -->

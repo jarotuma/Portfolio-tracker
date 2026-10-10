@@ -2,6 +2,12 @@
 
 `ReportReader.html` je samostatná stránka pro prohlížení **Flex Query XML reportů z Interactive Brokers**: přehled, pozice, obchody, P&L, deriváty, dividendy, úroky, poplatky a vklady s přepočtem do CZK, grafy a export do Excelu / PDF. Vše běží lokálně v prohlížeči — stačí soubor otevřít a přetáhnout do něj XML.
 
+## Více souborů jako jeden report
+
+Do stránky jde vybrat nebo přetáhnout **víc XML souborů najednou** (například dva Flex Query, každý s jinými sekcemi). Sloučí se po účtech a po sekcích: z každé sekce (Trades, Open Positions, Cash Transactions …) se vezme verze s nejvíc poli, při shodě novější. Když stejný report (stejné účty a období) už je uložený, nový soubor se k němu **doplní**, takže ho nemusíte nahrávat spolu s předchozím. Z *Prior Period Positions* se ponechají jen SPY a QQQ (ostatní jsou tisíce řádků navíc).
+
+Kurz měn bez `fxRateToBase` (typicky hotovostní transakce) se odhadne z nejbližšího data, ke kterému ho report obsahuje; stránka na to upozorní. Převody typu CASH se do vkladů nezapočítávají (jsou už v Cash Transactions).
+
 ## Více účtů v jednom reportu
 
 Flex Query může obsahovat víc účtů (každý jako vlastní `FlexStatement`). Stránka je sloučí do jednoho portfolia: denní hodnoty, Change in NAV, Cash Report, výkonnost, obchody, dividendy i uzavřené loty se sčítají; stejný cenný papír na obou účtech je jeden řádek pozic a % NAV se počítá z celku. IB TWR existuje jen pro jeden účet, proto se u sloučených účtů počítá z denních hodnot. Pro daně se účty sčítají (limit 100 000 Kč je za poplatníka).

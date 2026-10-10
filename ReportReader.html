@@ -683,7 +683,7 @@ tfoot td.tot { color: var(--amber); }
     <div class="drop-icon">📄</div>
     <h2>Přetáhněte XML soubor</h2>
     <p>nebo klikněte pro výběr souboru<br>Flex Query report z Interactive Brokers</p>
-    <input type="file" id="file-input" accept=".xml">
+    <input type="file" id="file-input" accept=".xml" multiple>
   </div>
   <div class="sample-bar">
     <button class="btn btn-primary" onclick="loadSample()">Vyzkoušet na ukázkových datech</button>
@@ -771,7 +771,7 @@ tfoot td.tot { color: var(--amber); }
     <button class="btn" id="btn-theme" onclick="toggleTheme()" title="Přepnout světlý/tmavý režim" style="font-size:15px;padding:6px 10px">☀</button>
     <button class="btn" onclick="showStart()" title="Uložené reporty a nahrání dalšího">Uložené reporty</button>
     <label class="btn btn-primary btn-open" style="cursor:pointer">
-      Otevřít XML<input type="file" accept=".xml" onchange="handleFile(this.files[0]); this.value=''" style="display:none">
+      Otevřít XML<input type="file" accept=".xml" multiple onchange="handleFiles(this.files); this.value=''" style="display:none">
     </label>
   </div>
 
@@ -1634,21 +1634,20 @@ dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dra
 dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('dragover');
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
+  handleFiles(e.dataTransfer.files);
 });
 document.getElementById('file-input').addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
+  handleFiles(e.target.files);
   e.target.value = '';            // so choosing the same file again fires change again
 });
 
-function handleFile(file) {
-  if (!file || !file.name.endsWith('.xml')) {
-    alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
-  }
+// One or more Flex Query XML files (e.g. two queries that each hold other sections) → one report
+function handleFiles(list) {
+  const files = [...(list || [])].filter(f => /\.xml$/i.test(f.name));
+  if (!files.length) { alert('Prosím vyberte XML soubor z Interactive Brokers.'); return; }
   G.sampleUnified = null;
   G.isSample = false;
-  readXML(file);   // parse first so the rate dialog knows the account's base currency
+  readFiles(files);   // parse first so the rate dialog knows the account's base currency
 }
 
 // ── Sample data ─────────────────────────────────────────────────────
@@ -1708,20 +1707,83 @@ document.getElementById('rate-input').addEventListener('keydown', e => {
 });
 
 // ── XML Parser ──────────────────────────────────────────────────────
-function readXML(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(e.target.result, 'application/xml');
+const parseXmlText = text => new DOMParser().parseFromString(text, 'application/xml');
+// PriorPeriodPositions holds a price row per held security per day (thousands of rows);
+// only the benchmark ETFs are used, so only they are kept
+const KEEP_PRIOR = new Set(['SPY', 'QQQ']);
+
+// Merge Flex Query documents into one. Per account and per section (Trades, OpenPositions,
+// CashTransactions, …) the version with the most distinct fields wins; at a tie the later
+// document wins. So a second query can add sections, and a newer export replaces an older one.
+function mergeFlexDocs(docs) {
+  const accts = new Map();
+  for (const doc of docs) {
+    for (const st of doc.querySelectorAll('FlexStatement')) {
+      const id = st.getAttribute('accountId') || '';
+      const a = accts.get(id) || { attrs: {}, sections: new Map() };
+      for (const { name, value } of st.attributes) {
+        if (name === 'fromDate') a.attrs.fromDate = [a.attrs.fromDate, value].filter(Boolean).sort()[0];
+        else if (name === 'toDate') a.attrs.toDate = [a.attrs.toDate, value].filter(Boolean).sort().at(-1);
+        else a.attrs[name] = value;
+      }
+      for (const sec of st.children) {
+        const names = new Set();
+        sec.querySelectorAll('*').forEach(e => { for (const x of e.attributes) names.add(x.name); });
+        const cur = a.sections.get(sec.tagName);
+        if (!cur || names.size >= cur.score) a.sections.set(sec.tagName, { score: names.size, node: sec });
+      }
+      accts.set(id, a);
+    }
+  }
+  const out = document.implementation.createDocument(null, 'FlexQueryResponse');
+  const root = out.documentElement;
+  const sts = out.createElement('FlexStatements');
+  sts.setAttribute('count', String(accts.size));
+  root.appendChild(sts);
+  for (const a of accts.values()) {
+    const st = out.createElement('FlexStatement');
+    for (const [k, v] of Object.entries(a.attrs)) st.setAttribute(k, v);
+    for (const { node } of a.sections.values()) {
+      const copy = out.importNode(node, true);
+      if (copy.tagName === 'PriorPeriodPositions')
+        [...copy.children].forEach(c => { if (!KEEP_PRIOR.has(c.getAttribute('symbol'))) c.remove(); });
+      st.appendChild(copy);
+    }
+    sts.appendChild(st);
+  }
+  return out;
+}
+
+// Saved XML of the same report (same accounts and period), if there is one
+async function savedXmlFor(key) {
+  try {
+    const meta = await idb.get('meta', key), b64 = await localGetBlob(key);
+    return meta && !meta.deleted && b64 ? await unpackText(meta.enc, b64) : null;
+  } catch { return null; }
+}
+
+async function readFiles(files) {
+  try {
+    const docs = [];
+    for (const f of files) {
+      const doc = parseXmlText(await f.text());
       const err = doc.querySelector('parsererror');
-      if (err) { alert('Chyba XML souboru: ' + err.textContent.slice(0,200)); return; }
-      G.pendingData = parseDoc(doc);
-      G.pendingXml = e.target.result;       // saved together with the rate once confirmed
-      askRate(false);
-    } catch(ex) { alert('Chyba zpracování: ' + ex.message); }
-  };
-  reader.readAsText(file, 'UTF-8');
+      if (err) { alert(`Chyba XML souboru ${f.name}: ` + err.textContent.slice(0, 200)); return; }
+      docs.push(doc);
+    }
+    let merged = mergeFlexDocs(docs), data = parseDoc(merged);
+    // the same report was saved before → add to it instead of replacing it
+    const old = PERSIST?.local ? await savedXmlFor(reportKey(data.account)) : null;
+    G.pendingMerge = false;
+    if (old) {
+      merged = mergeFlexDocs([parseXmlText(old), merged]);
+      data = parseDoc(merged);
+      G.pendingMerge = true;
+    }
+    G.pendingXml = new XMLSerializer().serializeToString(merged);   // saved together with the rate once confirmed
+    G.pendingData = data;
+    askRate(false);
+  } catch (ex) { alert('Chyba zpracování: ' + ex.message); }
 }
 
 // Parse the loaded report with the current USD/CZK-type rate (used as a fallback for CZK amounts)
@@ -1782,6 +1844,23 @@ function parseDoc(doc, opts = {}) {
       if (c && r > 0 && fxByCcy[c] == null) fxByCcy[c] = r;
     });
   });
+  const rawDate = s => (s || '').replace(/\D/g, '').slice(0, 8);   // → YYYYMMDD
+  // dated rate observations from the report itself (trades, lots, positions, transfers, cash)
+  const fxObs = {};
+  const dateOf = el => rawDate(attr(el,'dateTime') || attr(el,'reportDate') || attr(el,'date') || attr(el,'tradeDate') || attr(el,'toDate'));
+  doc.querySelectorAll('Trade, Lot, OpenPosition, Transfer, CashTransaction').forEach(el => {
+    const c = attr(el,'currency'), r = parseFloat(attr(el,'fxRateToBase')), d = dateOf(el) || rawDate(attr(el.closest('FlexStatement'),'toDate'));
+    if (c && c !== base && r > 0 && d) (fxObs[c] ||= []).push([d, r]);
+  });
+  Object.values(fxObs).forEach(a => a.sort((x, y) => x[0].localeCompare(y[0])));
+  const fxNear = (c, d) => {
+    const a = fxObs[c];
+    if (!a?.length || !d) return null;
+    let best = a[0], bd = Infinity;
+    for (const o of a) { const gap = Math.abs(ymdDays(o[0], d)); if (gap < bd) { bd = gap; best = o; } else if (o[0] > d) break; }
+    return best[1];
+  };
+  let fxApprox = false;
   const missingFx = new Set();
   let czkFallback = false;
   // fx of an element's own currency, or of another currency (e.g. commission currency)
@@ -1791,6 +1870,9 @@ function parseDoc(doc, opts = {}) {
     if (c === attr(el,'currency')) {
       const r = parseFloat(attr(el,'fxRateToBase'));
       if (r > 0) return r;
+      // element without its own rate (e.g. cash transactions): the rate of the nearest dated observation
+      const near = fxNear(c, dateOf(el));
+      if (near != null) { fxApprox = true; return near; }
     }
     if (fxByCcy[c] != null) return fxByCcy[c];
     // no rate in the report: CZK can use the rate entered by the viewer (CZK per 1 base unit)
@@ -1799,7 +1881,6 @@ function parseDoc(doc, opts = {}) {
     return 1;
   };
   const toBase = (v, fx) => { const n = parseFloat(v); return isNaN(n) ? '' : n * fx; };
-  const rawDate = s => (s || '').replace(/\D/g, '').slice(0, 8);   // → YYYYMMDD
   const num = (el, a) => parseFloat(attr(el, a)) || 0;
   // account of an element: its own accountId, else the FlexStatement it sits in
   const acctOf = el => attr(el, 'accountId') || attr(el.closest('FlexStatement'), 'accountId');
@@ -1913,7 +1994,7 @@ function parseDoc(doc, opts = {}) {
   cashTxns
     .filter(c => c.type === 'Deposits/Withdrawals' && c.rawDate)
     .forEach(c => { flowsByDate[c.rawDate] = (flowsByDate[c.rawDate] || 0) + parseFloat(c.amount || 0); });
-  const transfers = [...doc.querySelectorAll('Transfer')].map(t => {
+  const transfers = [...doc.querySelectorAll('Transfer')].filter(t => attr(t, 'assetCategory') !== 'CASH').map(t => {
     const dir = attr(t, 'direction').toUpperCase(), fx = fxOf(t);
     let v = parseFloat(attr(t, 'positionAmountInBase'));
     if (isNaN(v)) v = (parseFloat(attr(t, 'positionAmount')) || 0) * fx;
@@ -2087,6 +2168,7 @@ function parseDoc(doc, opts = {}) {
 
   account.missingFx = [...missingFx];
   account.czkFallback = czkFallback ? opts.czkPerBase : 0;
+  account.fxApprox = fxApprox;
 
   return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices,
            flowsByDate, salesTaxByTx, vatMode, closedLots, transfers };
@@ -2197,6 +2279,7 @@ function renderSummary() {
       ${acc.accounts > 1 ? `<div class="card-sub">sloučeno ${acc.accounts} účtů</div>` : ''}
     </div>` : '') + (missing.length
       ? warnCard(`Chybí kurz do ${BASE()}`, `Pro ${missing.join(', ')} report neobsahuje fxRateToBase ani Conversion Rates — částky v těchto měnách nejsou přepočtené. Přidejte do Flex Query pole FX Rate To Base a sekci Conversion Rates.`) : '')
+    + (acc.fxApprox ? warnCard('Kurz u některých položek odhadnut', 'Část položek (typicky hotovostní transakce) nemá v reportu FX Rate To Base, proto je použit kurz z nejbližšího data, ke kterému ho report obsahuje. Přesnější je přidat pole FX Rate To Base i do Cash Transactions a sekci Conversion Rates.') : '')
     + (acc.czkFallback ? warnCard('CZK přepočten vaším kurzem', `Report neobsahuje kurz pro CZK, proto jsou částky v korunách přepočtené jedním kurzem ${acc.czkFallback} Kč za 1 ${BASE()} (ten, který jste zadal). Je to přibližné; přesnější je pole FX Rate To Base v Flex Query.`) : '')
     + (jumps.length ? warnCard('Skok hodnoty bez vkladu — TWR a graf jsou zkreslené',
         `${jumps.slice(0, 3).map(j => `${fmtDate(j.date)}: ${j.amount >= 0 ? '+' : ''}${fmtN(j.amount, 0)} ${BASE()} (${j.pct >= 0 ? '+' : ''}${fmtN(j.pct, 0)} %)`).join(', ')}${jumps.length > 3 ? ` a ${jumps.length - 3} další` : ''}. Hodnota účtu se změnila, aniž by v reportu byl odpovídající vklad. Nejspíš jde o převod pozic z jiného brokera nebo mezi účty — přidejte do Flex Query sekci Transfers.`) : '')
@@ -5245,7 +5328,8 @@ async function persistCurrentReport(xml) {
                          rate: G.rate, enc, size: b64.length, contentAt: now, updatedAt: now }, b64);
     G.openKey = key;
     store.set('rr-last', key); touchSettings();
-    setMsg('Report je uložený.');
+    setMsg(G.pendingMerge ? 'Report je uložený (doplněn k dříve uloženému).' : 'Report je uložený.');
+    G.pendingMerge = false;
     renderSavedList(); scheduleSync();
   } catch (e) { setMsg('Report se nepodařilo uložit: ' + (e?.name || e?.message), true); }
 }

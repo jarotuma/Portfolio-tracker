@@ -89,6 +89,7 @@ ${spy}
 </OpenPositions>
 <CashTransactions>
 <CashTransaction accountId="${B}" currency="USD" fxRateToBase="1" amount="1000" description="CASH RECEIPTS / ELECTRONIC FUND TRANSFERS" dateTime="20260107" reportDate="20260107"/>
+<CashTransaction accountId="${B}" currency="EUR" amount="-10" description="EURO MARKET DATA FEE FOR JAN 2026" dateTime="20260108" reportDate="20260108"/>
 <CashTransaction accountId="${B}" currency="CZK" amount="50000" description="CASH RECEIPTS / ELECTRONIC FUND TRANSFERS" dateTime="20260109" reportDate="20260109"/>
 <CashTransaction accountId="${B}" symbol="KO" currency="USD" fxRateToBase="1" amount="3" description="KO(US1912161007) CASH DIVIDEND USD 0.1 PER SHARE (Ordinary Dividend)" dateTime="20260108" reportDate="20260108"/>
 <CashTransaction accountId="${B}" symbol="KO" currency="USD" fxRateToBase="1" amount="-0.45" description="KO(US1912161007) CASH DIVIDEND USD 0.1 PER SHARE - US TAX" dateTime="20260108" reportDate="20260108"/>
@@ -97,6 +98,7 @@ ${spy}
 <Transfers>
 <Transfer accountId="${B}" currency="USD" fxRateToBase="1" date="20260107" direction="IN" symbol="KO" positionAmountInBase="500" type="ACATS"/>
 <Transfer accountId="${B}" currency="USD" fxRateToBase="1" date="20260108" direction="OUT" symbol="KO" positionAmountInBase="100" type="FOP"/>
+<Transfer accountId="${B}" currency="USD" fxRateToBase="1" date="20260107" direction="IN" assetCategory="CASH" cashTransfer="5000" positionAmountInBase="0" type="INTERNAL"/>
 </Transfers>
 <EquitySummaryInBase>
 <EquitySummaryByReportDateInBase accountId="${B}" reportDate="20260107" stock="100" options="0" total="1100"/>

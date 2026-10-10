@@ -525,8 +525,8 @@ async function open(browser, opts, rate = '23') {
     const flush = page => page.evaluate(async () => { clearTimeout(_syncTimer); await syncAll(); });
 
     // Device A: big report (incompressible padding → several chunks) + salary
-    const big = fixture({ income: true, lots: true }).replace('</FlexQueryResponse>',
-      '<!--' + require('crypto').randomBytes(300000).toString('base64') + '-->\n</FlexQueryResponse>');
+    const big = fixture({ income: true, lots: true }).replace('</FlexStatement>',
+      '<Padding blob="' + require('crypto').randomBytes(300000).toString('base64') + '"/>\n</FlexStatement>');
     const bigPath = path.join(OUT, 'big.xml'); fs.writeFileSync(bigPath, big);
     const A = await device();
     check('cloud: signed-in page offers synchronization', await A.page.evaluate(() => PERSIST.cloudState) === 'ready' && await A.page.isVisible('#opt-sync-lbl'));
@@ -574,6 +574,48 @@ async function open(browser, opts, rate = '23') {
     await A.ctx.close(); await B.ctx.close();
   }
 
+  // ── Several files → one report (sections merged), also with a report saved earlier ──
+  {
+    const full = fixture({ income: true, lots: true, spyFull: true });
+    const section = (xml, tag) => (xml.match(new RegExp('<' + tag + '>[\\s\\S]*?</' + tag + '>')) || [''])[0];
+    const detailTags = ['Trades', 'OpenPositions', 'PriorPeriodPositions'];
+    const statement = body => full.match(/<FlexStatement [^>]*>/)[0] + body + '</FlexStatement>';
+    const wrap = st => '<?xml version="1.0"?><FlexQueryResponse><FlexStatements count="1">' + st + '</FlexStatements></FlexQueryResponse>';
+    const noise = '<PriorPeriodPosition symbol="AAPL" date="20260105" price="1"/>';
+    const detail = wrap(statement(detailTags.map(t => t === 'PriorPeriodPositions' ? section(full, t).replace('</PriorPeriodPositions>', noise + '</PriorPeriodPositions>') : section(full, t)).join('\n')));
+    let rest = full; detailTags.forEach(t => { rest = rest.replace(section(full, t), ''); });
+    // the "rest" query also has a poorer Trades section (one trade, few fields) — the richer one must win
+    rest = rest.replace('</CashTransactions>', '</CashTransactions><Trades><Trade symbol="AAPL" assetCategory="STK" quantity="1" dateTime="20260105"/></Trades>');
+    const fDetail = path.join(OUT, 'detail.xml'), fRest = path.join(OUT, 'rest.xml'), fFull = path.join(OUT, 'full.xml');
+    fs.writeFileSync(fDetail, detail); fs.writeFileSync(fRest, rest); fs.writeFileSync(fFull, full);
+    const summarize = () => ({ trades: G.data.trades.length, lots: G.data.closedLots.length, pos: G.data.positions.length, eq: G.data.equitySeries.length,
+      cash: G.data.cashTxns.length, prior: Object.keys(G.data.priorPrices).join(), noise: G.rawXml.includes('symbol="AAPL" date="20260105"'), sections: (G.rawXml.match(/<Trades>/g) || []).length });
+    const load = async (page, files) => { await page.setInputFiles('#file-input', files); await page.fill('#rate-input', '23'); await page.click('#rate-modal button'); await page.waitForSelector('#app.visible'); };
+    const mk = async () => { const ctx = await browser.newContext(); const page = await ctx.newPage(); page.errors = []; page.on('pageerror', e => page.errors.push(e.message));
+      await page.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort()); await page.goto('file://' + PAGE); return { ctx, page }; };
+
+    const one = await mk(); await load(one.page, fFull);
+    const ref = await one.page.evaluate(summarize);
+    const two = await mk(); await load(two.page, [fRest, fDetail]);
+    const got = await two.page.evaluate(summarize);
+    check('merge: two files (equity/cash in one, trades/positions in the other) = the full report',
+      got.trades === ref.trades && got.lots === ref.lots && got.pos === ref.pos && got.eq === ref.eq && got.cash === ref.cash, [got, ref]);
+    check('merge: the richer Trades section wins over the poorer one, only one kept', got.trades > 1 && got.sections === 1, got);
+    check('merge: prior-period prices reduced to the benchmark ETFs', got.prior === 'SPY' && !got.noise, got);
+    // saved report + a later file with the other sections → added to it
+    const three = await mk();
+    await load(three.page, fDetail);
+    check('merge: detail file alone has no equity series', await three.page.evaluate(() => G.data.equitySeries.length) === 0);
+    await three.page.evaluate(async () => { for (let i = 0; i < 50 && !(await localMetas()).some(m => m.kind === 'report'); i++) await new Promise(r => setTimeout(r, 100)); });
+    await load(three.page, fRest);   // handleFiles → same report key → merged with the saved one
+    const added = await three.page.evaluate(summarize);
+    check('merge: the second file is added to the saved report (equity + cash + trades together)', added.eq === ref.eq && added.trades === ref.trades && added.cash === ref.cash, [added, ref]);
+    await three.page.evaluate(() => new Promise(r => setTimeout(r, 400)));
+    check('merge: status says it was added to the saved report', (await three.page.evaluate(() => PERSIST.msg)).includes('doplněn'), await three.page.evaluate(() => PERSIST.msg));
+    check('no page errors', [one.page, two.page, three.page].every(p => p.errors.length === 0), [one.page.errors, two.page.errors, three.page.errors]);
+    await one.ctx.close(); await two.ctx.close(); await three.ctx.close();
+  }
+
   // ── Two accounts in one report → one combined portfolio ──
   {
     const { page, errors } = await open(browser, { second: true, lots: true });
@@ -596,9 +638,12 @@ async function open(browser, opts, rate = '23') {
     check('two accounts: same security in both accounts is one position line, % NAV vs combined value',
       d.sapRows === 1 && d.sapQty === 9 && near(d.sapVal, (960 + 120) * 1.1) && near(d.sapPct, (960 + 120) * 1.1 / (15453 + 1150) * 100, 0.001), d);
     check('two accounts: cash type inferred from the description (dividend, tax, fee, deposit)',
-      d.inferred && d.types['Withholding Tax'] === 2 && d.types['Dividends'] === 2 && d.types['Other Fees'] === 3 && d.types['Deposits/Withdrawals'] === 4, d.types);
+      d.inferred && d.types['Withholding Tax'] === 2 && d.types['Dividends'] === 2 && d.types['Other Fees'] === 4 && d.types['Deposits/Withdrawals'] === 4, d.types);
     check('two accounts: deposit + incoming position transfer are external flows (1000 + 500), outgoing transfer is negative',
       near(d.flows['20260107'], 1000 + 500) && near(d.flows['20260108'], -100), d.flows);
+    const fxn = await page.evaluate(() => { const c = G.data.cashTxns.find(c => c.desc.startsWith('EURO MARKET')); return { amt: c.amount, approx: G.data.account.fxApprox }; });
+    check('two accounts: cash transaction without a rate uses the nearest dated rate of the report (−10 EUR × 1.1)', near(fxn.amt, -11) && fxn.approx, fxn);
+    check('two accounts: CASH-category transfers are not counted as flows (covered by cash transactions)', near(d.flows['20260107'], 1500), d.flows);
     const jmp = await page.evaluate(() => {
       const eq = [100, 110, 300, 305].map((t, i) => ({ date: '2026010' + (i + 1), total: t }));
       return { none: unexplainedJumps(eq, { '20260103': 190 }).length, one: unexplainedJumps(eq, {}).map(j => [j.date, Math.round(j.amount)]) };

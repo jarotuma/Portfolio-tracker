@@ -576,9 +576,9 @@ tfoot td.tot { color: var(--amber); }
 <!-- Rate modal -->
 <div id="rate-modal">
   <div class="modal-box">
-    <h3>Kurz USD / CZK</h3>
+    <h3 id="rate-title">Kurz USD / CZK</h3>
     <p>Zadejte kurz pro přepočet všech hodnot do korun</p>
-    <input type="number" id="rate-input" value="22.50" step="0.01" min="1" max="50">
+    <input type="number" id="rate-input" value="22.50" step="0.01" min="0">
     <button class="btn btn-primary" style="width:100%" onclick="confirmRate()">Potvrdit a načíst</button>
   </div>
 </div>
@@ -751,7 +751,7 @@ tfoot td.tot { color: var(--amber); }
             <th>Typ</th>
             <th onclick="sortTable('tbl-trades',3)">Strana</th>
             <th onclick="sortTable('tbl-trades',4)" style="text-align:right">Množství</th>
-            <th onclick="sortTable('tbl-trades',5)">Cena USD</th>
+            <th onclick="sortTable('tbl-trades',5)" title="V měně obchodu">Cena</th>
             <th onclick="sortTable('tbl-trades',6)">Proceeds USD</th>
             <th onclick="sortTable('tbl-trades',7)">Komise USD</th>
             <th onclick="sortTable('tbl-trades',8)">Net cash USD</th>
@@ -835,7 +835,7 @@ tfoot td.tot { color: var(--amber); }
             <th onclick="sortTable('tbl-der',8)">Množství</th>
             <th onclick="sortTable('tbl-der',9)">Multiplier</th>
             <th onclick="sortTable('tbl-der',10)">Pořizovací cena USD</th>
-            <th onclick="sortTable('tbl-der',11)">Akt. cena USD</th>
+            <th onclick="sortTable('tbl-der',11)" title="V měně opce (sloupec Měna)">Akt. cena</th>
             <th onclick="sortTable('tbl-der',12)">Akt. cena CZK</th>
             <th onclick="sortTable('tbl-der',13)">Nerealizovaný P&amp;L USD</th>
             <th onclick="sortTable('tbl-der',14)">Nerealizovaný P&amp;L CZK</th>
@@ -952,6 +952,7 @@ tfoot td.tot { color: var(--amber); }
         <input type="text" id="filter-of" placeholder="Hledat…" oninput="filterOF()">
         <span class="filter-count" id="count-of"></span>
       </div>
+      <div id="of-vat-note" style="font-size:11px;color:var(--amber);margin:-4px 0 12px 2px"></div>
       <div class="table-wrap">
         <table id="tbl-of">
           <thead><tr>
@@ -960,7 +961,7 @@ tfoot td.tot { color: var(--amber); }
             <th>Popis</th>
             <th>Typ</th>
             <th onclick="sortTable('tbl-of',4)">Částka USD</th>
-            <th onclick="sortTable('tbl-of',5)">DPH 21 % USD</th>
+            <th onclick="sortTable('tbl-of',5)">DPH USD</th>
             <th onclick="sortTable('tbl-of',6)">Celkem s DPH USD</th>
             <th onclick="sortTable('tbl-of',7)">Celkem s DPH CZK</th>
           </tr></thead>
@@ -997,7 +998,7 @@ tfoot td.tot { color: var(--amber); }
 
 <script>
 // ── State ──────────────────────────────────────────────────────────
-let G = { rate: 22.5, data: null, pendingFile: null, manualUnderPrices: {} };
+let G = { rate: 22.5, data: null, pendingData: null, manualUnderPrices: {} };
 
 // ── Theme ───────────────────────────────────────────────────────────
 function toggleTheme() {
@@ -1031,6 +1032,65 @@ const parseDate = s => {
   if (s.length === 8) return `${s.slice(6,8)}.${s.slice(4,6)}.${s.slice(0,4)}`;
   return s;
 };
+// Base currency of the account (all converted amounts are in it)
+const BASE = () => G.data?.account?.base || G.pendingData?.account?.base || 'USD';
+const money = (v, d=2, sign=false) => {
+  const n = parseFloat(v||0);
+  return (sign && n >= 0 ? '+' : '') + fmtN(n, d) + ' ' + BASE();
+};
+// Replace "USD" in table headers with the actual base currency
+function relabelCurrency(root) {
+  root.querySelectorAll('th').forEach(th => {
+    if (th.dataset.lbl == null) th.dataset.lbl = th.textContent;
+    th.textContent = th.dataset.lbl.replace(/\bUSD\b/g, BASE());
+  });
+}
+
+// ── VAT on Other Fees ──
+const VAT_RATE = 0.21;
+function isVatLine(c) { return /\bVAT\b|\bDPH\b|sales tax|value added/i.test(c.desc || ''); }
+// VAT to add on top of the fee amount (base currency)
+function ofVat(c) {
+  const amt = parseFloat(c.amount || 0);
+  if (isVatLine(c)) return 0;                       // the row itself is tax
+  switch (G.data.vatMode) {
+    case 'lines': return 0;                         // VAT already booked as separate rows
+    case 'ib': {
+      const t = G.data.salesTaxByTx[c.txId];
+      return t != null ? Math.sign(amt) * Math.abs(t) : 0;
+    }
+    default: return amt * VAT_RATE;                 // no VAT data in report → 21 % estimate
+  }
+}
+const VAT_NOTES = {
+  lines: 'DPH je v reportu jako samostatné řádky poplatků — už je započtená v částkách, nic se nepřičítá.',
+  ib:    'DPH převzata ze sekce Sales Tax Details v reportu (skutečně účtovaná IB).',
+  calc:  'Report neobsahuje údaje o DPH — DPH je odhad 21 % z částky poplatku.',
+};
+
+// ── Derivatives: FX + underlying price (shared by screen and Excel export) ──
+const dfx = d => d.fx || 1;
+function setManualUnder(inp) {
+  G.manualUnderPrices[inp.dataset.underKey] = inp.value;
+}
+function ownUnderFor(d) {
+  const m = parseFloat(G.manualUnderPrices?.[`underPrice_${d.conid}`]);
+  if (m > 0) return m;
+  const x = parseFloat(d.underlyingPrice);
+  return x > 0 ? x : null;
+}
+// Own price (manual > XML), else any price known for the same underlying
+function underPriceFor(d) {
+  const own = ownUnderFor(d);
+  if (own != null) return own;
+  for (const o of G.data?.derivatives || []) {
+    if (o.underlying !== d.underlying) continue;
+    const p = ownUnderFor(o);
+    if (p != null) return p;
+  }
+  return null;
+}
+
 const colorClass = v => parseFloat(v||0) >= 0 ? 'pos' : 'neg';
 const typeBadge = t => `<span class="type-badge type-${t}">${t}</span>`;
 const sideBadge = s => `<span class="type-badge type-${s}">${s}</span>`;
@@ -1052,24 +1112,31 @@ function handleFile(file) {
   if (!file || !file.name.endsWith('.xml')) {
     alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
   }
-  G.pendingFile = file;
-  askRate(false);
+  readXML(file);   // parse first so the rate dialog knows the account's base currency
 }
 
 // ── Rate modal ──────────────────────────────────────────────────────
 function askRate(rerender) {
+  const base = BASE();
+  if (G.pendingData) {
+    if (base === 'CZK') G.rate = 1;
+    else if (G.rate === 1) G.rate = 22.5;   // previous report was in CZK
+  }
+  document.getElementById('rate-title').textContent = `Kurz ${base} / CZK`;
   document.getElementById('rate-input').value = G.rate.toFixed(4);
   document.getElementById('rate-modal').style.display = 'flex';
   if (rerender) G._rerender = true;
 }
 function confirmRate() {
   const v = parseFloat(document.getElementById('rate-input').value);
-  if (!v || v < 1) { alert('Zadejte platný kurz (např. 22.50)'); return; }
+  if (!(v > 0)) { alert('Zadejte platný kurz (např. 22.50)'); return; }
   G.rate = v;
   document.getElementById('rate-modal').style.display = 'none';
-  document.getElementById('hdr-rate').textContent = `USD/CZK ${G.rate.toFixed(4)}`;
-  if (G._rerender && G.data) { renderAll(); G._rerender = false; }
-  else if (G.pendingFile) { readXML(G.pendingFile); G.pendingFile = null; }
+  if (G.pendingData) {
+    G.data = G.pendingData; G.pendingData = null; G._rerender = false;
+    showApp();
+  } else if (G._rerender && G.data) { renderAll(); G._rerender = false; }
+  document.getElementById('hdr-rate').textContent = `${BASE()}/CZK ${G.rate.toFixed(4)}`;
 }
 document.getElementById('rate-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') confirmRate();
@@ -1084,8 +1151,8 @@ function readXML(file) {
       const doc = parser.parseFromString(e.target.result, 'application/xml');
       const err = doc.querySelector('parsererror');
       if (err) { alert('Chyba XML souboru: ' + err.textContent.slice(0,200)); return; }
-      G.data = parseDoc(doc);
-      showApp(doc);
+      G.pendingData = parseDoc(doc);
+      askRate(false);
     } catch(ex) { alert('Chyba zpracování: ' + ex.message); }
   };
   reader.readAsText(file, 'UTF-8');
@@ -1097,56 +1164,118 @@ function parseDoc(doc) {
   const stmt = doc.querySelector('FlexStatement');
   const info = doc.querySelector('AccountInformation');
 
+  const base = attr(info, 'currency') || 'USD';
   const account = {
     id:   attr(info, 'accountId'),
     name: attr(info, 'name'),
+    base,
     from: parseDate(attr(stmt, 'fromDate')),
     to:   parseDate(attr(stmt, 'toDate')),
   };
 
-  // Trades — levelOfDetail=EXECUTION
+  // ── FX to base currency ──
+  // Amounts in Trade / OpenPosition / CashTransaction are in the instrument's
+  // currency; fxRateToBase converts them. Fallback rates (per currency) come
+  // from the ConversionRate section (latest date) or any element carrying fxRateToBase.
+  const fxByCcy = { [base]: 1 };
+  [...doc.querySelectorAll('ConversionRate')]
+    .filter(c => attr(c,'toCurrency') === base && attr(c,'fromCurrency'))
+    .sort((a,b) => attr(a,'reportDate').localeCompare(attr(b,'reportDate')))
+    .forEach(c => { const r = parseFloat(attr(c,'rate')); if (r > 0) fxByCcy[attr(c,'fromCurrency')] = r; });
+  ['OpenPosition','Trade','CashTransaction'].forEach(sel => {
+    doc.querySelectorAll(sel).forEach(el => {
+      const c = attr(el,'currency'), r = parseFloat(attr(el,'fxRateToBase'));
+      if (c && r > 0 && fxByCcy[c] == null) fxByCcy[c] = r;
+    });
+  });
+  const missingFx = new Set();
+  // fx of an element's own currency, or of another currency (e.g. commission currency)
+  const fxOf = (el, ccy) => {
+    const c = ccy || attr(el,'currency');
+    if (!c || c === base) return 1;
+    if (c === attr(el,'currency')) {
+      const r = parseFloat(attr(el,'fxRateToBase'));
+      if (r > 0) return r;
+    }
+    if (fxByCcy[c] != null) return fxByCcy[c];
+    missingFx.add(c);
+    return 1;
+  };
+  const toBase = (v, fx) => { const n = parseFloat(v); return isNaN(n) ? '' : n * fx; };
+  const rawDate = s => (s || '').replace(/\D/g, '').slice(0, 8);   // → YYYYMMDD
+
+  // Trades — levelOfDetail=EXECUTION (money columns converted to base)
   const trades = [...doc.querySelectorAll('Trade')]
     .filter(t => attr(t,'levelOfDetail') === 'EXECUTION')
-    .map(t => ({
-      date:    parseDate(attr(t,'dateTime') || attr(t,'tradeDate')),
-      symbol:  attr(t,'symbol'),
-      desc:    attr(t,'description'),
-      type:    attr(t,'assetCategory'),
-      side:    attr(t,'buySell'),
-      qty:     attr(t,'quantity'),
-      price:   attr(t,'tradePrice'),
-      proceeds:attr(t,'proceeds'),
-      comm:    attr(t,'ibCommission'),
-      net:     attr(t,'netCash'),
-      pnl:     attr(t,'fifoPnlRealized'),
-    }));
+    .map(t => {
+      const fx = fxOf(t);
+      return {
+        date:    parseDate(attr(t,'dateTime') || attr(t,'tradeDate')),
+        symbol:  attr(t,'symbol'),
+        desc:    attr(t,'description'),
+        type:    attr(t,'assetCategory'),
+        side:    attr(t,'buySell'),
+        currency:attr(t,'currency') || base,
+        qty:     attr(t,'quantity'),
+        price:   attr(t,'tradePrice'),                    // local currency
+        proceeds:toBase(attr(t,'proceeds'), fx),
+        comm:    toBase(attr(t,'ibCommission'), fxOf(t, attr(t,'ibCommissionCurrency'))),
+        net:     toBase(attr(t,'netCash'), fx),
+        pnl:     toBase(attr(t,'fifoPnlRealized'), fx),
+      };
+    });
 
-  // Open Positions — levelOfDetail=SUMMARY
+  // Open Positions — levelOfDetail=SUMMARY (money columns converted to base)
   const positions = [...doc.querySelectorAll('OpenPosition')]
     .filter(p => attr(p,'levelOfDetail') === 'SUMMARY')
-    .map(p => ({
-      symbol:   attr(p,'symbol'),
-      isin:     attr(p,'isin'),
-      desc:     attr(p,'description'),
-      type:     attr(p,'assetCategory'),
-      qty:      attr(p,'position'),
-      openP:    attr(p,'openPrice'),
-      markP:    attr(p,'markPrice'),
-      mktVal:   attr(p,'positionValue'),
-      cost:     attr(p,'costBasisMoney'),
-      unreal:   attr(p,'fifoPnlUnrealized'),
-      pctNav:   attr(p,'percentOfNAV'),
-      side:     attr(p,'side'),
-    }));
+    .map(p => {
+      const fx = fxOf(p);
+      return {
+        symbol:   attr(p,'symbol'),
+        isin:     attr(p,'isin'),
+        desc:     attr(p,'description'),
+        type:     attr(p,'assetCategory'),
+        currency: attr(p,'currency') || base,
+        qty:      attr(p,'position'),
+        openP:    attr(p,'openPrice'),                    // local currency
+        markP:    attr(p,'markPrice'),                    // local currency
+        mktVal:   toBase(attr(p,'positionValue'), fx),
+        cost:     toBase(attr(p,'costBasisMoney'), fx),
+        unreal:   toBase(attr(p,'fifoPnlUnrealized'), fx),
+        pctNav:   attr(p,'percentOfNAV'),
+        side:     attr(p,'side'),
+      };
+    });
 
-  // Cash transactions
+  // Cash transactions (amount converted to base)
   const cashTxns = [...doc.querySelectorAll('CashTransaction')].map(c => ({
-    date:   parseDate(attr(c,'dateTime')),
-    symbol: attr(c,'symbol'),
-    desc:   attr(c,'description'),
-    type:   attr(c,'type'),
-    amount: attr(c,'amount'),
+    date:    parseDate(attr(c,'dateTime')),
+    rawDate: rawDate(attr(c,'reportDate') || attr(c,'dateTime')),
+    symbol:  attr(c,'symbol'),
+    desc:    attr(c,'description'),
+    type:    attr(c,'type'),
+    currency:attr(c,'currency') || base,
+    amount:  toBase(attr(c,'amount'), fxOf(c)),
+    txId:    attr(c,'transactionID'),
   }));
+
+  // External cash flows (deposits/withdrawals) in base currency by date — for daily TWR
+  const flowsByDate = {};
+  cashTxns
+    .filter(c => c.type === 'Deposits/Withdrawals' && c.rawDate)
+    .forEach(c => { flowsByDate[c.rawDate] = (flowsByDate[c.rawDate] || 0) + parseFloat(c.amount || 0); });
+
+  // VAT on fees. 'lines' = IB already booked VAT as its own Other Fees rows,
+  // 'ib' = VAT from the Sales Tax Details section, 'calc' = no VAT data → 21 % estimate.
+  const salesTaxByTx = {};
+  const salesTaxEls = [...doc.querySelectorAll('SalesTax')];
+  salesTaxEls.forEach(s => {
+    const id = attr(s,'taxableTransactionID');
+    const v  = toBase(attr(s,'salesTax'), fxOf(s));
+    if (id && v !== '') salesTaxByTx[id] = (salesTaxByTx[id] || 0) + v;
+  });
+  const vatMode = cashTxns.some(c => c.type === 'Other Fees' && isVatLine(c)) ? 'lines'
+                : salesTaxEls.length ? 'ib' : 'calc';
 
   // FIFO P&L
   const pnl = [...doc.querySelectorAll('FIFOPerformanceSummaryUnderlying')]
@@ -1175,9 +1304,10 @@ function parseDoc(doc) {
       const prevP = parseFloat(attr(m,'prevClosePrice')||0);
       const clQ   = parseFloat(attr(m,'closeQuantity')||0);
       const clP   = parseFloat(attr(m,'closePrice')||0);
+      const fx    = fxOf(m);   // prices are in the instrument's currency
       mtmMap[sym] = {
-        startVal: prevQ * prevP * mult,
-        endVal:   clQ   * clP   * mult,
+        startVal: prevQ * prevP * mult * fx,
+        endVal:   clQ   * clP   * mult * fx,
       };
     });
 
@@ -1210,7 +1340,8 @@ function parseDoc(doc) {
   const derivatives = [...doc.querySelectorAll('OpenPosition')]
     .filter(p => attr(p,'levelOfDetail') === 'SUMMARY' && attr(p,'assetCategory') === 'OPT')
     .map(p => ({
-      currency:        attr(p,'currency'),
+      currency:        attr(p,'currency') || base,
+      fx:              fxOf(p),
       symbol:          attr(p,'symbol'),
       conid:           attr(p,'conid'),
       underlying:      attr(p,'underlyingSymbol'),
@@ -1220,10 +1351,10 @@ function parseDoc(doc) {
       strike:          attr(p,'strike'),
       qty:             attr(p,'position'),
       multiplier:      attr(p,'multiplier'),
-      costBasis:       attr(p,'costBasisMoney'),
-      markPrice:       attr(p,'markPrice'),
-      mktVal:          attr(p,'positionValue'),
-      unreal:          attr(p,'fifoPnlUnrealized'),
+      costBasis:       toBase(attr(p,'costBasisMoney'), fxOf(p)),
+      markPrice:       attr(p,'markPrice'),                 // local currency, per unit
+      mktVal:          toBase(attr(p,'positionValue'), fxOf(p)),
+      unreal:          toBase(attr(p,'fifoPnlUnrealized'), fxOf(p)),
       side:            attr(p,'side'),
       desc:            attr(p,'description'),
     }));
@@ -1259,6 +1390,7 @@ function parseDoc(doc) {
       const clQ   = parseFloat(attr(m,'closeQuantity')||0);
       return {
         symbol: attr(m,'symbol'),
+        currency: attr(m,'currency') || base,
         pct:    prevP > 0 && clQ !== 0 ? ((clP - prevP) / prevP) * 100 : null,
         startP: prevP,
         endP:   clP,
@@ -1280,17 +1412,25 @@ function parseDoc(doc) {
     }
   });
 
-  return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices };
+  account.missingFx = [...missingFx];
+
+  return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices,
+           flowsByDate, salesTaxByTx, vatMode };
 }
 
 // ── Render ──────────────────────────────────────────────────────────
-function showApp(doc) {
+function showApp() {
   document.getElementById('drop-overlay').classList.add('hidden');
   document.getElementById('app').classList.add('visible');
   const a = G.data.account;
   document.getElementById('hdr-account').textContent =
-    `${a.name}  ·  ${a.id}  ·  ${a.from} – ${a.to}`;
-  document.getElementById('hdr-rate').textContent = `USD/CZK ${G.rate.toFixed(4)}`;
+    `${a.name}  ·  ${a.id}  ·  ${a.from} – ${a.to}  ·  základní měna ${a.base}`;
+  document.getElementById('hdr-rate').textContent = `${a.base}/CZK ${G.rate.toFixed(4)}`;
+  relabelCurrency(document.getElementById('app'));
+
+  // New report → derivatives output from the previous one is stale
+  G._derProcessed = false;
+  document.getElementById('der-output').innerHTML = '';
 
   // Reset benchmark state — new report = new period = stale data must be cleared
   CHART.bm     = { spx: false, ndx: false };
@@ -1324,6 +1464,7 @@ function renderAll() {
   renderOF();
   renderDep();
   renderDer();
+  if (G._derProcessed) zpracujDerivaty();   // keep derivatives output in sync with the rate
 }
 
 // ── Summary ──────────────────────────────────────────────────────────
@@ -1347,25 +1488,32 @@ function renderSummary() {
     </div>`;
 
   document.getElementById('cards-usd').innerHTML = [
-    mkCard('Tržní hodnota portfolia', '$'+fmtN(totalMV,0), fmtN(totalMV*r,0)),
-    mkCard('Nerealizovaný P&L', (totalUnr>=0?'+$':'$')+fmtN(totalUnr), fmtN(totalUnr*r,0), colorClass(totalUnr)),
-    mkCard('Realizovaný P&L', (totalReal>=0?'+$':'$')+fmtN(totalReal), fmtN(totalReal*r,0), colorClass(totalReal)),
-    mkCard('Dividendy hrubé', '$'+fmtN(divs), fmtN(divs*r,0), 'pos'),
-    mkCard('Srážková daň', '$'+fmtN(wh), fmtN(wh*r,0), 'neg'),
-    mkCard('Dividendy čisté', (divs+wh>=0?'+$':'$')+fmtN(divs+wh), fmtN((divs+wh)*r,0), colorClass(divs+wh)),
-    mkCard('Komise celkem', '$'+fmtN(comm), fmtN(comm*r,0), 'neg'),
-    mkCard('Cash na účtu', '$'+fmtN(endCash), fmtN(endCash*r,0)),
+    mkCard('Tržní hodnota portfolia', money(totalMV,0), fmtN(totalMV*r,0)),
+    mkCard('Nerealizovaný P&L', money(totalUnr,2,true), fmtN(totalUnr*r,0), colorClass(totalUnr)),
+    mkCard('Realizovaný P&L', money(totalReal,2,true), fmtN(totalReal*r,0), colorClass(totalReal)),
+    mkCard('Dividendy hrubé', money(divs), fmtN(divs*r,0), 'pos'),
+    mkCard('Srážková daň', money(wh), fmtN(wh*r,0), 'neg'),
+    mkCard('Dividendy čisté', money(divs+wh,2,true), fmtN((divs+wh)*r,0), colorClass(divs+wh)),
+    mkCard('Komise celkem', money(comm), fmtN(comm*r,0), 'neg'),
+    mkCard('Cash na účtu', money(endCash), fmtN(endCash*r,0)),
   ].join('');
 
-  // TWR card in second row
+  // TWR card in second row (+ warning when an FX rate to base was not found)
   const nav = G.data.changeInNAV;
-  const simpleRet = nav ? ((nav.endingValue - nav.startingValue) / Math.abs(nav.startingValue)) * 100 : null;
   const twrPct    = nav ? nav.twr : null;
-  document.getElementById('cards-czk').innerHTML = nav ? `
+  const eq        = G.data.equitySeries;
+  const twrDaily  = eq.length > 1 ? dailyTWR(eq, G.data.flowsByDate).at(-1) : null;
+  const missing   = G.data.account.missingFx || [];
+  document.getElementById('cards-czk').innerHTML = (nav ? `
     <div class="card" style="border-left: 3px solid var(--accent)">
       <div class="card-label">TWR (dle IB) — eliminuje vliv vkladů/výběrů</div>
       <div class="card-value ${twrPct >= 0 ? 'pos' : 'neg'}">${twrPct >= 0 ? '+' : ''}${twrPct.toFixed(2)} %</div>
-    </div>` : '';
+      ${twrDaily != null ? `<div class="card-sub">z denních hodnot (graf): ${twrDaily >= 0 ? '+' : ''}${twrDaily.toFixed(2)} %</div>` : ''}
+    </div>` : '') + (missing.length ? `
+    <div class="card" style="border-left: 3px solid var(--amber)">
+      <div class="card-label">Chybí kurz do ${BASE()}</div>
+      <div class="card-sub" style="color:var(--amber)">Pro ${missing.join(', ')} report neobsahuje fxRateToBase ani Conversion Rates — částky v těchto měnách nejsou přepočtené. Přidejte do Flex Query sekci Conversion Rates.</div>
+    </div>` : '');
   initChart();
 }
 
@@ -1398,28 +1546,24 @@ function toPercent(vals) {
   return vals.map(v => v != null ? ((v - base) / Math.abs(base)) * 100 : null);
 }
 
-// TWR-adjusted % series:
-// The twr field in IB XML is already in % (e.g. -3.116904 = -3.12%).
-// We scale each day's simple return proportionally so the endpoint
-// matches IB's TWR, preserving the shape of the curve.
-function toPercentTWR(vals, eq) {
-  const nav = G.data?.changeInNAV;
-  if (!nav || nav.twr === 0) return toPercent(vals);
-
-  const twrPct = nav.twr;           // already in %, e.g. -3.116904
-  const base   = vals[0];
-  if (!base) return toPercent(vals);
-
-  // Compute simple endpoint %
-  const lastVal = vals[vals.length - 1];
-  const simpleEnd = ((lastVal - base) / Math.abs(base)) * 100;
-  if (Math.abs(simpleEnd) < 0.0001) return toPercent(vals);
-
-  const scale = twrPct / simpleEnd;
-
-  return vals.map(v => v != null
-    ? ((v - base) / Math.abs(base)) * 100 * scale
-    : null);
+// Cumulative time-weighted return (%) of the total portfolio, chained daily:
+//   r_t = (V_t − CF_t) / V_{t−1} − 1
+// where CF_t are deposits/withdrawals booked on day t (end-of-day convention).
+// A flow on a non-trading day is assigned to the next day in the series.
+function dailyTWR(eq, flowsByDate) {
+  const cf = new Array(eq.length).fill(0);
+  for (const [d, amt] of Object.entries(flowsByDate || {})) {
+    const i = eq.findIndex(e => e.date >= d);
+    if (i > 0) cf[i] += amt;    // a flow on day 0 is already in the starting value
+  }
+  let idx = 1;
+  const out = [0];
+  for (let i = 1; i < eq.length; i++) {
+    const prev = eq[i-1].total;
+    if (prev > 0) idx *= (eq[i].total - cf[i]) / prev;
+    out.push((idx - 1) * 100);
+  }
+  return out;
 }
 
 function setReturnMode(mode, btn) {
@@ -1450,6 +1594,7 @@ function drawPerfChart(targetCanvas, targetLegend) {
   const W   = targetCanvas ? (canvas.offsetWidth || canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
   const H   = targetCanvas ? (canvas.offsetHeight || 480) : (document.getElementById('chart-canvas')?.offsetHeight || 320);
 
+  if (!(W > 0)) return;   // canvas hidden (another tab) — redrawn on showTab('summary')
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
   canvas.width  = W * dpr;
@@ -1579,11 +1724,11 @@ function drawPerfChart(targetCanvas, targetLegend) {
       </div>
       <div class="chart-tooltip-row">
         <span class="chart-tooltip-label">Začátek</span>
-        <span class="chart-tooltip-val">$${fmtN(s.startP,2)}</span>
+        <span class="chart-tooltip-val">${fmtN(s.startP,2)} ${s.currency}</span>
       </div>
       <div class="chart-tooltip-row">
         <span class="chart-tooltip-label">Konec</span>
-        <span class="chart-tooltip-val">$${fmtN(s.endP,2)}</span>
+        <span class="chart-tooltip-val">${fmtN(s.endP,2)} ${s.currency}</span>
       </div>`;
 
     const tx = Math.min(mx + 12, rect.width - 180);
@@ -1693,9 +1838,16 @@ async function loadBenchmark(bmKey) {
   const setStatus = t => { document.getElementById('bm-status').textContent = t; };
 
   // ── 1. Try XML first: SPY for S&P 500, QQQ for Nasdaq 100 ──
+  // PriorPeriodPosition only has prices for days the ETF was actually held,
+  // so use it only when it covers the whole report period.
   const xmlTicker = bmKey === 'spx' ? 'SPY' : 'QQQ';
   const xmlPrices = G.data?.priorPrices?.[xmlTicker];
-  if (xmlPrices && Object.keys(xmlPrices).length > 0) {
+  const eqS       = G.data?.equitySeries || [];
+  const xmlDates  = Object.keys(xmlPrices || {}).sort();
+  const xmlCovers = xmlDates.length > 0 && eqS.length > 0 &&
+    xmlDates[0] <= eqS[0].date &&
+    xmlDates.at(-1) >= eqS[Math.max(0, eqS.length - 2)].date;
+  if (xmlCovers) {
     const entries = Object.entries(xmlPrices).sort(([a],[b]) => a.localeCompare(b));
     const base    = entries[0][1];
     const map     = {};
@@ -1828,6 +1980,7 @@ function drawChart(targetCanvas, targetLegend) {
   const dpr = window.devicePixelRatio || 1;
   const W   = targetCanvas ? canvas.offsetWidth || (canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
   const H   = targetCanvas ? (canvas.offsetHeight || 480) : 320;
+  if (!(W > 0)) return;   // canvas hidden (another tab) — redrawn on showTab('summary')
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
   canvas.width  = W * dpr;
@@ -1839,51 +1992,50 @@ function drawChart(targetCanvas, targetLegend) {
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top  - PAD.bottom;
 
-  // ── Build percent series (TWR or simple, rebased to 0% at day 0) ──
-  const pctFn = (rawVals) =>
-    CHART.returnMode === 'twr'
-      ? toPercentTWR(rawVals, eq)
-      : toPercent(rawVals);
-
+  // ── Build percent series (rebased to 0% at day 0) ──
+  // TWR applies to the total only: deposits/withdrawals are not split by
+  // asset class, so the stock/option lines always show plain value change.
+  const twr = CHART.returnMode === 'twr';
   const series = [];
   series.push({
-    key: 'total', label: 'Portfolio celkem', color: COLORS.total,
-    vals: pctFn(eq.map(e => e.total)),
+    key: 'total', label: twr ? 'Portfolio celkem (TWR)' : 'Portfolio celkem', color: COLORS.total,
+    vals: twr ? dailyTWR(eq, G.data.flowsByDate) : toPercent(eq.map(e => e.total)),
     rawVals: eq.map(e => e.total),
   });
   if (CHART.series.stocks)
     series.push({
-      key: 'stocks', label: 'Akcie', color: COLORS.stocks,
-      vals: pctFn(eq.map(e => e.stocks)),
+      key: 'stocks', label: 'Akcie (změna hodnoty)', color: COLORS.stocks,
+      vals: toPercent(eq.map(e => e.stocks)),
       rawVals: eq.map(e => e.stocks),
     });
   if (CHART.series.options)
     series.push({
-      key: 'options', label: 'Opce', color: COLORS.options,
-      vals: pctFn(eq.map(e => e.options)),
+      key: 'options', label: 'Opce (změna hodnoty)', color: COLORS.options,
+      vals: toPercent(eq.map(e => e.options)),
       rawVals: eq.map(e => e.options),
     });
 
-  // Benchmark series — already stored as % from their own period start
+  // Benchmark series — stored as % from the source's own first point; align each
+  // portfolio day to the latest benchmark close on or before it, then rebase so
+  // the benchmark starts at 0 % on the same day as the portfolio.
   const bmSeries = [];
   ['spx','ndx'].forEach(bk => {
     if (!CHART.bm[bk] || !CHART.bmData[bk]) return;
     const map  = CHART.bmData[bk];
-    const vals = eq.map(e => map[e.date] ?? null);
-    // Fill gaps with nearest available date (weekend/holiday alignment)
-    for (let i = 1; i < vals.length; i++) {
-      if (vals[i] == null) {
-        // Search ±1 day
-        const d = eq[i].date;
-        const dn = String(Number(d)+1).padStart(8,'0');
-        const dp = String(Number(d)-1).padStart(8,'0');
-        vals[i] = map[dn] ?? map[dp] ?? null;
-      }
-    }
+    const keys = Object.keys(map).sort();
+    let k = 0, last = null;
+    const aligned = eq.map(e => {
+      while (k < keys.length && keys[k] <= e.date) last = map[keys[k++]];
+      return last;
+    });
+    const b0   = aligned.find(v => v != null);
+    const vals = aligned.map(v => v == null || b0 == null
+      ? null
+      : ((1 + v / 100) / (1 + b0 / 100) - 1) * 100);
     bmSeries.push({
       key: bk, dashed: true,
       label: bk === 'spx' ? 'S&P 500' : 'Nasdaq 100',
-      color: COLORS[bk], vals, rawVals: vals,
+      color: COLORS[bk], vals, rawVals: null,
     });
   });
 
@@ -2041,7 +2193,7 @@ function drawChart(targetCanvas, targetLegend) {
       const raw = s.rawVals?.[idx];
       if (pct == null) return '';
       const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">$${fmtN(raw,0)}</span>` : '';
+      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">${fmtN(raw,0)} ${BASE()}</span>` : '';
       return `<div class="chart-tooltip-row">
         <span class="chart-tooltip-label" style="color:${s.color}">${s.label}</span>
         <span class="chart-tooltip-val" style="color:${pct>=0?'var(--green)':'var(--red)'}">${pctStr}</span>${rawStr}
@@ -2091,6 +2243,7 @@ function drawZoomChart(type) {
   const W   = canvas.parentElement.clientWidth;
   const H   = Math.round(window.innerHeight * 0.68);
   const dpr = window.devicePixelRatio || 1;
+  if (!(W > 0)) return;   // canvas hidden (another tab) — redrawn on showTab('summary')
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
   canvas.width  = W * dpr;
@@ -2123,7 +2276,7 @@ function drawZoomChart(type) {
       const pct = s.vals[idx]; const raw = s.rawVals?.[idx];
       if (pct == null) return '';
       const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">$${fmtN(raw,0)}</span>` : '';
+      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">${fmtN(raw,0)} ${BASE()}</span>` : '';
       return `<div class="chart-tooltip-row"><span class="chart-tooltip-label" style="color:${s.color}">${s.label}</span><span class="chart-tooltip-val" style="color:${pct>=0?'var(--green)':'var(--red)'}">${pctStr}</span>${rawStr}</div>`;
     }).join('');
     const tx = Math.min(mx + 14, rect.width - 210);
@@ -2169,6 +2322,7 @@ function drawPieChart(targetCanvas, targetLegend) {
   const dpr = window.devicePixelRatio || 1;
   const W   = targetCanvas ? (canvas.offsetWidth || canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
 
+  if (!(W > 0)) return;   // canvas hidden (another tab) — redrawn on showTab('summary')
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
   canvas.width  = W * dpr;
@@ -2220,7 +2374,7 @@ function drawPieChart(targetCanvas, targetLegend) {
   ctx.font         = `500 12px 'IBM Plex Sans', sans-serif`;
   ctx.fillText('Portfolio', cx, cy - 8);
   ctx.font         = `600 13px 'IBM Plex Mono', monospace`;
-  ctx.fillText('$' + fmtN(total, 0), cx, cy + 8);
+  ctx.fillText(fmtN(total, 0) + ' ' + BASE(), cx, cy + 8);
 
   // Right-side legend (vertical list)
   const legendX  = W - labelW + 8;
@@ -2296,7 +2450,7 @@ function drawPieChart(targetCanvas, targetLegend) {
       </div>
       <div class="chart-tooltip-row">
         <span class="chart-tooltip-label">Hodnota</span>
-        <span class="chart-tooltip-val">$${fmtN(hit.val, 0)}</span>
+        <span class="chart-tooltip-val">${fmtN(hit.val, 0)} ${BASE()}</span>
       </div>
       <div class="chart-tooltip-row">
         <span class="chart-tooltip-label">CZK</span>
@@ -2333,7 +2487,7 @@ function filterTrades() {
       <td>${typeBadge(t.type)}${t.type==='OPT'?' '+sideBadge(t.side.charAt(0)+t.side.slice(1).toLowerCase()):'&nbsp;'+sideBadge(t.side)}</td>
       <td>${sideBadge(t.side)}</td>
       <td>${fmtN(t.qty,0)}</td>
-      <td>${fmtN(t.price,4)}</td>
+      <td>${fmtN(t.price,4)}${t.currency !== BASE() ? ' ' + t.currency : ''}</td>
       <td>${fmtN(t.proceeds)}</td>
       <td class="neg">${fmtN(t.comm)}</td>
       <td>${fmtN(t.net)}</td>
@@ -2541,11 +2695,11 @@ function filterOF() {
     !q || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)
   );
   document.getElementById('count-of').textContent = `${rows.length} transakcí`;
+  document.getElementById('of-vat-note').textContent = _ofRows.length ? VAT_NOTES[G.data.vatMode] : '';
   const tbody = document.querySelector('#tbl-of tbody');
-  const VAT = 0.21;
   tbody.innerHTML = rows.map(c => {
     const amt     = parseFloat(c.amount||0);
-    const vat     = amt * VAT;
+    const vat     = ofVat(c);
     const total   = amt + vat;
     const totalCZK= total * G.rate;
     return `<tr>
@@ -2563,7 +2717,7 @@ function filterOF() {
   // Custom totals footer for OF (DPH columns)
   const tfoot = document.getElementById('tfoot-of');
   const sumAmt   = _ofRows.reduce((s,c) => s + parseFloat(c.amount||0), 0);
-  const sumVat   = sumAmt * VAT;
+  const sumVat   = _ofRows.reduce((s,c) => s + ofVat(c), 0);
   const sumTotal = sumAmt + sumVat;
   const sumCZK   = sumTotal * G.rate;
   tfoot.innerHTML = `<tr>
@@ -2647,7 +2801,7 @@ function filterDer() {
              value="${storedVal}"
              placeholder="zadat..."
              style="width:90px;font-family:var(--mono);font-size:11px;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:5px;color:#fcd34d;padding:3px 6px;text-align:right;font-weight:600"
-             onchange="G.manualUnderPrices=G.manualUnderPrices||{};G.manualUnderPrices['${storedKey}']=this.value"
+             data-under-key="${storedKey}" oninput="setManualUnder(this)"
              title="Cena podkladu není v reportu — zadejte ručně">
          </td>`;
 
@@ -2664,7 +2818,7 @@ function filterDer() {
       <td>${d.multiplier}</td>
       <td class="${colorClass(cost)}">${fmtN(cost)}</td>
       <td>${fmtN(markP, 4)}</td>
-      <td>${fmtN(markP * r, 2)}</td>
+      <td>${fmtN(markP * dfx(d) * r, 2)}</td>
       <td class="${colorClass(unr)}">${unr >= 0 ? '+' : ''}${fmtN(unr)}</td>
       <td class="${colorClass(unr)}">${unr >= 0 ? '+' : ''}${fmtN(unr * r, 0)}</td>
     </tr>`;
@@ -2687,28 +2841,11 @@ function filterDer() {
 function zpracujDerivaty() {
   const out = document.getElementById('der-output');
   if (!out) return;
-  const r = G.data?.changeInNAV ? G.rate : G.rate;
+  const r = G.rate;
+  G._derProcessed = true;
 
-  // Collect underlying prices from the top table inputs + xml
   const derRows = G.data.derivatives || [];
-  const underMap = {};
-  derRows.forEach(d => {
-    const key = `underPrice_${d.conid}`;
-    const xmlP = d.underlyingPrice ? parseFloat(d.underlyingPrice) : null;
-    const manP = G.manualUnderPrices?.[key] ? parseFloat(G.manualUnderPrices[key]) : null;
-    // Also read from live DOM inputs in case user typed without blur
-    const inp = document.querySelector(`input[onchange*="${key}"]`);
-    const domP = inp && inp.value ? parseFloat(inp.value) : null;
-    underMap[d.underlying] = underMap[d.underlying] || xmlP || manP || domP || null;
-    // Per-conid override takes priority
-    if (manP || domP) underMap[key] = manP || domP;
-  });
-  const getUnder = d => {
-    const key = `underPrice_${d.conid}`;
-    return G.manualUnderPrices?.[key]
-      ? parseFloat(G.manualUnderPrices[key])
-      : (d.underlyingPrice ? parseFloat(d.underlyingPrice) : underMap[d.underlying]);
-  };
+  const getUnder = underPriceFor;   // same lookup as the Excel export
 
   const mkSection = (title, rows, buildRow, buildFoot) => {
     if (!rows.length) return `
@@ -2741,9 +2878,9 @@ function zpracujDerivaty() {
         const mult   = parseFloat(d.multiplier||1);
         const strike = parseFloat(d.strike||0);
         const underP = getUnder(d);
-        const strikeUSD = qty * mult * strike;
+        const strikeUSD = qty * mult * strike * dfx(d);
         const strikeCZK = strikeUSD * r;
-        const mktUSD    = underP != null ? qty * mult * underP : null;
+        const mktUSD    = underP != null ? qty * mult * underP * dfx(d) : null;
         const mktCZK    = mktUSD != null ? mktUSD * r : null;
         sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
         if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
@@ -2790,9 +2927,9 @@ function zpracujDerivaty() {
         const mult   = parseFloat(d.multiplier||1);
         const strike = parseFloat(d.strike||0);
         const underP = getUnder(d);
-        const strikeUSD = Math.abs(qty) * mult * strike;     // pohledávka
+        const strikeUSD = Math.abs(qty) * mult * strike * dfx(d);     // pohledávka
         const strikeCZK = strikeUSD * r;
-        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * -1 : null;  // závazek (záporný)
+        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * dfx(d) * -1 : null;  // závazek (záporný)
         const mktCZK    = mktUSD != null ? mktUSD * r : null;
         sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
         if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
@@ -2837,9 +2974,9 @@ function zpracujDerivaty() {
         const mult   = parseFloat(d.multiplier||1);
         const strike = parseFloat(d.strike||0);
         const underP = getUnder(d);
-        const strikeUSD = qty * mult * strike;          // pohledávka
+        const strikeUSD = qty * mult * strike * dfx(d);          // pohledávka
         const strikeCZK = strikeUSD * r;
-        const mktUSD    = underP != null ? qty * mult * underP : null;  // závazek
+        const mktUSD    = underP != null ? qty * mult * underP * dfx(d) : null;  // závazek
         const mktCZK    = mktUSD != null ? mktUSD * r : null;
         sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
         if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
@@ -2884,9 +3021,9 @@ function zpracujDerivaty() {
         const mult   = parseFloat(d.multiplier||1);
         const strike = parseFloat(d.strike||0);
         const underP = getUnder(d);
-        const strikeUSD = Math.abs(qty) * mult * strike;          // závazek
+        const strikeUSD = Math.abs(qty) * mult * strike * dfx(d);          // závazek
         const strikeCZK = strikeUSD * r;
-        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * -1 : null;  // pohledávka (záporný závazek)
+        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * dfx(d) * -1 : null;  // pohledávka (záporný závazek)
         const mktCZK    = mktUSD != null ? mktUSD * r : null;
         sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
         if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
@@ -2931,11 +3068,11 @@ function zpracujDerivaty() {
       const strike = parseFloat(d.strike||0);
       const underP = getUnder(d);
       const absQty = Math.abs(qty);
-      strikeUSD += absQty * mult * strike;
-      strikeCZK += absQty * mult * strike * r;
+      strikeUSD += absQty * mult * strike * dfx(d);
+      strikeCZK += absQty * mult * strike * dfx(d) * r;
       if (underP != null) {
-        mktUSD += absQty * mult * underP;
-        mktCZK += absQty * mult * underP * r;
+        mktUSD += absQty * mult * underP * dfx(d);
+        mktCZK += absQty * mult * underP * dfx(d) * r;
         hasMkt = true;
       }
     });
@@ -3014,6 +3151,7 @@ function zpracujDerivaty() {
     </div>`;
 
   out.innerHTML = lcSection + scSection + lpSection + spSection + recapSection;
+  relabelCurrency(out);
 }
 
 // ── Positions ────────────────────────────────────────────────────────
@@ -3039,8 +3177,8 @@ function filterPos() {
       <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${p.desc.slice(0,30)}</td>
       <td>${typeBadge(p.type)}</td>
       <td>${fmtN(p.qty,0)}</td>
-      <td>${fmtN(p.openP,2)}</td>
-      <td>${fmtN(p.markP,2)}</td>
+      <td>${fmtN(p.openP,2)}${p.currency !== BASE() ? ' ' + p.currency : ''}</td>
+      <td>${fmtN(p.markP,2)}${p.currency !== BASE() ? ' ' + p.currency : ''}</td>
       <td>${fmtN(p.mktVal,0)}</td>
       <td>${fmtN(parseFloat(p.mktVal||0)*G.rate,0)}</td>
       <td>${fmtN(p.cost,0)}</td>
@@ -3058,10 +3196,21 @@ function showTab(id) {
   const tabs = ['summary','positions','trades','pnl','derivatives','dividends','brokerinterest','otherfees','deposits'];
   document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
   document.getElementById('panel-'+id).classList.add('active');
+  if (id === 'summary' && G.data) { drawChart(); drawPerfChart(); drawPieChart(); }
 }
 
 // ── Sortable columns ─────────────────────────────────────────────────
 const _sortState = {};
+// Sort key of a cell: dd.mm.yyyy → YYYYMMDD number, cs-CZ formatted number
+// ("1 234,56 EUR", "+12,5 %") → number, anything else → text
+function sortKey(cell) {
+  if (!cell) return '';
+  const t  = cell.textContent.trim();
+  const dm = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (dm) return Number(dm[3] + dm[2].padStart(2,'0') + dm[1].padStart(2,'0'));
+  const n = t.replace(/[\s  +$%]|Kč|[A-Z]{3}$/g, '').replace(/−/g, '-').replace(',', '.');
+  return /^-?\d+(\.\d+)?$/.test(n) ? Number(n) : t;
+}
 function sortTable(tableId, colIdx) {
   const table = document.getElementById(tableId);
   const tbody = table.querySelector('tbody');
@@ -3071,11 +3220,9 @@ function sortTable(tableId, colIdx) {
   const asc = _sortState[key] === 'asc';
 
   rows.sort((a, b) => {
-    const av = a.cells[colIdx]?.textContent.trim().replace(/[+$Kč %,]/g,'') || '';
-    const bv = b.cells[colIdx]?.textContent.trim().replace(/[+$Kč %,]/g,'') || '';
-    const an = parseFloat(av.replace(/\s/g,'')), bn = parseFloat(bv.replace(/\s/g,''));
-    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
-    return asc ? av.localeCompare(bv, 'cs') : bv.localeCompare(av, 'cs');
+    const av = sortKey(a.cells[colIdx]), bv = sortKey(b.cells[colIdx]);
+    if (typeof av === 'number' && typeof bv === 'number') return asc ? av - bv : bv - av;
+    return asc ? String(av).localeCompare(String(bv), 'cs') : String(bv).localeCompare(String(av), 'cs');
   });
 
   table.querySelectorAll('th').forEach(th => {
@@ -3092,8 +3239,6 @@ function exportXLSX() {
   if (!G.data) return;
   const { account, trades, positions, cashTxns, pnl, derivatives, summary, changeInNAV } = G.data;
   const r = G.rate;
-
-  const VAT = 0.21;
 
   // ── 1. Přehled ──
   const totalMV   = positions.reduce((s,p) => s + parseFloat(p.mktVal||0), 0);
@@ -3140,7 +3285,7 @@ function exportXLSX() {
 
   // ── 3. Obchody ──
   const sheetObchody = [
-    ['Datum','Symbol','Popis','Typ','Strana','Množství','Cena USD','Proceeds USD','Komise USD','Net cash USD','P&L USD','P&L CZK'],
+    ['Datum','Symbol','Popis','Typ','Strana','Množství','Cena (v měně obchodu)','Proceeds USD','Komise USD','Net cash USD','P&L USD','P&L CZK'],
     ...trades.map(t => [
       t.date, t.symbol, t.desc, t.type, t.side,
       +parseFloat(t.qty||0).toFixed(4),
@@ -3208,16 +3353,17 @@ function exportXLSX() {
   // ── 8. Poplatky (s DPH) ──
   const ofRows = cashTxns.filter(c => c.type === 'Other Fees');
   const sheetPoplatky = [
-    ['Datum','Symbol','Popis','Typ','Částka USD','DPH 21 % USD','Celkem s DPH USD','Celkem s DPH CZK'],
+    ['Datum','Symbol','Popis','Typ','Částka USD','DPH USD','Celkem s DPH USD','Celkem s DPH CZK'],
     ...ofRows.map(c => {
       const amt   = parseFloat(c.amount||0);
-      const vat   = amt * VAT;
+      const vat   = ofVat(c);
       const total = amt + vat;
       return [
         c.date, c.symbol||'', c.desc, c.type,
         +amt.toFixed(2), +vat.toFixed(2), +total.toFixed(2), +(total*r).toFixed(2),
       ];
     }),
+    ...(ofRows.length ? [[], [VAT_NOTES[G.data.vatMode]]] : []),
   ];
 
   // ── 9. Vklady/výběry ──
@@ -3239,6 +3385,10 @@ function exportXLSX() {
 
   const wb = XLSX.utils.book_new();
   const addSheet = (name, data) => {
+    // Header rows (all text) get the account's base currency instead of "USD"
+    data = data.map(row => row.length > 1 && row.every(c => typeof c === 'string')
+      ? row.map(c => c.replace(/\bUSD\b/g, BASE()))
+      : row);
     const ws = XLSX.utils.aoa_to_sheet(data);
 
     // Apply number format with thousands separator to all numeric cells
@@ -3276,13 +3426,7 @@ function exportXLSX() {
   // ── Deriváty — vše na jednom listu ──
   const derRows = derivatives || [];
 
-  const getUnderXlsx = d => {
-    const key = `underPrice_${d.conid}`;
-    const manP = G.manualUnderPrices?.[key] ? parseFloat(G.manualUnderPrices[key]) : null;
-    const inp  = document.querySelector(`input[onchange*="${key}"]`);
-    const domP = inp && inp.value ? parseFloat(inp.value) : null;
-    return manP || domP || (d.underlyingPrice ? parseFloat(d.underlyingPrice) : null);
-  };
+  const getUnderXlsx = underPriceFor;   // same lookup as "Zpracuj deriváty" on screen
 
   const buildOptRows = rows => rows.map(d => {
     const qty    = parseFloat(d.qty||0);
@@ -3290,9 +3434,9 @@ function exportXLSX() {
     const strike = parseFloat(d.strike||0);
     const underP = getUnderXlsx(d);
     const absQty = Math.abs(qty);
-    const strikeUSD = absQty * mult * strike;
+    const strikeUSD = absQty * mult * strike * dfx(d);
     const strikeCZK = strikeUSD * r;
-    const mktUSD    = underP != null ? absQty * mult * underP : null;
+    const mktUSD    = underP != null ? absQty * mult * underP * dfx(d) : null;
     const mktCZK    = mktUSD != null ? mktUSD * r : null;
     return [
       d.currency, d.symbol, d.conid, d.underlying,
@@ -3355,7 +3499,7 @@ function exportXLSX() {
     // ── Sekce 1: Otevřené pozice ──
     ['OTEVŘENÉ POZICE OPCÍ'],
     ['Měna','Symbol','Contract ID','Podklad','Expirace','Typ','Strike','Množství','Multiplier',
-     'Pořizovací cena USD','Akt. cena USD','Akt. cena CZK','Nerealizovaný P&L USD','Nerealizovaný P&L CZK'],
+     'Pořizovací cena USD','Akt. cena (v měně opce)','Akt. cena CZK','Nerealizovaný P&L USD','Nerealizovaný P&L CZK'],
     ...derivatives.map(d => {
       const markP = parseFloat(d.markPrice||0);
       const unr   = parseFloat(d.unreal||0);
@@ -3366,7 +3510,7 @@ function exportXLSX() {
         +parseFloat(d.qty||0),
         +parseFloat(d.multiplier||1),
         +parseFloat(d.costBasis||0).toFixed(2),
-        +markP.toFixed(4), +(markP*r).toFixed(2),
+        +markP.toFixed(4), +(markP*dfx(d)*r).toFixed(2),
         +unr.toFixed(2), +(unr*r).toFixed(2),
       ];
     }),
@@ -3451,7 +3595,7 @@ async function printPDF() {
       <div style="background:#0a0e1a;color:#fff;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-family:Arial,sans-serif;font-size:11px;margin-bottom:0">
         <strong style="font-size:13px">ReportReader</strong>
         <span>${a.name} · ${a.id}</span>
-        <span>USD/CZK ${r.toFixed(4)}</span>
+        <span>${BASE()}/CZK ${r.toFixed(4)}</span>
       </div>
       <div style="background:#1d4ed8;color:#fff;padding:4px 12px;font-family:Arial,sans-serif;font-size:10px;text-align:center;margin-bottom:12px">
         Report za období ${a.from} – ${a.to}

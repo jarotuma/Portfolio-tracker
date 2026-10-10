@@ -1,0 +1,3571 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReportReader</title>
+<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAMAEBAAAAEAIABnAQAANgAAACAgAAABACAA5QIAAJ0BAAAwMAAAAQAgAH4EAACCBAAAiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABLklEQVR42oXSvS9DYRQG8Gf21RbVtMXV1EV70/qIIIIIIkwmk8lkMpksJpPJZDKZTJ1MJpPJ//R4T9Jzc5zcez37L+c573swMtHAaCnCWCXm+FSCUnUd5do2K/V9TjaPOT13zmp0wZnWJWvtK9TjazSWb9js3GI2uYPFDJgBIwfTYAbM+d49PGYBpsOM+g/EsLbFKMCweGHtEboz6KLYRys7bm08IX0wiZ0skckSW1sSMANme/OZ6YNJbG2J1JbY2hLFi1svhD6Yjz6Yj8XxzivTB5PYyVpbkjVZ8NLuG+F39rXtzhKLV/beCb/zf5MlijsHAyLrPM0/+9oIGEOM7uEHkHWeOZgGM2AmR59A1nnmYDrM3skXkXWeBRgW90+/oTv/Oc+CyZDailfPfvAL5JnfetjBeeoAAAAASUVORK5CYIKJUE5HDQoaCgAAAA1JSERSAAAAIAAAACAIBgAAAHN6evQAAAKsSURBVHjapZbvh1RRHMaf17vt7OzszM7O7OzOzs+d2dmZna2tra2tra2tTURERERERERkiYiIiIiIiIiIiIiIiIjoH3o6d91zu07n3HPc83Bf3Ref74/n+ToYyZQxkqlgdLyK0Wwd+yZaHMt1MDbZQyY/wHhhBeNTq8wW15idXudEaYO58iZzM1ucrGwzP7vD/NwFFqoXWZi/xKnaZRbrV1hsXOV08xpKresotW+gvHAT5c4tznRvo7J4B5XeXcwu3UMczhBOAaeAM4QjJZwxOEM4BZwCzgA+17+PJDjDzpESzgQ4BVx8u4iPXQcPOkdKOGNj18FZHTyADU4POC1wVpcfEqHhkuDwgCMJPj98BOn2pM7h0TkS4KytPIYtagEcHmNH6HYtvLb/CRCLGmKGQwwOj53vRS1we2A4OXYJrx94Cm3nNqlwm5TOKeAUcDZWn1F7ZGxSO7cWYIA3Dj6n9shImcYuJccuZTKclApvHnpB7ZGJCjDsPCog3LmUye1SKry59pLQHRkpk+GkpOGkDG6P/qvw1uFX1B6ZyGwGt0cjD93+r4BdreGiAhR4+8hrao+MTep5tUnXeQBvr7+h9sjYpJ5XawEG+MLRt9QeGSnTzlW3S7nsPA7vHHtH6KIWFWDYuer2KGYOO4/DOxvvRQEOObe53ZRzKRO8e/wD4ZJzm9tNOZcywbsnPhIuOffduZQKX9z8JApwyLnvzqMCFHjv5GfC5elsunC6267AIcYO0TkEHCEcAg4BR+/UF8Dl6ZwSzhj8v84D+NLWV8Dl6ZwSzgQ4BZz9098Al6dzSjhjY9fB2T/zHXB5OqeE0wLnYPsH4fJ09oAjCT44+xNweTp7dI4EOJfP/QJcns4eY0fodi18uPMbcHk6e+x8L2qB2wPDybFL+PD8H/wF4le8I7qKcwMAAAAASUVORK5CYIKJUE5HDQoaCgAAAA1JSERSAAAAMAAAADAIBgAAAFcC+YcAAARFSURBVHjatZnra1RXFMXX52gyeT8mycwkk8lrMpnEvJqmMY3WV0RERKSUUkoppYgEERFFRESklFJKKSkiIlJKKaWUUkoppZQiUkoREf+f5b4yN54zzj1zzrnHDfvz/a3LPmsv2Ghpy6KlbRAtmWHsyuSxq30EuzuK0iXs7pxga9cUWrvKaOuuoK2nikzPPDK9C8j0LaG9b4Xt/avs6F9jx8A6O7Ib7MxusnNwP7uGDkgfYvfwEXbnjkofY0/+OHsKJ9hbOMnekVPsHT3NvtF32Vd8D/3F99E/9gEGSh9Kf4SB8Y+RnfhE+lMOTp7B4NRZ6W0MTZ/DUPk8hssXMDxzEY3gKfCswUuXKfAUeNbBIxA8G8BT4FmDp8BLb1PgqcLnKpfgAk+BpwKPQPB0gKfAM4bPVS7DFZ61sYngEQiejvAUeEbwudkr8IGPxwaB4OkBT4FnfvYq4gfrCh/9eQSCZ+3BusIzX70G1W1c4KM/j0DwVNzGBZ6FuevwhWdAeHrCS98gaj7vA4+A8PCBL8zfRLykfP48Av55eMBzZM9niDesz9gg4NjAA176c6jxwBUeAWc+jgdO8KMLX8An28TwCPhg1XhgDT+6+CXqs40WD1wrCd61bOGLi1+hHh61DRstKTgLSPjzrhVt2GhJRT4fu030YOvhi0tfwzg2rpU0Ns4CGv95CjwFngJPgWdx+RaNkVgtmwerljrzatm4jVom+LHl2zRGYrVsHqxa6oPVBFhYpS4gGX5s5RsaI7EmwMJtdAEv3UYtG6tUywRfWrlDYyRWy8Yq1VKtUhNg4fOaAAN86Y27NEZiTYCFz2sCFJ/XLNLC59UywZdW79EYiTUBFktKF/Ay2+gCmi4pXYABfnz1PmGKxK6VFIldq9nYxPDjbz6gMRI7C0iIxK5lCz+x9i2NkdhdQONI7CzAEn5i7TsaI7G2ZS3cJmlJqeXrNo3gJ9/6nsZIrG1WC7dJWlK6AD+3aQQ/uf4DjZFYF9DcbZKWlCbA020awU+u/ygCPLKN65KyyTZq2cJP7f2J8Mk2rkvKJttoAizhpzZ+FgEe2cZ1SdlkG02AJfz0xi8iwCPbvG63UcsEP/32r4RPtnndbqOWCX568zcRYDgu1LnNK8eFgG4DgYfAQ8ZG+24NHgIPgYfAQ+Ah8Chv/g6kOS7YBLNmeb7253fgZebRZGx24Mv7/gDSHBcCwdMB/sXYxPAz+/4E0hwXAsHTEZ4Czwh+Zv9fQJrjQiB4esBT4Fl5528gzXEhEHxklfCAl/4HSHNcCAQf/Xl4wLNy4CGQ5rgQCJ6e8Jw9+IhIc1wICA8f+NmD/wJpjgsB/zw84Fk99B+Q5rgQcGzgAc/q4f+BNMeFgDMfxwMn+Orhx0Ca40LAB6vGA2v4uSNPUJ9t4HJcCOg2UOOBLfzc1lPUw8PluBDQKlV4RBs2WlKRz8duEz3Yevj5rWd4DubxfrpqgjcZAAAAAElFTkSuQmCC">
+<script>
+// Set favicon dynamically via blob URL — works reliably in Chrome for local files
+(function() {
+  const b64 = "AAABAAMAEBAAAAEAIABnAQAANgAAACAgAAABACAA5QIAAJ0BAAAwMAAAAQAgAH4EAACCBAAAiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABLklEQVR42oXSvS9DYRQG8Gf21RbVtMXV1EV70/qIIIIIIkwmk8lkMpksJpPJZDKZTJ1MJpPJ//R4T9Jzc5zcez37L+c573swMtHAaCnCWCXm+FSCUnUd5do2K/V9TjaPOT13zmp0wZnWJWvtK9TjazSWb9js3GI2uYPFDJgBIwfTYAbM+d49PGYBpsOM+g/EsLbFKMCweGHtEboz6KLYRys7bm08IX0wiZ0skckSW1sSMANme/OZ6YNJbG2J1JbY2hLFi1svhD6Yjz6Yj8XxzivTB5PYyVpbkjVZ8NLuG+F39rXtzhKLV/beCb/zf5MlijsHAyLrPM0/+9oIGEOM7uEHkHWeOZgGM2AmR59A1nnmYDrM3skXkXWeBRgW90+/oTv/Oc+CyZDailfPfvAL5JnfetjBeeoAAAAASUVORK5CYIKJUE5HDQoaCgAAAA1JSERSAAAAIAAAACAIBgAAAHN6evQAAAKsSURBVHjapZbvh1RRHMaf17vt7OzszM7O7OzOzs+d2dmZna2tra2tra2tTURERERERERkiYiIiIiIiIiIiIiIiIjoH3o6d91zu07n3HPc83Bf3Ref74/n+ToYyZQxkqlgdLyK0Wwd+yZaHMt1MDbZQyY/wHhhBeNTq8wW15idXudEaYO58iZzM1ucrGwzP7vD/NwFFqoXWZi/xKnaZRbrV1hsXOV08xpKresotW+gvHAT5c4tznRvo7J4B5XeXcwu3UMczhBOAaeAM4QjJZwxOEM4BZwCzgA+17+PJDjDzpESzgQ4BVx8u4iPXQcPOkdKOGNj18FZHTyADU4POC1wVpcfEqHhkuDwgCMJPj98BOn2pM7h0TkS4KytPIYtagEcHmNH6HYtvLb/CRCLGmKGQwwOj53vRS1we2A4OXYJrx94Cm3nNqlwm5TOKeAUcDZWn1F7ZGxSO7cWYIA3Dj6n9shImcYuJccuZTKclApvHnpB7ZGJCjDsPCog3LmUye1SKry59pLQHRkpk+GkpOGkDG6P/qvw1uFX1B6ZyGwGt0cjD93+r4BdreGiAhR4+8hrao+MTep5tUnXeQBvr7+h9sjYpJ5XawEG+MLRt9QeGSnTzlW3S7nsPA7vHHtH6KIWFWDYuer2KGYOO4/DOxvvRQEOObe53ZRzKRO8e/wD4ZJzm9tNOZcywbsnPhIuOffduZQKX9z8JApwyLnvzqMCFHjv5GfC5elsunC6267AIcYO0TkEHCEcAg4BR+/UF8Dl6ZwSzhj8v84D+NLWV8Dl6ZwSzgQ4BZz9098Al6dzSjhjY9fB2T/zHXB5OqeE0wLnYPsH4fJ09oAjCT44+xNweTp7dI4EOJfP/QJcns4eY0fodi18uPMbcHk6e+x8L2qB2wPDybFL+PD8H/wF4le8I7qKcwMAAAAASUVORK5CYIKJUE5HDQoaCgAAAA1JSERSAAAAMAAAADAIBgAAAFcC+YcAAARFSURBVHjatZnra1RXFMXX52gyeT8mycwkk8lrMpnEvJqmMY3WV0RERKSUUkoppYgEERFFRESklFJKKSkiIlJKKaWUUkoppZQiUkoREf+f5b4yN54zzj1zzrnHDfvz/a3LPmsv2Ghpy6KlbRAtmWHsyuSxq30EuzuK0iXs7pxga9cUWrvKaOuuoK2nikzPPDK9C8j0LaG9b4Xt/avs6F9jx8A6O7Ib7MxusnNwP7uGDkgfYvfwEXbnjkofY0/+OHsKJ9hbOMnekVPsHT3NvtF32Vd8D/3F99E/9gEGSh9Kf4SB8Y+RnfhE+lMOTp7B4NRZ6W0MTZ/DUPk8hssXMDxzEY3gKfCswUuXKfAUeNbBIxA8G8BT4FmDp8BLb1PgqcLnKpfgAk+BpwKPQPB0gKfAM4bPVS7DFZ61sYngEQiejvAUeEbwudkr8IGPxwaB4OkBT4FnfvYq4gfrCh/9eQSCZ+3BusIzX70G1W1c4KM/j0DwVNzGBZ6FuevwhWdAeHrCS98gaj7vA4+A8PCBL8zfRLykfP48Av55eMBzZM9niDesz9gg4NjAA176c6jxwBUeAWc+jgdO8KMLX8An28TwCPhg1XhgDT+6+CXqs40WD1wrCd61bOGLi1+hHh61DRstKTgLSPjzrhVt2GhJRT4fu030YOvhi0tfwzg2rpU0Ns4CGv95CjwFngJPgWdx+RaNkVgtmwerljrzatm4jVom+LHl2zRGYrVsHqxa6oPVBFhYpS4gGX5s5RsaI7EmwMJtdAEv3UYtG6tUywRfWrlDYyRWy8Yq1VKtUhNg4fOaAAN86Y27NEZiTYCFz2sCFJ/XLNLC59UywZdW79EYiTUBFktKF/Ay2+gCmi4pXYABfnz1PmGKxK6VFIldq9nYxPDjbz6gMRI7C0iIxK5lCz+x9i2NkdhdQONI7CzAEn5i7TsaI7G2ZS3cJmlJqeXrNo3gJ9/6nsZIrG1WC7dJWlK6AD+3aQQ/uf4DjZFYF9DcbZKWlCbA020awU+u/ygCPLKN65KyyTZq2cJP7f2J8Mk2rkvKJttoAizhpzZ+FgEe2cZ1SdlkG02AJfz0xi8iwCPbvG63UcsEP/32r4RPtnndbqOWCX568zcRYDgu1LnNK8eFgG4DgYfAQ8ZG+24NHgIPgYfAQ+Ah8Chv/g6kOS7YBLNmeb7253fgZebRZGx24Mv7/gDSHBcCwdMB/sXYxPAz+/4E0hwXAsHTEZ4Czwh+Zv9fQJrjQiB4esBT4Fl5528gzXEhEHxklfCAl/4HSHNcCAQf/Xl4wLNy4CGQ5rgQCJ6e8Jw9+IhIc1wICA8f+NmD/wJpjgsB/zw84Fk99B+Q5rgQcGzgAc/q4f+BNMeFgDMfxwMn+Orhx0Ca40LAB6vGA2v4uSNPUJ9t4HJcCOg2UOOBLfzc1lPUw8PluBDQKlV4RBs2WlKRz8duEz3Yevj5rWd4DubxfrpqgjcZAAAAAElFTkSuQmCC";
+  try {
+    const bin = atob(b64);
+    const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const blob = new Blob([buf], {type: 'image/x-icon'});
+    const url  = URL.createObjectURL(blob);
+    const link = document.getElementById('favicon-link') || document.createElement('link');
+    link.id   = 'favicon-link';
+    link.rel  = 'icon';
+    link.type = 'image/x-icon';
+    link.href = url;
+    document.head.appendChild(link);
+  } catch(e) {}
+})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #0a0e1a;
+  --surface:  #111827;
+  --surface2: #1a2235;
+  --border:   #1f2d45;
+  --border2:  #2a3f5f;
+  --accent:   #60a5fa;
+  --accent2:  #3b82f6;
+  --green:    #10b981;
+  --red:      #ef4444;
+  --amber:    #f59e0b;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --muted2:   #94a3b8;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+
+:root.light {
+  --bg:       #f8f9fc;
+  --surface:  #ffffff;
+  --surface2: #f1f4f9;
+  --border:   #dde2ec;
+  --border2:  #c5cdd9;
+  --accent:   #3b82f6;
+  --accent2:  #2563eb;
+  --green:    #059669;
+  --red:      #dc2626;
+  --amber:    #d97706;
+  --text:     #0f172a;
+  --muted:    #64748b;
+  --muted2:   #475569;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── Drop overlay ── */
+#drop-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px;
+  transition: opacity .3s;
+}
+#drop-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.drop-zone {
+  width: 480px; max-width: 90vw;
+  border: 2px dashed var(--border2);
+  border-radius: 16px;
+  padding: 56px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(59,130,246,.06);
+}
+.drop-icon {
+  width: 56px; height: 56px;
+  margin: 0 auto 20px;
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.drop-zone h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.drop-zone p  { color: var(--muted2); font-size: 13px; }
+.drop-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.brand-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* Rate modal */
+#rate-modal {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  display: none;
+}
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 32px 36px;
+  width: 380px;
+  max-width: 90vw;
+}
+.modal-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.modal-box p  { color: var(--muted2); margin-bottom: 20px; font-size: 13px; }
+.modal-box input[type=number] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  outline: none;
+}
+.modal-box input:focus { border-color: var(--accent); }
+
+/* ── App shell ── */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* Header */
+.header {
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky; top: 0; z-index: 100;
+}
+.header-brand {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.header-sep { width: 1px; height: 20px; background: var(--border); }
+.header-account { color: var(--muted2); font-size: 12px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.header-rate {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.header-rate:hover { border-color: var(--amber); }
+
+.btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--surface2); border-color: var(--border2); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-open { margin-left: auto; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  gap: 4px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .15s, border-color .15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Content */
+.content { flex: 1; padding: 24px; overflow: auto; }
+
+/* Summary cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+.card-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.card-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+.card-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.card-value.pos { color: var(--green); }
+.card-value.neg { color: var(--red); }
+
+/* Section header */
+.section-hdr {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted2);
+}
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted2);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* Table */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: auto;
+  max-height: calc(100vh - 280px);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+thead tr {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface2);
+}
+thead th {
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3) { text-align: left; }
+thead th:hover { color: var(--text); }
+thead th.sort-asc::after  { content: ' ↑'; color: var(--accent); }
+thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.03); }
+
+td {
+  padding: 9px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted2);
+  white-space: nowrap;
+  text-align: right;
+}
+td:first-child, td.left { text-align: left; color: var(--text); font-weight: 500; }
+td:nth-child(2) { text-align: left; color: var(--muted2); font-family: var(--sans); }
+td.pos { color: var(--green); }
+td.neg { color: var(--red); }
+td.neutral { color: var(--text); }
+
+.type-badge {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: .04em;
+}
+.type-STK  { background: rgba(59,130,246,.15); color: #93c5fd; }
+.type-OPT  { background: rgba(245,158,11,.15); color: #fcd34d; }
+.type-FUT  { background: rgba(168,85,247,.15);  color: #c084fc; }
+.type-FOP  { background: rgba(236,72,153,.15);  color: #f9a8d4; }
+.type-BOND { background: rgba(20,184,166,.15);  color: #5eead4; }
+.type-CASH { background: rgba(16,185,129,.15); color: #6ee7b7; }
+.type-BUY  { background: rgba(16,185,129,.12); color: #6ee7b7; }
+.type-SELL { background: rgba(239,68,68,.12);  color: #fca5a5; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex; gap: 10px; align-items: center;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.filter-bar input, .filter-bar select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 7px 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+.filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+.filter-bar input { width: 180px; }
+.filter-bar select option { background: var(--surface2); }
+.filter-count { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Export buttons */
+.export-bar {
+  display: flex; gap: 8px; margin-left: auto;
+}
+
+/* Empty state */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.der-section-title {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted2);
+  margin-bottom: 10px; padding: 0 2px;
+}
+
+/* Totals footer */
+tfoot tr { border-top: 1px solid var(--border2); background: var(--surface2); }
+tfoot td {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 10px 14px;
+  text-align: right;
+}
+tfoot td:first-child { text-align: left; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; color: var(--muted); }
+tfoot td.pos { color: var(--green); }
+tfoot td.neg { color: var(--red); }
+tfoot td.tot { color: var(--amber); }
+
+/* Two-column chart layout */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+.chart-half { display: flex; flex-direction: column; min-width: 0; }
+@media (max-width: 1100px) { .charts-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px)  { .charts-row { grid-template-columns: 1fr; } }
+
+/* Chart title */
+.chart-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 8px;
+  padding: 0 2px;
+  letter-spacing: .01em;
+}
+
+/* Controls below chart */
+.chart-toolbar-below {
+  margin-top: 10px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+/* Chart */
+.chart-section { margin-top: 20px; }
+.chart-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; flex-wrap: wrap;
+}
+.chart-toolbar .ct { font-size: 11px; color: var(--muted); margin-right: 4px; }
+.chart-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 11px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: all .15s;
+}
+.chart-btn:hover { background: var(--surface2); color: var(--text); }
+.chart-btn.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+.chart-btn.bm-active { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,.08); }
+.chart-sep { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+.chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px 12px;
+  position: relative;
+}
+.chart-wrap canvas { cursor: pointer; }
+#chart-canvas { width: 100%; display: block; }
+.chart-legend {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--muted2);
+}
+.legend-dot { width: 10px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+.chart-tooltip {
+  position: absolute;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  pointer-events: none;
+  display: none;
+  z-index: 50;
+  min-width: 180px;
+}
+.chart-tooltip-date { color: var(--muted); margin-bottom: 4px; font-size: 10px; }
+.chart-tooltip-row { display: flex; justify-content: space-between; gap: 16px; margin-top: 2px; }
+.chart-tooltip-label { color: var(--muted2); }
+.chart-tooltip-val { font-family: var(--mono); font-weight: 600; }
+.bm-status {
+  font-size: 10px; color: var(--muted);
+  margin-left: auto;
+  font-style: italic;
+}
+
+/* Print */
+@media print {
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+
+  /* Hide UI chrome */
+  .header, .tabs, .filter-bar, .export-bar, .btn, .header-rate,
+  #drop-overlay, #bm-modal, #chart-zoom-modal,
+  .chart-toolbar, .chart-toolbar-below, .bm-status { display: none !important; }
+
+  /* Reset layout */
+  body { background: #fff !important; color: #000 !important; font-size: 10px; }
+  .content { padding: 0 !important; }
+  .table-wrap { max-height: none !important; overflow: visible !important; border: none !important; }
+  td, th { color: #000 !important; font-size: 9px !important; }
+  th { background: #e8edf5 !important; }
+  tr:nth-child(even) td { background: #f8f9fc !important; }
+  .card { border: 1px solid #ccc !important; background: #fff !important; }
+  .card-value, .card-label, .card-sub { color: #000 !important; }
+
+  /* Show ALL panels during print */
+  .tab-panel { display: block !important; opacity: 1 !important; }
+
+  /* Each panel = new page with title */
+  .print-panel-wrap { page-break-before: always; }
+  .print-panel-wrap:first-child { page-break-before: avoid; }
+  .print-section-title {
+    font-size: 13px; font-weight: 700; color: #1d4ed8;
+    border-bottom: 2px solid #1d4ed8; padding-bottom: 4px;
+    margin-bottom: 10px;
+  }
+
+  /* Charts: hide canvases in print — they don't export well */
+  canvas { display: none !important; }
+  .chart-wrap, .charts-row { display: none !important; }
+  .chart-legend { display: none !important; }
+
+  /* Derivatives output section */
+  #der-output { display: block !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Drop overlay -->
+<div id="drop-overlay">
+  <div class="brand-title">Report Reader · Interactive Brokers</div>
+  <div class="drop-zone" id="drop-zone">
+    <div class="drop-icon">📄</div>
+    <h2>Přetáhněte XML soubor</h2>
+    <p>nebo klikněte pro výběr souboru<br>Flex Query report z Interactive Brokers</p>
+    <input type="file" id="file-input" accept=".xml">
+  </div>
+  <div style="margin-top:20px;color:var(--muted);font-size:12px;letter-spacing:.02em">
+    &copy; Jiří Javorník — 2026
+  </div>
+</div>
+
+<!-- Rate modal -->
+<div id="rate-modal">
+  <div class="modal-box">
+    <h3>Kurz USD / CZK</h3>
+    <p>Zadejte kurz pro přepočet všech hodnot do korun</p>
+    <input type="number" id="rate-input" value="22.50" step="0.01" min="1" max="50">
+    <button class="btn btn-primary" style="width:100%" onclick="confirmRate()">Potvrdit a načíst</button>
+  </div>
+</div>
+
+<!-- Benchmark CSV import modal -->
+<div id="bm-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.75);align-items:center;justify-content:center">
+  <div class="modal-box" style="width:480px;max-width:94vw">
+    <h3>Importovat benchmark z CSV</h3>
+    <p style="margin-bottom:14px">Stáhněte historická data z <strong>finance.yahoo.com</strong> nebo <strong>stooq.com</strong> jako CSV a přetáhněte soubor sem. Podporované formáty: Yahoo Finance, stooq, nebo libovolné CSV se sloupci <code>Date,Close</code>.</p>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted2);margin-bottom:14px;line-height:1.8">
+      <strong style="color:var(--text)">Jak stáhnout z Yahoo Finance:</strong><br>
+      1. Otevřete <code>finance.yahoo.com/quote/^GSPC/history</code><br>
+      2. Nastavte datum od–do shodné s vaším reportem<br>
+      3. Klikněte <em>Download</em> → uložte CSV<br>
+      <br>
+      <strong style="color:var(--text)">Nebo z stooq.com:</strong><br>
+      Přímý odkaz: <code id="bm-stooq-link" style="word-break:break-all"></code>
+    </div>
+    <div id="bm-drop" style="border:2px dashed var(--border2);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;margin-bottom:14px">
+      <div style="font-size:18px;margin-bottom:6px">📂</div>
+      <div style="font-size:13px;color:var(--muted2)">Přetáhněte CSV soubor nebo klikněte pro výběr</div>
+      <input type="file" id="bm-file-input" accept=".csv,.txt" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+    </div>
+    <div style="display:flex;gap:10px">
+      <select id="bm-target" style="flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px">
+        <option value="spx">S&P 500</option>
+        <option value="ndx">Nasdaq 100</option>
+      </select>
+      <button class="btn" onclick="closeBmImport()">Zrušit</button>
+    </div>
+    <div id="bm-import-status" style="margin-top:10px;font-size:12px;color:var(--muted2)"></div>
+  </div>
+</div>
+
+<!-- Chart zoom modal -->
+<div id="chart-zoom-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.88);flex-direction:column;align-items:center;justify-content:center;padding:24px" onclick="closeChartZoom(event)">
+  <div style="width:96vw;max-width:1400px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span id="zoom-title" style="font-size:13px;font-weight:500;color:var(--text)"></span>
+      <button onclick="closeChartZoom()" style="background:none;border:none;color:var(--muted2);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px" title="Zavřít (Esc)">✕</button>
+    </div>
+    <div style="position:relative">
+      <canvas id="zoom-canvas" style="width:100%;display:block"></canvas>
+      <div class="chart-tooltip" id="zoom-tooltip">
+        <div class="chart-tooltip-date" id="zt-date"></div>
+        <div id="zt-rows"></div>
+      </div>
+    </div>
+    <div class="chart-legend" id="zoom-legend" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- Main app -->
+<div id="app">
+  <div class="header">
+    <span class="header-brand">Report Reader</span>
+    <div class="header-sep"></div>
+    <span class="header-account" id="hdr-account">—</span>
+    <span class="header-rate" id="hdr-rate" onclick="askRate(true)" title="Klikněte pro změnu kurzu">USD/CZK —</span>
+    <button class="btn" onclick="exportXLSX()">Excel export</button>
+    <button class="btn" onclick="printPDF()">Tisk / PDF</button>
+    <button class="btn" id="btn-theme" onclick="toggleTheme()" title="Přepnout světlý/tmavý režim" style="font-size:15px;padding:6px 10px">☀</button>
+    <label class="btn btn-primary btn-open" style="cursor:pointer">
+      Otevřít XML<input type="file" accept=".xml" onchange="handleFile(this.files[0])" style="display:none">
+    </label>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('summary')">Přehled</div>
+    <div class="tab" onclick="showTab('positions')">Pozice</div>
+    <div class="tab" onclick="showTab('trades')">Obchody</div>
+    <div class="tab" onclick="showTab('pnl')">P&amp;L</div>
+    <div class="tab" onclick="showTab('derivatives')">Deriváty</div>
+    <div class="tab" onclick="showTab('dividends')">Dividendy &amp; Daně</div>
+    <div class="tab" onclick="showTab('brokerinterest')">Úroky</div>
+    <div class="tab" onclick="showTab('otherfees')">Poplatky</div>
+    <div class="tab" onclick="showTab('deposits')">Vklady/výběry</div>
+  </div>
+
+  <div class="content">
+
+    <!-- SUMMARY -->
+    <div class="tab-panel active" id="panel-summary">
+      <div class="cards-grid" id="cards-usd"></div>
+      <div class="cards-grid" id="cards-czk"></div>
+
+      <div class="charts-row">
+        <!-- Graf 1: vývoj portfolia -->
+        <div class="chart-half">
+          <div class="chart-title" id="chart-title-1">Portfolio celkem za období</div>
+          <div class="chart-wrap">
+            <canvas id="chart-canvas" onclick="openChartZoom('portfolio')" title="Klikni pro zvětšení"></canvas>
+            <div class="chart-tooltip" id="chart-tooltip">
+              <div class="chart-tooltip-date" id="tt-date"></div>
+              <div id="tt-rows"></div>
+            </div>
+          </div>
+          <div class="chart-toolbar chart-toolbar-below">
+            <span class="ct">Styl:</span>
+            <button class="chart-btn" onclick="setChartType('line',this)">Linie</button>
+            <button class="chart-btn active" onclick="setChartType('area',this)">Plocha</button>
+            <button class="chart-btn" onclick="setChartType('bar',this)">Sloupce</button>
+            <div class="chart-sep"></div>
+            <span class="ct">Výnos:</span>
+            <button class="chart-btn active" id="btn-twr" onclick="setReturnMode('twr',this)" title="Time-Weighted Return — eliminuje vliv vkladů a výběrů">TWR</button>
+            <button class="chart-btn" id="btn-simple" onclick="setReturnMode('simple',this)" title="Prostý výnos — (konec − začátek) / začátek">Prostý</button>
+            <div class="chart-sep"></div>
+            <span class="ct">Zobrazit:</span>
+            <button class="chart-btn" id="btn-stocks" onclick="toggleSeries('stocks',this)">Akcie</button>
+            <button class="chart-btn" id="btn-options" onclick="toggleSeries('options',this)">Opce</button>
+            <div class="chart-sep"></div>
+            <span class="ct">Benchmark:</span>
+            <button class="chart-btn" id="btn-spx" onclick="toggleBenchmark('spx',this)">S&amp;P 500</button>
+            <button class="chart-btn" id="btn-ndx" onclick="toggleBenchmark('ndx',this)">Nasdaq 100</button>
+            <button class="chart-btn" id="btn-bm-csv" onclick="openBmImport()" title="Importovat benchmark z CSV souboru">+ CSV</button>
+            <span class="bm-status" id="bm-status"></span>
+          </div>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+
+        <!-- Graf 2: výkonnost akcií -->
+        <div class="chart-half">
+          <div class="chart-title" id="chart-title-2">Výkonnost akcií za období</div>
+          <div class="chart-wrap">
+            <canvas id="perf-canvas" onclick="openChartZoom('perf')" title="Klikni pro zvětšení"></canvas>
+            <div class="chart-tooltip" id="perf-tooltip">
+              <div class="chart-tooltip-date" id="pt-sym"></div>
+              <div id="pt-rows"></div>
+            </div>
+          </div>
+          <div class="chart-legend" id="perf-legend"></div>
+        </div>
+        <!-- Graf 3: alokace portfolia -->
+        <div class="chart-half">
+          <div class="chart-title" id="chart-title-3">Alokace akciového portfolia</div>
+          <div class="chart-wrap">
+            <canvas id="pie-canvas" onclick="openChartZoom('pie')" title="Klikni pro zvětšení"></canvas>
+            <div class="chart-tooltip" id="pie-tooltip">
+              <div class="chart-tooltip-date" id="pie-sym"></div>
+              <div id="pie-rows"></div>
+            </div>
+          </div>
+          <div class="chart-legend" id="pie-legend"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-trades">
+      <div class="filter-bar">
+        <input type="text" id="filter-trades" placeholder="Hledat symbol…" oninput="filterTrades()">
+        <select id="filter-trades-type" onchange="filterTrades()">
+          <option value="">Všechny typy</option>
+          <option value="STK">Akcie (STK)</option>
+          <option value="OPT">Opce (OPT)</option>
+          <option value="FUT">Futures (FUT)</option>
+          <option value="FOP">Futures opce (FOP)</option>
+          <option value="BOND">Dluhopisy (BOND)</option>
+        </select>
+        <select id="filter-trades-side" onchange="filterTrades()">
+          <option value="">BUY + SELL</option>
+          <option value="BUY">BUY</option>
+          <option value="SELL">SELL</option>
+        </select>
+        <span class="filter-count" id="count-trades"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-trades">
+          <thead><tr>
+            <th onclick="sortTable('tbl-trades',0)">Datum</th>
+            <th onclick="sortTable('tbl-trades',1)">Symbol</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-trades',3)">Strana</th>
+            <th onclick="sortTable('tbl-trades',4)" style="text-align:right">Množství</th>
+            <th onclick="sortTable('tbl-trades',5)">Cena USD</th>
+            <th onclick="sortTable('tbl-trades',6)">Proceeds USD</th>
+            <th onclick="sortTable('tbl-trades',7)">Komise USD</th>
+            <th onclick="sortTable('tbl-trades',8)">Net cash USD</th>
+            <th onclick="sortTable('tbl-trades',9)">P&amp;L USD</th>
+            <th onclick="sortTable('tbl-trades',10)">P&amp;L CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-trades"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- P&L -->
+    <div class="tab-panel" id="panel-pnl">
+      <div class="filter-bar">
+        <input type="text" id="filter-pnl" placeholder="Hledat symbol…" oninput="filterPnl()">
+        <select id="filter-pnl-type" onchange="filterPnl()">
+          <option value="">Všechny typy</option>
+          <option value="STK">Akcie (STK)</option>
+          <option value="OPT">Opce (OPT)</option>
+          <option value="FUT">Futures (FUT)</option>
+          <option value="FOP">Futures opce (FOP)</option>
+          <option value="BOND">Dluhopisy (BOND)</option>
+        </select>
+        <span class="filter-count" id="count-pnl"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-pnl">
+          <thead><tr>
+            <th onclick="sortTable('tbl-pnl',0)">Symbol</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-pnl',3)">Real. zisk ST USD</th>
+            <th onclick="sortTable('tbl-pnl',4)">Real. ztráta ST USD</th>
+            <th onclick="sortTable('tbl-pnl',5)">Real. celkem USD</th>
+            <th onclick="sortTable('tbl-pnl',6)">Real. celkem CZK</th>
+            <th onclick="sortTable('tbl-pnl',7)">Nerealizovaný USD</th>
+            <th onclick="sortTable('tbl-pnl',8)">Nerealizovaný CZK</th>
+            <th onclick="sortTable('tbl-pnl',9)">Total USD</th>
+            <th onclick="sortTable('tbl-pnl',10)">Total CZK</th>
+            <th onclick="sortTable('tbl-pnl',11)" title="Ocenění pozice na začátku sledovaného období">Ocenění začátek USD</th>
+            <th onclick="sortTable('tbl-pnl',12)" title="Ocenění pozice na konci sledovaného období">Ocenění konec USD</th>
+            <th onclick="sortTable('tbl-pnl',13)" title="Rozdíl ocenění USD (konec − začátek)">Rozdíl ocenění USD</th>
+            <th onclick="sortTable('tbl-pnl',14)" title="Ocenění pozice na začátku sledovaného období">Ocenění začátek CZK</th>
+            <th onclick="sortTable('tbl-pnl',15)" title="Ocenění pozice na konci sledovaného období">Ocenění konec CZK</th>
+            <th onclick="sortTable('tbl-pnl',16)" title="Rozdíl ocenění CZK (konec − začátek)">Rozdíl ocenění CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-pnl"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- DERIVÁTY -->
+    <div class="tab-panel" id="panel-derivatives">
+      <div class="filter-bar">
+        <input type="text" id="filter-der" placeholder="Hledat symbol…" oninput="filterDer()">
+        <select id="filter-der-pc" onchange="filterDer()">
+          <option value="">Call + Put</option>
+          <option value="C">Call</option>
+          <option value="P">Put</option>
+        </select>
+        <select id="filter-der-side" onchange="filterDer()">
+          <option value="">Long + Short</option>
+          <option value="Long">Long</option>
+          <option value="Short">Short</option>
+        </select>
+        <span class="filter-count" id="count-der"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-der">
+          <thead><tr>
+            <th onclick="sortTable('tbl-der',0)">Měna</th>
+            <th onclick="sortTable('tbl-der',1)">Symbol</th>
+            <th onclick="sortTable('tbl-der',2)">Contract ID</th>
+            <th onclick="sortTable('tbl-der',3)">Podklad</th>
+            <th id="th-under-price">Cena podkladu</th>
+            <th onclick="sortTable('tbl-der',5)">Expirace</th>
+            <th onclick="sortTable('tbl-der',6)">Typ</th>
+            <th onclick="sortTable('tbl-der',7)">Strike</th>
+            <th onclick="sortTable('tbl-der',8)">Množství</th>
+            <th onclick="sortTable('tbl-der',9)">Multiplier</th>
+            <th onclick="sortTable('tbl-der',10)">Pořizovací cena USD</th>
+            <th onclick="sortTable('tbl-der',11)">Akt. cena USD</th>
+            <th onclick="sortTable('tbl-der',12)">Akt. cena CZK</th>
+            <th onclick="sortTable('tbl-der',13)">Nerealizovaný P&amp;L USD</th>
+            <th onclick="sortTable('tbl-der',14)">Nerealizovaný P&amp;L CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-der"></tfoot>
+        </table>
+      </div>
+
+      <div style="margin-top:16px;display:flex;align-items:center;gap:14px">
+        <button class="btn btn-primary" onclick="zpracujDerivaty()" style="font-size:13px;padding:9px 24px">
+          Zpracuj deriváty
+        </button>
+        <span style="font-size:12px;color:var(--muted2);font-style:italic">Stiskni po doplnění cen podkladů</span>
+      </div>
+
+      <div id="der-output"></div>
+    </div>
+    <div class="tab-panel" id="panel-dividends">
+      <div class="filter-bar">
+        <input type="text" id="filter-divs" placeholder="Hledat symbol…" oninput="filterDivs()">
+        <select id="filter-divs-type" onchange="filterDivs()">
+          <option value="">Všechny typy</option>
+          <option value="Dividends">Dividendy</option>
+          <option value="Withholding Tax">Srážková daň</option>
+          <option value="Payment In Lieu Of Dividends">Platba místo div.</option>
+        </select>
+        <span class="filter-count" id="count-divs"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-divs">
+          <thead><tr>
+            <th onclick="sortTable('tbl-divs',0)">Datum</th>
+            <th onclick="sortTable('tbl-divs',1)">Symbol</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-divs',4)">Částka USD</th>
+            <th onclick="sortTable('tbl-divs',5)">Částka CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-divs"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- POSITIONS -->
+    <div class="tab-panel" id="panel-positions">
+      <div class="filter-bar">
+        <input type="text" id="filter-pos" placeholder="Hledat symbol…" oninput="filterPos()">
+        <select id="filter-pos-type" onchange="filterPos()">
+          <option value="">Všechny typy</option>
+          <option value="STK">Akcie (STK)</option>
+          <option value="OPT">Opce (OPT)</option>
+          <option value="FUT">Futures (FUT)</option>
+          <option value="FOP">Futures opce (FOP)</option>
+          <option value="BOND">Dluhopisy (BOND)</option>
+        </select>
+        <span class="filter-count" id="count-pos"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-pos">
+          <thead><tr>
+            <th onclick="sortTable('tbl-pos',0)">Symbol</th>
+            <th onclick="sortTable('tbl-pos',1)">ISIN</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-pos',4)">Pozice</th>
+            <th onclick="sortTable('tbl-pos',5)">Ot. cena</th>
+            <th onclick="sortTable('tbl-pos',6)">Akt. cena</th>
+            <th onclick="sortTable('tbl-pos',7)">Trž. hodnota USD</th>
+            <th onclick="sortTable('tbl-pos',8)">Trž. hodnota CZK</th>
+            <th onclick="sortTable('tbl-pos',9)">Náklady USD</th>
+            <th onclick="sortTable('tbl-pos',10)">Nerealizovaný USD</th>
+            <th onclick="sortTable('tbl-pos',11)">Nerealizovaný CZK</th>
+            <th onclick="sortTable('tbl-pos',12)">% NAV</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BROKER INTEREST -->
+    <div class="tab-panel" id="panel-brokerinterest">
+      <div class="filter-bar">
+        <input type="text" id="filter-bi" placeholder="Hledat…" oninput="filterBI()">
+        <select id="filter-bi-type" onchange="filterBI()">
+          <option value="">Všechny typy</option>
+          <option value="Bond Interest Received">Kupóny</option>
+          <option value="Bond Interest Paid">Cizí úroky</option>
+          <option value="Broker Interest Received">Přijaté úroky z hotovosti</option>
+          <option value="Broker Interest Paid">Placené úroky z hotovosti</option>
+        </select>
+        <span class="filter-count" id="count-bi"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-bi">
+          <thead><tr>
+            <th onclick="sortTable('tbl-bi',0)">Datum</th>
+            <th onclick="sortTable('tbl-bi',1)">Symbol</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-bi',4)">Částka USD</th>
+            <th onclick="sortTable('tbl-bi',5)">Částka CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-bi"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- OTHER FEES -->
+    <div class="tab-panel" id="panel-otherfees">
+      <div class="filter-bar">
+        <input type="text" id="filter-of" placeholder="Hledat…" oninput="filterOF()">
+        <span class="filter-count" id="count-of"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-of">
+          <thead><tr>
+            <th onclick="sortTable('tbl-of',0)">Datum</th>
+            <th onclick="sortTable('tbl-of',1)">Symbol</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-of',4)">Částka USD</th>
+            <th onclick="sortTable('tbl-of',5)">DPH 21 % USD</th>
+            <th onclick="sortTable('tbl-of',6)">Celkem s DPH USD</th>
+            <th onclick="sortTable('tbl-of',7)">Celkem s DPH CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-of"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- DEPOSITS / WITHDRAWALS -->
+    <div class="tab-panel" id="panel-deposits">
+      <div class="filter-bar">
+        <input type="text" id="filter-dep" placeholder="Hledat…" oninput="filterDep()">
+        <span class="filter-count" id="count-dep"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl-dep">
+          <thead><tr>
+            <th onclick="sortTable('tbl-dep',0)">Datum</th>
+            <th onclick="sortTable('tbl-dep',1)">Symbol</th>
+            <th>Popis</th>
+            <th>Typ</th>
+            <th onclick="sortTable('tbl-dep',4)">Částka USD</th>
+            <th onclick="sortTable('tbl-dep',5)">Částka CZK</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot id="tfoot-dep"></tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- .content -->
+</div><!-- #app -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let G = { rate: 22.5, data: null, pendingFile: null, manualUnderPrices: {} };
+
+// ── Theme ───────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  const btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = isLight ? '🌙' : '☀';
+  if (G.data) { drawChart(); drawPerfChart(); drawPieChart(); }
+}
+
+// Returns theme-aware colors for canvas drawing
+function tc(dark, light) {
+  return document.documentElement.classList.contains('light') ? light : dark;
+}
+
+// ── Utils ───────────────────────────────────────────────────────────
+const fmtN = (v, d=2) => {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('cs-CZ', {minimumFractionDigits:d, maximumFractionDigits:d});
+};
+const fmtC = (v, d=2) => {
+  const n = parseFloat(v);
+  if (isNaN(n)) return '—';
+  const s = (n >= 0 ? '' : '') + n.toLocaleString('cs-CZ', {minimumFractionDigits:d, maximumFractionDigits:d});
+  return s;
+};
+const czk = v => fmtN(parseFloat(v||0) * G.rate, 0);
+const parseDate = s => {
+  if (!s) return '';
+  s = s.split(';')[0];
+  if (s.length === 8) return `${s.slice(6,8)}.${s.slice(4,6)}.${s.slice(0,4)}`;
+  return s;
+};
+const colorClass = v => parseFloat(v||0) >= 0 ? 'pos' : 'neg';
+const typeBadge = t => `<span class="type-badge type-${t}">${t}</span>`;
+const sideBadge = s => `<span class="type-badge type-${s}">${s}</span>`;
+
+// ── Drop zone ───────────────────────────────────────────────────────
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.xml')) {
+    alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
+  }
+  G.pendingFile = file;
+  askRate(false);
+}
+
+// ── Rate modal ──────────────────────────────────────────────────────
+function askRate(rerender) {
+  document.getElementById('rate-input').value = G.rate.toFixed(4);
+  document.getElementById('rate-modal').style.display = 'flex';
+  if (rerender) G._rerender = true;
+}
+function confirmRate() {
+  const v = parseFloat(document.getElementById('rate-input').value);
+  if (!v || v < 1) { alert('Zadejte platný kurz (např. 22.50)'); return; }
+  G.rate = v;
+  document.getElementById('rate-modal').style.display = 'none';
+  document.getElementById('hdr-rate').textContent = `USD/CZK ${G.rate.toFixed(4)}`;
+  if (G._rerender && G.data) { renderAll(); G._rerender = false; }
+  else if (G.pendingFile) { readXML(G.pendingFile); G.pendingFile = null; }
+}
+document.getElementById('rate-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmRate();
+});
+
+// ── XML Parser ──────────────────────────────────────────────────────
+function readXML(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(e.target.result, 'application/xml');
+      const err = doc.querySelector('parsererror');
+      if (err) { alert('Chyba XML souboru: ' + err.textContent.slice(0,200)); return; }
+      G.data = parseDoc(doc);
+      showApp(doc);
+    } catch(ex) { alert('Chyba zpracování: ' + ex.message); }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function attr(el, a) { return el ? (el.getAttribute(a) || '') : ''; }
+
+function parseDoc(doc) {
+  const stmt = doc.querySelector('FlexStatement');
+  const info = doc.querySelector('AccountInformation');
+
+  const account = {
+    id:   attr(info, 'accountId'),
+    name: attr(info, 'name'),
+    from: parseDate(attr(stmt, 'fromDate')),
+    to:   parseDate(attr(stmt, 'toDate')),
+  };
+
+  // Trades — levelOfDetail=EXECUTION
+  const trades = [...doc.querySelectorAll('Trade')]
+    .filter(t => attr(t,'levelOfDetail') === 'EXECUTION')
+    .map(t => ({
+      date:    parseDate(attr(t,'dateTime') || attr(t,'tradeDate')),
+      symbol:  attr(t,'symbol'),
+      desc:    attr(t,'description'),
+      type:    attr(t,'assetCategory'),
+      side:    attr(t,'buySell'),
+      qty:     attr(t,'quantity'),
+      price:   attr(t,'tradePrice'),
+      proceeds:attr(t,'proceeds'),
+      comm:    attr(t,'ibCommission'),
+      net:     attr(t,'netCash'),
+      pnl:     attr(t,'fifoPnlRealized'),
+    }));
+
+  // Open Positions — levelOfDetail=SUMMARY
+  const positions = [...doc.querySelectorAll('OpenPosition')]
+    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY')
+    .map(p => ({
+      symbol:   attr(p,'symbol'),
+      isin:     attr(p,'isin'),
+      desc:     attr(p,'description'),
+      type:     attr(p,'assetCategory'),
+      qty:      attr(p,'position'),
+      openP:    attr(p,'openPrice'),
+      markP:    attr(p,'markPrice'),
+      mktVal:   attr(p,'positionValue'),
+      cost:     attr(p,'costBasisMoney'),
+      unreal:   attr(p,'fifoPnlUnrealized'),
+      pctNav:   attr(p,'percentOfNAV'),
+      side:     attr(p,'side'),
+    }));
+
+  // Cash transactions
+  const cashTxns = [...doc.querySelectorAll('CashTransaction')].map(c => ({
+    date:   parseDate(attr(c,'dateTime')),
+    symbol: attr(c,'symbol'),
+    desc:   attr(c,'description'),
+    type:   attr(c,'type'),
+    amount: attr(c,'amount'),
+  }));
+
+  // FIFO P&L
+  const pnl = [...doc.querySelectorAll('FIFOPerformanceSummaryUnderlying')]
+    .filter(f => attr(f,'symbol'))
+    .map(f => ({
+      symbol:   attr(f,'symbol'),
+      desc:     attr(f,'description'),
+      type:     attr(f,'assetCategory'),
+      realST:   attr(f,'realizedSTProfit'),
+      realSTL:  attr(f,'realizedSTLoss'),
+      realLT:   attr(f,'realizedLTProfit'),
+      realLTL:  attr(f,'realizedLTLoss'),
+      totalReal:attr(f,'totalRealizedPnl'),
+      unreal:   attr(f,'totalUnrealizedPnl'),
+      total:    attr(f,'totalFifoPnl'),
+    }));
+
+  // MTM valuations — start/end of period per symbol
+  const mtmMap = {};
+  [...doc.querySelectorAll('MTMPerformanceSummaryUnderlying')]
+    .filter(m => attr(m,'symbol') && ['STK','OPT'].includes(attr(m,'assetCategory')))
+    .forEach(m => {
+      const sym   = attr(m,'symbol');
+      const mult  = parseFloat(attr(m,'multiplier')||1) || 1;
+      const prevQ = parseFloat(attr(m,'prevCloseQuantity')||0);
+      const prevP = parseFloat(attr(m,'prevClosePrice')||0);
+      const clQ   = parseFloat(attr(m,'closeQuantity')||0);
+      const clP   = parseFloat(attr(m,'closePrice')||0);
+      mtmMap[sym] = {
+        startVal: prevQ * prevP * mult,
+        endVal:   clQ   * clP   * mult,
+      };
+    });
+
+  // Merge MTM valuations into pnl rows
+  pnl.forEach(p => {
+    const m = mtmMap[p.symbol] || { startVal: 0, endVal: 0 };
+    p.startVal = m.startVal;
+    p.endVal   = m.endVal;
+  });
+
+  // Summary
+  const cr = doc.querySelector('CashReportCurrency[currency="BASE_SUMMARY"]');
+  const summary = cr ? {
+    dividends:  attr(cr,'dividends'),
+    withholding:attr(cr,'withholdingTax'),
+    commissions:attr(cr,'commissions'),
+    brokerInt:  attr(cr,'brokerInterest'),
+    otherFees:  attr(cr,'otherFees'),
+    endCash:    attr(cr,'endingCash'),
+    startCash:  attr(cr,'startingCash'),
+  } : {};
+
+  // Underlying price map from STK OpenPosition markPrice
+  const underlyingPrices = {};
+  [...doc.querySelectorAll('OpenPosition')]
+    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY' && attr(p,'assetCategory') === 'STK')
+    .forEach(p => { underlyingPrices[attr(p,'symbol')] = attr(p,'markPrice'); });
+
+  // Derivatives — OPT open positions with full contract details
+  const derivatives = [...doc.querySelectorAll('OpenPosition')]
+    .filter(p => attr(p,'levelOfDetail') === 'SUMMARY' && attr(p,'assetCategory') === 'OPT')
+    .map(p => ({
+      currency:        attr(p,'currency'),
+      symbol:          attr(p,'symbol'),
+      conid:           attr(p,'conid'),
+      underlying:      attr(p,'underlyingSymbol'),
+      underlyingPrice: underlyingPrices[attr(p,'underlyingSymbol')] || '',
+      expiry:          parseDate(attr(p,'expiry')),
+      putCall:         attr(p,'putCall'),
+      strike:          attr(p,'strike'),
+      qty:             attr(p,'position'),
+      multiplier:      attr(p,'multiplier'),
+      costBasis:       attr(p,'costBasisMoney'),
+      markPrice:       attr(p,'markPrice'),
+      mktVal:          attr(p,'positionValue'),
+      unreal:          attr(p,'fifoPnlUnrealized'),
+      side:            attr(p,'side'),
+      desc:            attr(p,'description'),
+    }));
+
+  // ChangeInNAV — contains TWR and cash flow breakdown
+  const nav = doc.querySelector('ChangeInNAV');
+  const changeInNAV = nav ? {
+    twr:               parseFloat(attr(nav,'twr')||0),
+    mtm:               parseFloat(attr(nav,'mtm')||0),
+    depositsWithdrawals: parseFloat(attr(nav,'depositsWithdrawals')||0),
+    startingValue:     parseFloat(attr(nav,'startingValue')||0),
+    endingValue:       parseFloat(attr(nav,'endingValue')||0),
+  } : null;
+
+  // EquitySummaryByReportDateInBase — daily portfolio value
+  const equitySeries = [...doc.querySelectorAll('EquitySummaryByReportDateInBase')]
+    .map(e => ({
+      date:    attr(e,'reportDate'),            // YYYYMMDD
+      stocks:  parseFloat(attr(e,'stock')||0),
+      options: parseFloat(attr(e,'options')||0),
+      total:   parseFloat(attr(e,'total')||0),
+    }))
+    .filter(e => e.date)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  // Per-stock % performance from MTM (STK only, both periods must have price)
+  const stockPerf = [...doc.querySelectorAll('MTMPerformanceSummaryUnderlying')]
+    .filter(m => attr(m,'assetCategory') === 'STK' && attr(m,'symbol'))
+    .map(m => {
+      const prevP = parseFloat(attr(m,'prevClosePrice')||0);
+      const clP   = parseFloat(attr(m,'closePrice')||0);
+      const prevQ = parseFloat(attr(m,'prevCloseQuantity')||0);
+      const clQ   = parseFloat(attr(m,'closeQuantity')||0);
+      return {
+        symbol: attr(m,'symbol'),
+        pct:    prevP > 0 && clQ !== 0 ? ((clP - prevP) / prevP) * 100 : null,
+        startP: prevP,
+        endP:   clP,
+        qty:    Math.abs(prevQ),
+      };
+    })
+    .filter(s => s.pct !== null)
+    .sort((a,b) => a.pct - b.pct);   // ascending: worst left, best right
+
+  // PriorPeriodPosition — daily prices for SPY and QQQ (benchmark data from XML)
+  const priorPrices = {};
+  [...doc.querySelectorAll('PriorPeriodPosition')].forEach(p => {
+    const sym   = attr(p, 'symbol');
+    const date  = attr(p, 'date');    // YYYYMMDD
+    const price = attr(p, 'price');
+    if ((sym === 'SPY' || sym === 'QQQ') && date && price) {
+      if (!priorPrices[sym]) priorPrices[sym] = {};
+      priorPrices[sym][date] = parseFloat(price);
+    }
+  });
+
+  return { account, trades, positions, cashTxns, pnl, summary, equitySeries, stockPerf, derivatives, changeInNAV, priorPrices };
+}
+
+// ── Render ──────────────────────────────────────────────────────────
+function showApp(doc) {
+  document.getElementById('drop-overlay').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  const a = G.data.account;
+  document.getElementById('hdr-account').textContent =
+    `${a.name}  ·  ${a.id}  ·  ${a.from} – ${a.to}`;
+  document.getElementById('hdr-rate').textContent = `USD/CZK ${G.rate.toFixed(4)}`;
+
+  // Reset benchmark state — new report = new period = stale data must be cleared
+  CHART.bm     = { spx: false, ndx: false };
+  CHART.bmData = { spx: null,  ndx: null  };
+  CHART.bmLoading = { spx: false, ndx: false };
+  ['spx','ndx'].forEach(k => {
+    const btn = document.getElementById(`btn-${k}`);
+    if (btn) btn.classList.remove('bm-active');
+  });
+  document.getElementById('bm-status').textContent = '';
+
+  // Update chart titles with actual report period
+  const period = `${a.from} – ${a.to}`;
+  const t1 = document.getElementById('chart-title-1');
+  const t2 = document.getElementById('chart-title-2');
+  if (t1) t1.textContent = `Portfolio celkem za období ${period}`;
+  if (t2) t2.textContent = `Výkonnost akcií za období ${period}`;
+  const t3 = document.getElementById('chart-title-3');
+  if (t3) t3.textContent = `Alokace akciového portfolia k ${a.to}`;
+  renderAll();
+  updateBmLinks();
+}
+
+function renderAll() {
+  renderSummary();
+  renderTrades();
+  renderPnl();
+  renderDivs();
+  renderPositions();
+  renderBI();
+  renderOF();
+  renderDep();
+  renderDer();
+}
+
+// ── Summary ──────────────────────────────────────────────────────────
+function renderSummary() {
+  const { positions, pnl, cashTxns, summary } = G.data;
+  const r = G.rate;
+
+  const totalMV   = positions.reduce((s,p) => s + parseFloat(p.mktVal||0), 0);
+  const totalUnr  = positions.reduce((s,p) => s + parseFloat(p.unreal||0), 0);
+  const totalReal = pnl.reduce((s,p) => s + parseFloat(p.totalReal||0), 0);
+  const divs      = parseFloat(summary.dividends||0);
+  const wh        = parseFloat(summary.withholding||0);
+  const comm      = parseFloat(summary.commissions||0);
+  const endCash   = parseFloat(summary.endCash||0);
+
+  const mkCard = (label, usd, czk, cls='') => `
+    <div class="card">
+      <div class="card-label">${label}</div>
+      <div class="card-value ${cls}">${usd}</div>
+      <div class="card-sub">Kč ${czk}</div>
+    </div>`;
+
+  document.getElementById('cards-usd').innerHTML = [
+    mkCard('Tržní hodnota portfolia', '$'+fmtN(totalMV,0), fmtN(totalMV*r,0)),
+    mkCard('Nerealizovaný P&L', (totalUnr>=0?'+$':'$')+fmtN(totalUnr), fmtN(totalUnr*r,0), colorClass(totalUnr)),
+    mkCard('Realizovaný P&L', (totalReal>=0?'+$':'$')+fmtN(totalReal), fmtN(totalReal*r,0), colorClass(totalReal)),
+    mkCard('Dividendy hrubé', '$'+fmtN(divs), fmtN(divs*r,0), 'pos'),
+    mkCard('Srážková daň', '$'+fmtN(wh), fmtN(wh*r,0), 'neg'),
+    mkCard('Dividendy čisté', (divs+wh>=0?'+$':'$')+fmtN(divs+wh), fmtN((divs+wh)*r,0), colorClass(divs+wh)),
+    mkCard('Komise celkem', '$'+fmtN(comm), fmtN(comm*r,0), 'neg'),
+    mkCard('Cash na účtu', '$'+fmtN(endCash), fmtN(endCash*r,0)),
+  ].join('');
+
+  // TWR card in second row
+  const nav = G.data.changeInNAV;
+  const simpleRet = nav ? ((nav.endingValue - nav.startingValue) / Math.abs(nav.startingValue)) * 100 : null;
+  const twrPct    = nav ? nav.twr : null;
+  document.getElementById('cards-czk').innerHTML = nav ? `
+    <div class="card" style="border-left: 3px solid var(--accent)">
+      <div class="card-label">TWR (dle IB) — eliminuje vliv vkladů/výběrů</div>
+      <div class="card-value ${twrPct >= 0 ? 'pos' : 'neg'}">${twrPct >= 0 ? '+' : ''}${twrPct.toFixed(2)} %</div>
+    </div>` : '';
+  initChart();
+}
+
+// ── Chart engine ──────────────────────────────────────────────────────
+const CHART = {
+  type: 'area',
+  returnMode: 'twr',    // 'twr' | 'simple'
+  series: { stocks: false, options: false },
+  bm: { spx: false, ndx: false },
+  bmData: { spx: null, ndx: null },
+  bmLoading: { spx: false, ndx: false },
+};
+
+const COLORS = {
+  total:   '#3b82f6',
+  stocks:  '#10b981',
+  options: '#f59e0b',
+  spx:     '#a78bfa',
+  ndx:     '#f87171',
+};
+
+function fmtDate(d) {
+  return `${d.slice(6,8)}.${d.slice(4,6)}.${d.slice(0,4)}`;
+}
+
+// Convert raw value series to % change from first point (0% = day 0)
+function toPercent(vals) {
+  const base = vals.find(v => v != null && v !== 0);
+  if (!base) return vals.map(() => 0);
+  return vals.map(v => v != null ? ((v - base) / Math.abs(base)) * 100 : null);
+}
+
+// TWR-adjusted % series:
+// The twr field in IB XML is already in % (e.g. -3.116904 = -3.12%).
+// We scale each day's simple return proportionally so the endpoint
+// matches IB's TWR, preserving the shape of the curve.
+function toPercentTWR(vals, eq) {
+  const nav = G.data?.changeInNAV;
+  if (!nav || nav.twr === 0) return toPercent(vals);
+
+  const twrPct = nav.twr;           // already in %, e.g. -3.116904
+  const base   = vals[0];
+  if (!base) return toPercent(vals);
+
+  // Compute simple endpoint %
+  const lastVal = vals[vals.length - 1];
+  const simpleEnd = ((lastVal - base) / Math.abs(base)) * 100;
+  if (Math.abs(simpleEnd) < 0.0001) return toPercent(vals);
+
+  const scale = twrPct / simpleEnd;
+
+  return vals.map(v => v != null
+    ? ((v - base) / Math.abs(base)) * 100 * scale
+    : null);
+}
+
+function setReturnMode(mode, btn) {
+  CHART.returnMode = mode;
+  document.getElementById('btn-twr').classList.toggle('active', mode === 'twr');
+  document.getElementById('btn-simple').classList.toggle('active', mode === 'simple');
+  drawChart();
+}
+
+function initChart() {
+  if (!G.data || !G.data.equitySeries) return;
+  document.querySelectorAll('.chart-toolbar .chart-btn').forEach(b => {
+    if (['Linie','Plocha','Sloupce'].includes(b.textContent.trim()))
+      b.classList.toggle('active', b.textContent.trim() === 'Plocha');
+  });
+  drawChart();
+  drawPerfChart();
+  drawPieChart();
+}
+
+// ── Per-stock performance bar chart ──────────────────────────────────
+function drawPerfChart(targetCanvas, targetLegend) {
+  const canvas = targetCanvas || document.getElementById('perf-canvas');
+  if (!canvas || !G.data?.stockPerf?.length) return;
+  const stocks = G.data.stockPerf;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = targetCanvas ? (canvas.offsetWidth || canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
+  const H   = targetCanvas ? (canvas.offsetHeight || 480) : (document.getElementById('chart-canvas')?.offsetHeight || 320);
+
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD  = { top: 20, right: 16, bottom: 52, left: 58 };
+  const cW   = W - PAD.left - PAD.right;
+  const cH   = H - PAD.top  - PAD.bottom;
+  const n    = stocks.length;
+  const barW = Math.max(4, Math.floor(cW / n * 0.72));
+  const gap  = (cW - barW * n) / (n + 1);
+
+  const pcts   = stocks.map(s => s.pct);
+  const maxAbs = Math.max(...pcts.map(Math.abs), 0.5);
+  const range  = maxAbs * 1.18;   // pad 18%
+  const minV   = -range, maxV = range;
+
+  const xOf = i => PAD.left + gap + i * (barW + gap) + barW / 2;
+  const yOf = v => PAD.top + cH - ((v - minV) / (maxV - minV)) * cH;
+  const y0  = yOf(0);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = tc('rgba(255,255,255,0.05)','rgba(0,0,0,0.07)');
+  ctx.lineWidth   = 0.5;
+  const gridTicks = [-range*0.75, -range*0.5, -range*0.25, 0,
+                      range*0.25,  range*0.5,  range*0.75];
+  gridTicks.forEach(v => {
+    const y = yOf(v);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+  });
+
+  // Zero line
+  ctx.strokeStyle = tc('rgba(255,255,255,0.2)','rgba(0,0,0,0.2)');
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, y0); ctx.lineTo(PAD.left + cW, y0); ctx.stroke();
+
+  // Y axis labels
+  ctx.fillStyle = tc('rgba(148,163,184,0.9)','rgba(71,85,105,0.9)');
+  ctx.font       = `10px 'IBM Plex Mono', monospace`;
+  ctx.textAlign  = 'right';
+  gridTicks.forEach(v => {
+    const y = yOf(v);
+    ctx.fillStyle = Math.abs(v) < 0.01 ? 'rgba(0,0,0,0.45)' : tc('rgba(148,163,184,0.9)','rgba(71,85,105,0.9)');
+    ctx.fillText(v.toFixed(1) + '%', PAD.left - 5, y + 3);
+  });
+
+  // Bars + X labels
+  stocks.forEach((s, i) => {
+    const x    = PAD.left + gap + i * (barW + gap);
+    const top  = Math.min(yOf(s.pct), y0);
+    const bh   = Math.abs(yOf(s.pct) - y0);
+    const col  = s.pct >= 0 ? '#10b981' : '#ef4444';
+
+    // Bar
+    ctx.fillStyle = col + 'cc';
+    ctx.fillRect(x, top, barW, Math.max(bh, 1));
+
+    // Top border line on bar
+    ctx.fillStyle = col;
+    ctx.fillRect(x, top, barW, 2);
+
+    // % label above/below bar
+    ctx.fillStyle  = col;
+    ctx.font       = `9px 'IBM Plex Mono', monospace`;
+    ctx.textAlign  = 'center';
+    const labelY   = s.pct >= 0 ? top - 4 : top + bh + 11;
+    ctx.fillText((s.pct >= 0 ? '+' : '') + s.pct.toFixed(1) + '%', x + barW/2, labelY);
+
+    // X label (symbol, rotated)
+    ctx.save();
+    ctx.translate(x + barW/2, H - PAD.bottom + 10);
+    ctx.rotate(-Math.PI / 4);
+    ctx.textAlign  = 'right';
+    ctx.fillStyle = tc('rgba(148,163,184,0.85)','rgba(71,85,105,0.85)');
+    ctx.font       = `10px 'IBM Plex Sans', sans-serif`;
+    ctx.fillText(s.symbol.length > 8 ? s.symbol.slice(0,8) : s.symbol, 0, 0);
+    ctx.restore();
+  });
+
+  // Store meta for tooltip
+  canvas._perfMeta = { stocks, xOf, barW, PAD, cW, H, W, yOf, y0 };
+
+  // Legend: best and worst
+  const best  = stocks[stocks.length - 1];
+  const worst = stocks[0];
+  const perfLegendEl = targetLegend || document.getElementById('perf-legend');
+  if (perfLegendEl) perfLegendEl.innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div><span>Růst</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span>Pokles</span></div>
+    <div class="legend-item" style="margin-left:auto;color:var(--muted2);font-size:11px">
+      Nejlepší: <strong style="color:#10b981">${best.symbol} ${best.pct >= 0 ? '+' : ''}${best.pct.toFixed(2)}%</strong>
+      &nbsp;|&nbsp;
+      Nejhorší: <strong style="color:#ef4444">${worst.symbol} ${worst.pct.toFixed(2)}%</strong>
+    </div>`;
+}
+
+// Perf chart tooltip
+(function setupPerfTooltip() {
+  const canvas = document.getElementById('perf-canvas');
+  const tt     = document.getElementById('perf-tooltip');
+  if (!canvas) return;
+
+  canvas.addEventListener('mousemove', e => {
+    const meta = canvas._perfMeta;
+    if (!meta) return;
+    const rect  = canvas.getBoundingClientRect();
+    const mx    = e.clientX - rect.left;
+    const { stocks, xOf, barW, PAD, cW } = meta;
+
+    // Find which bar we're over
+    const idx = stocks.findIndex((_, i) => {
+      const bx = xOf(i) - barW / 2;
+      return mx >= bx && mx <= bx + barW;
+    });
+    if (idx < 0) { tt.style.display = 'none'; return; }
+
+    const s = stocks[idx];
+    document.getElementById('pt-sym').textContent = s.symbol;
+    document.getElementById('pt-rows').innerHTML = `
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">Výkonnost</span>
+        <span class="chart-tooltip-val" style="color:${s.pct>=0?'var(--green)':'var(--red)'}">${s.pct>=0?'+':''}${s.pct.toFixed(2)}%</span>
+      </div>
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">Začátek</span>
+        <span class="chart-tooltip-val">$${fmtN(s.startP,2)}</span>
+      </div>
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">Konec</span>
+        <span class="chart-tooltip-val">$${fmtN(s.endP,2)}</span>
+      </div>`;
+
+    const tx = Math.min(mx + 12, rect.width - 180);
+    const ty = Math.max(e.clientY - rect.top - 70, 4);
+    tt.style.left = tx + 'px'; tt.style.top = ty + 'px'; tt.style.display = 'block';
+  });
+  canvas.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+})();
+
+function setChartType(type, btn) {
+  CHART.type = type;
+  document.querySelectorAll('.chart-toolbar .chart-btn').forEach(b => {
+    if (['Linie','Plocha','Sloupce'].includes(b.textContent.trim())) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  drawChart();
+}
+
+function toggleSeries(key, btn) {
+  CHART.series[key] = !CHART.series[key];
+  btn.classList.toggle('active', CHART.series[key]);
+  drawChart();
+}
+
+function toggleBenchmark(key, btn) {
+  CHART.bm[key] = !CHART.bm[key];
+  if (CHART.bm[key]) {
+    btn.classList.add('bm-active');
+    loadBenchmark(key);
+  } else {
+    btn.classList.remove('bm-active');
+    drawChart();
+  }
+}
+
+// ── Benchmark loader ──────────────────────────────────────────────────
+// Strategy: try multiple direct + proxy URLs, then fall back gracefully
+async function tryFetch(url, timeoutMs = 7000) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' },
+      mode: 'cors',
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.text();
+  } finally { clearTimeout(tid); }
+}
+
+function parseYahooJSON(raw) {
+  // allorigins wraps in {contents:"..."}
+  let text = raw;
+  try { const o = JSON.parse(raw); if (o.contents) text = o.contents; } catch {}
+  const data   = JSON.parse(text);
+  const result = data?.chart?.result?.[0];
+  if (!result) throw new Error('No chart result');
+  const timestamps = result.timestamp;
+  const closes     = result.indicators.quote[0].close;
+  const base       = closes.find(v => v != null && v > 0);
+  if (!base) throw new Error('No closes');
+  const map = {};
+  timestamps.forEach((ts, i) => {
+    if (!closes[i]) return;
+    const d = new Date(ts * 1000);
+    const k = `${d.getUTCFullYear()}${String(d.getUTCMonth()+1).padStart(2,'0')}${String(d.getUTCDate()).padStart(2,'0')}`;
+    map[k] = ((closes[i] - base) / base) * 100;
+  });
+  if (!Object.keys(map).length) throw new Error('Empty map');
+  return map;
+}
+
+function parseCSV(raw) {
+  // Handles Yahoo Finance CSV, stooq CSV, and any Date,Close CSV
+  const lines = raw.trim().split(/\r?\n/);
+  if (lines.length < 2) throw new Error('Too few lines');
+  const header = lines[0].toLowerCase();
+  // Find Date and Close column indices
+  const cols = header.split(',');
+  const di = cols.findIndex(c => c.trim().startsWith('date'));
+  const ci = cols.findIndex(c => c.trim() === 'close' || c.trim() === 'adj close');
+  if (di < 0 || ci < 0) throw new Error(`Bad header: ${header}`);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const dateRaw = (parts[di]||'').trim().replace(/"/g,'');
+    const closeRaw = (parts[ci]||'').trim().replace(/"/g,'');
+    if (!dateRaw || !closeRaw || closeRaw === 'null') continue;
+    // Normalise date: YYYY-MM-DD or YYYYMMDD → YYYYMMDD
+    const d = dateRaw.replace(/-/g,'');
+    const v = parseFloat(closeRaw);
+    if (d.length === 8 && !isNaN(v) && v > 0) rows.push({ d, v });
+  }
+  if (!rows.length) throw new Error('No valid rows');
+  rows.sort((a,b) => a.d.localeCompare(b.d));
+  const base = rows[0].v;
+  const map  = {};
+  rows.forEach(({ d, v }) => { map[d] = ((v - base) / base) * 100; });
+  return map;
+}
+
+async function loadBenchmark(bmKey) {
+  if (CHART.bmData[bmKey] || CHART.bmLoading[bmKey]) { drawChart(); return; }
+  CHART.bmLoading[bmKey] = true;
+  const label = bmKey === 'spx' ? 'S&P 500' : 'Nasdaq 100';
+  const setStatus = t => { document.getElementById('bm-status').textContent = t; };
+
+  // ── 1. Try XML first: SPY for S&P 500, QQQ for Nasdaq 100 ──
+  const xmlTicker = bmKey === 'spx' ? 'SPY' : 'QQQ';
+  const xmlPrices = G.data?.priorPrices?.[xmlTicker];
+  if (xmlPrices && Object.keys(xmlPrices).length > 0) {
+    const entries = Object.entries(xmlPrices).sort(([a],[b]) => a.localeCompare(b));
+    const base    = entries[0][1];
+    const map     = {};
+    entries.forEach(([date, price]) => {
+      map[date] = ((price - base) / base) * 100;
+    });
+    CHART.bmData[bmKey] = map;
+    CHART.bmLoading[bmKey] = false;
+    setStatus('');
+    drawChart();
+    return;
+  }
+
+  // ── 2. Fall back to network if XML data unavailable ──
+  setStatus(`Načítám ${label}…`);
+  const eq = G.data.equitySeries;
+  const d0 = eq[0].date, d1 = eq[eq.length-1].date;
+  const iso = d => `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+  const t0  = Math.floor(new Date(iso(d0)).getTime()/1000) - 86400*2;
+  const t1  = Math.floor(new Date(iso(d1)).getTime()/1000) + 86400*2;
+  const yTk = bmKey === 'spx' ? '%5EGSPC' : '%5ENDX';
+  const sTk = bmKey === 'spx' ? '%5Espx'  : '%5Endx';
+  const enc = encodeURIComponent;
+
+  const yUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${yTk}?interval=1d&period1=${t0}&period2=${t1}`;
+  const yUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${yTk}?interval=1d&period1=${t0}&period2=${t1}`;
+  const sUrl  = `https://stooq.com/q/d/l/?s=${sTk}&d1=${d0}&d2=${d1}&i=d`;
+
+  const attempts = [
+    [sUrl,  parseCSV],
+    [yUrl1, parseYahooJSON],
+    [yUrl2, parseYahooJSON],
+    [`https://api.allorigins.win/get?url=${enc(yUrl1)}`, parseYahooJSON],
+    [`https://api.allorigins.win/get?url=${enc(yUrl2)}`, parseYahooJSON],
+    [`https://api.allorigins.win/get?url=${enc(sUrl)}`,  parseCSV],
+    [`https://corsproxy.io/?url=${enc(yUrl1)}`, parseYahooJSON],
+    [`https://corsproxy.io/?url=${enc(sUrl)}`,  parseCSV],
+    [`https://api.codetabs.com/v1/proxy?quest=${enc(sUrl)}`,  parseCSV],
+    [`https://api.codetabs.com/v1/proxy?quest=${enc(yUrl1)}`, parseYahooJSON],
+  ];
+
+  let map = null;
+  for (const [url, parser] of attempts) {
+    try {
+      const raw = await tryFetch(url, 6000);
+      map = parser(raw);
+      if (Object.keys(map).length > 0) break;
+    } catch (_) { /* try next */ }
+  }
+
+  CHART.bmLoading[bmKey] = false;
+  if (map && Object.keys(map).length > 0) {
+    CHART.bmData[bmKey] = map;
+    setStatus('');
+  } else {
+    CHART.bm[bmKey] = false;
+    document.getElementById(`btn-${bmKey}`).classList.remove('bm-active');
+    setStatus(`${label}: automatické načtení selhalo — použijte tlačítko + CSV`);
+    setTimeout(() => setStatus(''), 7000);
+  }
+  drawChart();
+}
+
+// ── CSV import modal ──────────────────────────────────────────────────
+function openBmImport() {
+  if (!G.data) return;
+  const eq = G.data.equitySeries;
+  const d0 = eq[0].date, d1 = eq[eq.length-1].date;
+  document.getElementById('bm-stooq-link').textContent =
+    `https://stooq.com/q/d/l/?s=%5Espx&d1=${d0}&d2=${d1}&i=d`;
+  document.getElementById('bm-import-status').textContent = '';
+  const modal = document.getElementById('bm-modal');
+  modal.style.display = 'flex';
+
+  // Wire drag & drop
+  const drop = document.getElementById('bm-drop');
+  drop.ondragover = e => { e.preventDefault(); drop.style.borderColor = 'var(--accent)'; };
+  drop.ondragleave = () => { drop.style.borderColor = 'var(--border2)'; };
+  drop.ondrop = e => {
+    e.preventDefault(); drop.style.borderColor = 'var(--border2)';
+    const f = e.dataTransfer.files[0]; if (f) handleBmFile(f);
+  };
+  document.getElementById('bm-file-input').onchange = e => {
+    const f = e.target.files[0]; if (f) handleBmFile(f);
+  };
+}
+
+function closeBmImport() {
+  document.getElementById('bm-modal').style.display = 'none';
+}
+
+function handleBmFile(file) {
+  const target = document.getElementById('bm-target').value;
+  const status = document.getElementById('bm-import-status');
+  status.textContent = 'Načítám soubor…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const map = parseCSV(e.target.result);
+      const n = Object.keys(map).length;
+      if (!n) throw new Error('Žádná data');
+      CHART.bmData[target] = map;
+      CHART.bm[target] = true;
+      const btn = document.getElementById(`btn-${target}`);
+      btn.classList.add('bm-active');
+      status.textContent = `✓ Načteno ${n} datových bodů`;
+      setTimeout(() => { closeBmImport(); drawChart(); }, 800);
+    } catch(err) {
+      status.textContent = `Chyba: ${err.message} — zkontrolujte formát CSV`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Populate stooq link when data loads
+function updateBmLinks() {
+  if (!G.data?.equitySeries?.length) return;
+  const eq = G.data.equitySeries;
+  const d0 = eq[0].date, d1 = eq[eq.length-1].date;
+  const el = document.getElementById('bm-stooq-link');
+  if (el) el.textContent = `https://stooq.com/q/d/l/?s=%5Espx&d1=${d0}&d2=${d1}&i=d`;
+}
+
+function drawChart(targetCanvas, targetLegend) {
+  const canvas = targetCanvas || document.getElementById('chart-canvas');
+  if (!canvas || !G.data) return;
+  const eq = G.data.equitySeries;
+  if (!eq || !eq.length) return;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = targetCanvas ? canvas.offsetWidth || (canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
+  const H   = targetCanvas ? (canvas.offsetHeight || 480) : 320;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD = { top: 20, right: 24, bottom: 36, left: 64 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  // ── Build percent series (TWR or simple, rebased to 0% at day 0) ──
+  const pctFn = (rawVals) =>
+    CHART.returnMode === 'twr'
+      ? toPercentTWR(rawVals, eq)
+      : toPercent(rawVals);
+
+  const series = [];
+  series.push({
+    key: 'total', label: 'Portfolio celkem', color: COLORS.total,
+    vals: pctFn(eq.map(e => e.total)),
+    rawVals: eq.map(e => e.total),
+  });
+  if (CHART.series.stocks)
+    series.push({
+      key: 'stocks', label: 'Akcie', color: COLORS.stocks,
+      vals: pctFn(eq.map(e => e.stocks)),
+      rawVals: eq.map(e => e.stocks),
+    });
+  if (CHART.series.options)
+    series.push({
+      key: 'options', label: 'Opce', color: COLORS.options,
+      vals: pctFn(eq.map(e => e.options)),
+      rawVals: eq.map(e => e.options),
+    });
+
+  // Benchmark series — already stored as % from their own period start
+  const bmSeries = [];
+  ['spx','ndx'].forEach(bk => {
+    if (!CHART.bm[bk] || !CHART.bmData[bk]) return;
+    const map  = CHART.bmData[bk];
+    const vals = eq.map(e => map[e.date] ?? null);
+    // Fill gaps with nearest available date (weekend/holiday alignment)
+    for (let i = 1; i < vals.length; i++) {
+      if (vals[i] == null) {
+        // Search ±1 day
+        const d = eq[i].date;
+        const dn = String(Number(d)+1).padStart(8,'0');
+        const dp = String(Number(d)-1).padStart(8,'0');
+        vals[i] = map[dn] ?? map[dp] ?? null;
+      }
+    }
+    bmSeries.push({
+      key: bk, dashed: true,
+      label: bk === 'spx' ? 'S&P 500' : 'Nasdaq 100',
+      color: COLORS[bk], vals, rawVals: vals,
+    });
+  });
+
+  const allSeries = [...series, ...bmSeries];
+
+  // ── Y range ──
+  const allVals = allSeries.flatMap(s => s.vals.filter(v => v != null));
+  let minV = Math.min(0, ...allVals);  // always include 0% baseline
+  let maxV = Math.max(0, ...allVals);
+  const padV = Math.max((maxV - minV) * 0.10, 0.5);
+  minV -= padV; maxV += padV;
+
+  const xOf = i => PAD.left + (eq.length < 2 ? cW/2 : (i / (eq.length - 1)) * cW);
+  const yOf = v => PAD.top + cH - ((v - minV) / (maxV - minV)) * cH;
+  const y0  = yOf(0); // pixel position of 0% line
+
+  // ── Clear ──
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Grid lines ──
+  ctx.strokeStyle = tc('rgba(255,255,255,0.05)','rgba(0,0,0,0.07)');
+  ctx.lineWidth = 0.5;
+  const gridCount = 6;
+  const gridStep  = (maxV - minV) / gridCount;
+  for (let i = 0; i <= gridCount; i++) {
+    const v = minV + gridStep * i;
+    const y = yOf(v);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+  }
+
+  // ── Zero line (highlighted) ──
+  ctx.strokeStyle = tc('rgba(255,255,255,0.18)','rgba(0,0,0,0.18)');
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(PAD.left, y0); ctx.lineTo(PAD.left + cW, y0); ctx.stroke();
+
+  // ── Y axis labels (%) ──
+  ctx.fillStyle = tc('rgba(148,163,184,0.9)','rgba(71,85,105,0.9)');
+  ctx.font       = `10px 'IBM Plex Mono', monospace`;
+  ctx.textAlign  = 'right';
+  for (let i = 0; i <= gridCount; i++) {
+    const v = minV + gridStep * i;
+    const y = yOf(v);
+    const pct = v.toFixed(v % 1 === 0 ? 0 : 1) + '%';
+    ctx.fillStyle = Math.abs(v) < 0.01 ? 'rgba(0,0,0,0.45)' : tc('rgba(148,163,184,0.9)','rgba(71,85,105,0.9)');
+    ctx.fillText(pct, PAD.left - 6, y + 3);
+  }
+
+  // ── X axis labels ──
+  ctx.fillStyle = tc('rgba(148,163,184,0.8)','rgba(71,85,105,0.8)');
+  ctx.textAlign  = 'center';
+  const labelStep = Math.max(1, Math.floor(eq.length / 8));
+  eq.forEach((e, i) => {
+    if (i % labelStep !== 0 && i !== eq.length - 1) return;
+    ctx.fillText(`${e.date.slice(6,8)}.${e.date.slice(4,6)}`, xOf(i), H - 8);
+  });
+
+  // ── Draw series ──
+  allSeries.forEach(s => {
+    const pts = s.vals.map((v, i) => v != null ? { x: xOf(i), y: yOf(v) } : null);
+    const validPts = pts.filter(Boolean);
+    if (!validPts.length) return;
+
+    // Area fill (not for dashed benchmarks)
+    if ((CHART.type === 'area' || CHART.type === 'line') && !s.dashed && CHART.type !== 'bar') {
+      if (CHART.type === 'area') {
+        ctx.beginPath();
+        let started = false;
+        pts.forEach(p => {
+          if (!p) return;
+          if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+          else ctx.lineTo(p.x, p.y);
+        });
+        const last = validPts.at(-1), first = validPts[0];
+        ctx.lineTo(last.x, y0);
+        ctx.lineTo(first.x, y0);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
+        grad.addColorStop(0, s.color + '35');
+        grad.addColorStop(1, s.color + '04');
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+    }
+
+    // Bar chart
+    if (CHART.type === 'bar' && !s.dashed) {
+      const bw = Math.max(2, cW / eq.length * 0.5);
+      pts.forEach(p => {
+        if (!p) return;
+        const top    = Math.min(p.y, y0);
+        const bottom = Math.max(p.y, y0);
+        ctx.fillStyle = p.y <= y0 ? s.color + 'cc' : COLORS.ndx + 'cc';
+        ctx.fillRect(p.x - bw/2, top, bw, bottom - top);
+      });
+      return;
+    }
+
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth   = s.dashed ? 1.5 : (s.key === 'total' ? 2.5 : 1.5);
+    ctx.setLineDash(s.dashed ? [5, 4] : []);
+    let started = false;
+    pts.forEach(p => {
+      if (!p) return;
+      if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+      else ctx.lineTo(p.x, p.y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dots on total line
+    if (s.key === 'total' && CHART.type !== 'bar') {
+      validPts.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+        ctx.fillStyle = s.color;
+        ctx.fill();
+      });
+    }
+  });
+
+  // Store metadata for tooltip
+  canvas._chartMeta = { eq, allSeries, xOf, yOf, PAD, cW, W, H };
+
+  // ── Legend ──
+  const legendEl = targetLegend || document.getElementById('chart-legend');
+  if (legendEl) legendEl.innerHTML = allSeries.map(s => `
+    <div class="legend-item">
+      <div class="legend-dot" style="${s.dashed
+        ? `background:repeating-linear-gradient(90deg,${s.color} 0,${s.color} 5px,transparent 5px,transparent 9px)`
+        : `background:${s.color}`}"></div>
+      <span>${s.label}</span>
+    </div>`).join('');
+}
+
+// ── Tooltip ──────────────────────────────────────────────────────────
+(function setupTooltip() {
+  const canvas = document.getElementById('chart-canvas');
+  const tt     = document.getElementById('chart-tooltip');
+  if (!canvas) return;
+
+  canvas.addEventListener('mousemove', e => {
+    const meta = canvas._chartMeta;
+    if (!meta) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx   = e.clientX - rect.left;
+    const { eq, allSeries, xOf, PAD, cW } = meta;
+    const idx  = Math.min(eq.length-1, Math.max(0, Math.round((mx - PAD.left) / cW * (eq.length-1))));
+    if (mx < PAD.left || mx > PAD.left + cW) { tt.style.display='none'; return; }
+
+    document.getElementById('tt-date').textContent = fmtDate(eq[idx].date);
+    document.getElementById('tt-rows').innerHTML = allSeries.map(s => {
+      const pct = s.vals[idx];
+      const raw = s.rawVals?.[idx];
+      if (pct == null) return '';
+      const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">$${fmtN(raw,0)}</span>` : '';
+      return `<div class="chart-tooltip-row">
+        <span class="chart-tooltip-label" style="color:${s.color}">${s.label}</span>
+        <span class="chart-tooltip-val" style="color:${pct>=0?'var(--green)':'var(--red)'}">${pctStr}</span>${rawStr}
+      </div>`;
+    }).join('');
+
+    const tx = Math.min(mx + 14, rect.width - 210);
+    const ty = Math.max(e.clientY - rect.top - 70, 4);
+    tt.style.left = tx + 'px'; tt.style.top = ty + 'px'; tt.style.display = 'block';
+  });
+  canvas.addEventListener('mouseleave', () => { tt.style.display='none'; });
+})();
+
+window.addEventListener('resize', () => { if (G.data) { drawChart(); drawPerfChart(); drawPieChart(); } });
+
+// ── Chart zoom modal ──────────────────────────────────────────────────
+let _zoomType = null;   // 'portfolio' | 'perf' | 'pie'
+
+function openChartZoom(type) {
+  _zoomType = type;
+  const modal = document.getElementById('chart-zoom-modal');
+  const titles = {
+    portfolio: document.getElementById('chart-title-1')?.textContent || 'Portfolio celkem',
+    perf:      document.getElementById('chart-title-2')?.textContent || 'Výkonnost akcií',
+    pie:       document.getElementById('chart-title-3')?.textContent || 'Alokace akciového portfolia',
+  };
+  document.getElementById('zoom-title').textContent = titles[type] + ' — klikni mimo pro zavření';
+  modal.style.display = 'flex';
+  // Slight delay so canvas is sized before drawing
+  requestAnimationFrame(() => { requestAnimationFrame(() => drawZoomChart(type)); });
+  document.addEventListener('keydown', onZoomKey);
+}
+
+function closeChartZoom(e) {
+  if (e && e.currentTarget !== e.target) return;  // click was on child element
+  document.getElementById('chart-zoom-modal').style.display = 'none';
+  document.removeEventListener('keydown', onZoomKey);
+  _zoomType = null;
+}
+
+function onZoomKey(e) { if (e.key === 'Escape') { document.getElementById('chart-zoom-modal').style.display = 'none'; document.removeEventListener('keydown', onZoomKey); _zoomType = null; } }
+
+function drawZoomChart(type) {
+  const canvas = document.getElementById('zoom-canvas');
+  const legend = document.getElementById('zoom-legend');
+  if (!canvas) return;
+  const W   = canvas.parentElement.clientWidth;
+  const H   = Math.round(window.innerHeight * 0.68);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+
+  if (type === 'portfolio') {
+    drawChart(canvas, legend);
+  } else if (type === 'perf') {
+    drawPerfChart(canvas, legend);
+  } else if (type === 'pie') {
+    drawPieChart(canvas, legend);
+  }
+}
+
+(function setupZoomTooltip() {
+  const canvas = document.getElementById('zoom-canvas');
+  const tt     = document.getElementById('zoom-tooltip');
+  if (!canvas) return;
+  canvas.addEventListener('mousemove', e => {
+    if (_zoomType !== 'portfolio') { tt.style.display='none'; return; }
+    const meta = canvas._chartMeta;
+    if (!meta) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx   = e.clientX - rect.left;
+    const { eq, allSeries, xOf, PAD, cW } = meta;
+    const idx  = Math.min(eq.length-1, Math.max(0, Math.round((mx - PAD.left) / cW * (eq.length-1))));
+    if (mx < PAD.left || mx > PAD.left + cW) { tt.style.display='none'; return; }
+    document.getElementById('zt-date').textContent = fmtDate(eq[idx].date);
+    document.getElementById('zt-rows').innerHTML = allSeries.map(s => {
+      const pct = s.vals[idx]; const raw = s.rawVals?.[idx];
+      if (pct == null) return '';
+      const pctStr = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      const rawStr = raw != null ? `  <span style="color:var(--muted);font-size:10px">$${fmtN(raw,0)}</span>` : '';
+      return `<div class="chart-tooltip-row"><span class="chart-tooltip-label" style="color:${s.color}">${s.label}</span><span class="chart-tooltip-val" style="color:${pct>=0?'var(--green)':'var(--red)'}">${pctStr}</span>${rawStr}</div>`;
+    }).join('');
+    const tx = Math.min(mx + 14, rect.width - 210);
+    const ty = Math.max(e.clientY - rect.top - 70, 4);
+    tt.style.left = tx + 'px'; tt.style.top = ty + 'px'; tt.style.display = 'block';
+  });
+  canvas.addEventListener('mouseleave', () => { tt.style.display='none'; });
+})();
+
+// ── Allocation pie chart ─────────────────────────────────────────────
+function drawPieChart(targetCanvas, targetLegend) {
+  const canvas = targetCanvas || document.getElementById('pie-canvas');
+  if (!canvas || !G.data?.positions?.length) return;
+
+  // Build allocation data from open positions (end of period market value)
+  // Group by symbol, use positionValue
+  const posMap = {};
+  G.data.positions.forEach(p => {
+    if (p.type !== 'STK') return;
+    const v = parseFloat(p.mktVal || 0);
+    if (v === 0) return;
+    const sym = p.symbol;
+    posMap[sym] = (posMap[sym] || 0) + Math.abs(v);
+  });
+
+  const total = Object.values(posMap).reduce((s, v) => s + v, 0);
+  if (total === 0) return;
+
+  // All positions shown individually, sorted descending by value
+  let slices = Object.entries(posMap)
+    .map(([sym, val]) => ({ sym, val, pct: val / total * 100 }))
+    .sort((a, b) => b.val - a.val);
+
+  const PIE_COLORS = [
+    '#3b82f6','#10b981','#f59e0b','#a78bfa','#f87171',
+    '#34d399','#60a5fa','#fbbf24','#c084fc','#fb7185',
+    '#2dd4bf','#818cf8','#facc15','#4ade80','#38bdf8',
+  ];
+  slices.forEach((s, i) => { s.color = PIE_COLORS[i % PIE_COLORS.length]; });
+
+  // Canvas sizing
+  const H   = targetCanvas ? (canvas.offsetHeight || 480) : (document.getElementById('chart-canvas')?.offsetHeight || 320);
+  const dpr = window.devicePixelRatio || 1;
+  const W   = targetCanvas ? (canvas.offsetWidth || canvas.parentElement.clientWidth - 32) : canvas.parentElement.clientWidth - 32;
+
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // Pie geometry — leave right margin for inline labels
+  const labelW  = 110;
+  const cx      = (W - labelW) / 2;
+  const cy      = H / 2;
+  const radius  = Math.min(cx, cy - 20) * 0.88;
+  const innerR  = radius * 0.46;  // donut hole
+
+  // Draw slices
+  let angle = -Math.PI / 2;  // start at top
+  const sliceAngles = [];
+  slices.forEach(s => {
+    const sweep = (s.pct / 100) * Math.PI * 2;
+    sliceAngles.push({ start: angle, sweep, ...s });
+
+    // Slice fill
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = s.color + 'cc';
+    ctx.fill();
+
+    // Slice border
+    ctx.strokeStyle = 'rgba(10,14,26,0.6)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    angle += sweep;
+  });
+
+  // Donut hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = getComputedStyle(document.documentElement)
+    .getPropertyValue('--surface').trim() || tc('#111827','#ffffff');
+  ctx.fill();
+
+  // Centre label: total value
+  ctx.textAlign    = 'center';
+  ctx.fillStyle = tc('rgba(226,232,240,0.9)','rgba(15,23,42,0.9)');
+  ctx.font         = `500 12px 'IBM Plex Sans', sans-serif`;
+  ctx.fillText('Portfolio', cx, cy - 8);
+  ctx.font         = `600 13px 'IBM Plex Mono', monospace`;
+  ctx.fillText('$' + fmtN(total, 0), cx, cy + 8);
+
+  // Right-side legend (vertical list)
+  const legendX  = W - labelW + 8;
+  const itemH    = Math.min(18, (H - 20) / slices.length);
+  const startY   = cy - (slices.length * itemH) / 2 + itemH / 2;
+
+  ctx.textAlign = 'left';
+  slices.forEach((s, i) => {
+    const y = startY + i * itemH;
+
+    // Colour dot
+    ctx.beginPath();
+    ctx.arc(legendX + 5, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = s.color;
+    ctx.fill();
+
+    // Symbol
+    ctx.font      = `500 10px 'IBM Plex Sans', sans-serif`;
+    ctx.fillStyle = tc('rgba(226,232,240,0.85)','rgba(15,23,42,0.85)');
+    const symLabel = s.sym.length > 10 ? s.sym.slice(0, 10) : s.sym;
+    ctx.fillText(symLabel, legendX + 13, y + 3.5);
+
+    // Percentage right-aligned
+    ctx.font      = `10px 'IBM Plex Mono', monospace`;
+    ctx.fillStyle = tc('rgba(148,163,184,0.9)','rgba(71,85,105,0.9)');
+    ctx.textAlign = 'right';
+    ctx.fillText(s.pct.toFixed(1) + '%', W - 4, y + 3.5);
+    ctx.textAlign = 'left';
+  });
+
+  // Store metadata for tooltip
+  canvas._pieMeta = { slices: sliceAngles, cx, cy, radius, innerR, W, H };
+
+  // Bottom legend strip (colour chips only for overflow)
+  const pieLegendEl = targetLegend || document.getElementById('pie-legend');
+  if (pieLegendEl) pieLegendEl.innerHTML = '';
+}
+
+// Pie tooltip
+(function setupPieTooltip() {
+  const canvas = document.getElementById('pie-canvas');
+  const tt     = document.getElementById('pie-tooltip');
+  if (!canvas) return;
+
+  canvas.addEventListener('mousemove', e => {
+    const meta = canvas._pieMeta;
+    if (!meta) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx   = e.clientX - rect.left;
+    const my   = e.clientY - rect.top;
+    const { slices, cx, cy, radius, innerR } = meta;
+
+    const dx   = mx - cx, dy = my - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < innerR || dist > radius) { tt.style.display = 'none'; return; }
+
+    let ang = Math.atan2(dy, dx);
+    // normalise to [startAngle, startAngle + 2π]
+    const startOffset = -Math.PI / 2;
+    ang = ((ang - startOffset) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+
+    const hit = slices.find(s => {
+      const a = ((s.start - startOffset) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      return ang >= a && ang < a + s.sweep;
+    });
+    if (!hit) { tt.style.display = 'none'; return; }
+
+    document.getElementById('pie-sym').textContent   = hit.sym;
+    document.getElementById('pie-rows').innerHTML = `
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">Podíl</span>
+        <span class="chart-tooltip-val">${hit.pct.toFixed(2)}%</span>
+      </div>
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">Hodnota</span>
+        <span class="chart-tooltip-val">$${fmtN(hit.val, 0)}</span>
+      </div>
+      <div class="chart-tooltip-row">
+        <span class="chart-tooltip-label">CZK</span>
+        <span class="chart-tooltip-val">Kč ${fmtN(hit.val * G.rate, 0)}</span>
+      </div>`;
+
+    const tx = Math.min(mx + 14, rect.width - 190);
+    const ty = Math.max(my - 70, 4);
+    tt.style.left = tx + 'px'; tt.style.top = ty + 'px'; tt.style.display = 'block';
+  });
+  canvas.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+})();
+let _tradesRows = [];
+function renderTrades() {
+  _tradesRows = G.data.trades;
+  filterTrades();
+}
+function filterTrades() {
+  const q  = document.getElementById('filter-trades').value.toLowerCase();
+  const tp = document.getElementById('filter-trades-type').value;
+  const sd = document.getElementById('filter-trades-side').value;
+  const rows = _tradesRows.filter(t =>
+    (!q  || t.symbol.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q)) &&
+    (!tp || t.type === tp) &&
+    (!sd || t.side === sd)
+  );
+  document.getElementById('count-trades').textContent = `${rows.length} obchodů`;
+  const tbody = document.querySelector('#tbl-trades tbody');
+  tbody.innerHTML = rows.map(t => {
+    const pnl = parseFloat(t.pnl||0);
+    return `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${t.date}</td>
+      <td class="left">${t.symbol}</td>
+      <td>${typeBadge(t.type)}${t.type==='OPT'?' '+sideBadge(t.side.charAt(0)+t.side.slice(1).toLowerCase()):'&nbsp;'+sideBadge(t.side)}</td>
+      <td>${sideBadge(t.side)}</td>
+      <td>${fmtN(t.qty,0)}</td>
+      <td>${fmtN(t.price,4)}</td>
+      <td>${fmtN(t.proceeds)}</td>
+      <td class="neg">${fmtN(t.comm)}</td>
+      <td>${fmtN(t.net)}</td>
+      <td class="${colorClass(pnl)}">${pnl>=0?'+':''}${fmtN(pnl)}</td>
+      <td class="${colorClass(pnl)}">${pnl>=0?'+':''}${fmtN(pnl*G.rate,0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="11"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+
+  // Totals footer — Komise (col 7), Net cash (col 8), P&L USD (col 9), P&L CZK (col 10)
+  const tfoot = document.getElementById('tfoot-trades');
+  const sumComm = rows.reduce((s,t) => s + parseFloat(t.comm||0), 0);
+  const sumNet  = rows.reduce((s,t) => s + parseFloat(t.net||0), 0);
+  const sumPnl  = rows.reduce((s,t) => s + parseFloat(t.pnl||0), 0);
+  const sumPnlCZK = sumPnl * G.rate;
+  tfoot.innerHTML = `<tr>
+    <td colspan="7">Celkem za období</td>
+    <td class="${colorClass(sumComm)} tot">${sumComm>=0?'+':''}${fmtN(sumComm)}</td>
+    <td class="${colorClass(sumNet)} tot">${sumNet>=0?'+':''}${fmtN(sumNet)}</td>
+    <td class="${colorClass(sumPnl)} tot">${sumPnl>=0?'+':''}${fmtN(sumPnl)}</td>
+    <td class="${colorClass(sumPnlCZK)} tot">${sumPnlCZK>=0?'+':''}${fmtN(sumPnlCZK,0)}</td>
+  </tr>`;
+}
+// ── P&L ──────────────────────────────────────────────────────────────
+let _pnlRows = [];
+function renderPnl() {
+  _pnlRows = G.data.pnl;
+  filterPnl();
+}
+function filterPnl() {
+  const q  = document.getElementById('filter-pnl').value.toLowerCase();
+  const tp = document.getElementById('filter-pnl-type').value;
+  const rows = _pnlRows.filter(p =>
+    (!q  || p.symbol.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) &&
+    (!tp || p.type === tp)
+  );
+  document.getElementById('count-pnl').textContent = `${rows.length} pozic`;
+  const tbody = document.querySelector('#tbl-pnl tbody');
+  tbody.innerHTML = rows.map(p => {
+    const tr  = parseFloat(p.totalReal||0);
+    const ur  = parseFloat(p.unreal||0);
+    const tt  = parseFloat(p.total||0);
+    const sv  = parseFloat(p.startVal||0);
+    const ev  = parseFloat(p.endVal||0);
+    const dv  = ev - sv;
+    const r   = G.rate;
+    return `<tr>
+      <td class="left">${p.symbol}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${p.desc.slice(0,35)}</td>
+      <td>${typeBadge(p.type)}</td>
+      <td class="${colorClass(p.realST)}">${fmtN(p.realST)}</td>
+      <td class="${colorClass(p.realSTL)}">${fmtN(p.realSTL)}</td>
+      <td class="${colorClass(tr)}">${tr>=0?'+':''}${fmtN(tr)}</td>
+      <td class="${colorClass(tr)}">${tr>=0?'+':''}${fmtN(tr*r,0)}</td>
+      <td class="${colorClass(ur)}">${ur>=0?'+':''}${fmtN(ur)}</td>
+      <td class="${colorClass(ur)}">${ur>=0?'+':''}${fmtN(ur*r,0)}</td>
+      <td class="${colorClass(tt)}">${tt>=0?'+':''}${fmtN(tt)}</td>
+      <td class="${colorClass(tt)}">${tt>=0?'+':''}${fmtN(tt*r,0)}</td>
+      <td class="neutral">${sv!==0 ? fmtN(sv,0) : '—'}</td>
+      <td class="neutral">${ev!==0 ? fmtN(ev,0) : '—'}</td>
+      <td class="${colorClass(dv)}">${sv!==0||ev!==0 ? (dv>=0?'+':'')+fmtN(dv,0) : '—'}</td>
+      <td class="neutral">${sv!==0 ? fmtN(sv*r,0) : '—'}</td>
+      <td class="neutral">${ev!==0 ? fmtN(ev*r,0) : '—'}</td>
+      <td class="${colorClass(dv)}">${sv!==0||ev!==0 ? (dv>=0?'+':'')+fmtN(dv*r,0) : '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="17"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+
+  // Totals footer — over all (unfiltered) _pnlRows for correct period sums
+  const all = _pnlRows;
+  const sum = key => all.reduce((s,p) => s + parseFloat(p[key]||0), 0);
+  const sumSV = all.reduce((s,p) => s + parseFloat(p.startVal||0), 0);
+  const sumEV = all.reduce((s,p) => s + parseFloat(p.endVal||0), 0);
+  const sumDV = sumEV - sumSV;
+  const r = G.rate;
+  const tfoot = document.getElementById('tfoot-pnl');
+  tfoot.innerHTML = `<tr>
+    <td colspan="3">Celkem za období</td>
+    <td class="${colorClass(sum('realST'))}">${sum('realST')>=0?'+':''}${fmtN(sum('realST'))}</td>
+    <td class="${colorClass(sum('realSTL'))}">${fmtN(sum('realSTL'))}</td>
+    <td class="${colorClass(sum('totalReal'))} tot">${sum('totalReal')>=0?'+':''}${fmtN(sum('totalReal'))}</td>
+    <td class="${colorClass(sum('totalReal'))} tot">${sum('totalReal')>=0?'+':''}${fmtN(sum('totalReal')*r,0)}</td>
+    <td class="${colorClass(sum('unreal'))}">${sum('unreal')>=0?'+':''}${fmtN(sum('unreal'))}</td>
+    <td class="${colorClass(sum('unreal'))}">${sum('unreal')>=0?'+':''}${fmtN(sum('unreal')*r,0)}</td>
+    <td class="${colorClass(sum('total'))} tot">${sum('total')>=0?'+':''}${fmtN(sum('total'))}</td>
+    <td class="${colorClass(sum('total'))} tot">${sum('total')>=0?'+':''}${fmtN(sum('total')*r,0)}</td>
+    <td class="neutral tot">${fmtN(sumSV,0)}</td>
+    <td class="neutral tot">${fmtN(sumEV,0)}</td>
+    <td class="${colorClass(sumDV)} tot">${sumDV>=0?'+':''}${fmtN(sumDV,0)}</td>
+    <td class="neutral tot">${fmtN(sumSV*r,0)}</td>
+    <td class="neutral tot">${fmtN(sumEV*r,0)}</td>
+    <td class="${colorClass(sumDV)} tot">${sumDV>=0?'+':''}${fmtN(sumDV*r,0)}</td>
+  </tr>`;
+}
+
+// ── Dividends ────────────────────────────────────────────────────────
+const DIV_TYPES = ['Dividends','Withholding Tax','Payment In Lieu Of Dividends'];
+const BI_TYPES  = ['Broker Interest Paid','Broker Interest Received','Bond Interest Paid','Bond Interest Received'];
+const BI_LABELS = {
+  'Bond Interest Received'  : { short: 'KUP', cs: 'Kupón' },
+  'Bond Interest Paid'      : { short: 'CIZ', cs: 'Cizí úrok' },
+  'Broker Interest Received': { short: 'BI+', cs: 'Úrok přijatý' },
+  'Broker Interest Paid'    : { short: 'BI-', cs: 'Úrok placený' },
+};
+const OF_TYPES  = ['Other Fees'];
+const DEP_TYPES = ['Deposits/Withdrawals'];
+
+function totalsFooter(tfootId, rows, cols) {
+  const tfoot = document.getElementById(tfootId);
+  if (!tfoot) return;
+  const sums = {};
+  rows.forEach(c => {
+    const amt = parseFloat(c.amount||0);
+    const type = c.type||'';
+    sums[type] = (sums[type]||0) + amt;
+  });
+  const grandUSD = rows.reduce((s,c) => s + parseFloat(c.amount||0), 0);
+  const grandCZK = grandUSD * G.rate;
+
+  let html = '';
+  // Per-type subtotals
+  for (const [type, usd] of Object.entries(sums)) {
+    const czk = usd * G.rate;
+    html += `<tr>
+      <td colspan="${cols-2}" style="text-align:left;font-family:var(--sans);font-size:11px;color:var(--muted2)">Součet: ${type}</td>
+      <td class="${colorClass(usd)}">${usd>=0?'+':''}${fmtN(usd)}</td>
+      <td class="${colorClass(usd)}">${usd>=0?'+':''}${fmtN(czk,0)}</td>
+    </tr>`;
+  }
+  // Grand total
+  html += `<tr>
+    <td colspan="${cols-2}">Celkem za období</td>
+    <td class="${colorClass(grandUSD)} tot">${grandUSD>=0?'+':''}${fmtN(grandUSD)}</td>
+    <td class="${colorClass(grandCZK)} tot">${grandCZK>=0?'+':''}${fmtN(grandCZK,0)}</td>
+  </tr>`;
+  tfoot.innerHTML = html;
+}
+
+let _divsRows = [];
+function renderDivs() {
+  _divsRows = G.data.cashTxns.filter(c => DIV_TYPES.includes(c.type));
+  filterDivs();
+}
+function filterDivs() {
+  const q  = document.getElementById('filter-divs').value.toLowerCase();
+  const tp = document.getElementById('filter-divs-type').value;
+  const rows = _divsRows.filter(c =>
+    (!q  || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)) &&
+    (!tp || c.type === tp)
+  );
+  document.getElementById('count-divs').textContent = `${rows.length} transakcí`;
+  const tbody = document.querySelector('#tbl-divs tbody');
+  tbody.innerHTML = rows.map(c => {
+    const amt = parseFloat(c.amount||0);
+    return `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${c.date}</td>
+      <td class="left">${c.symbol||'—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${(c.desc||'').slice(0,50)}</td>
+      <td style="text-align:left">${typeBadge(c.type.split(' ').map(w=>w[0]).join('').slice(0,3))}&nbsp;<span style="color:var(--muted2);font-family:var(--sans);font-size:10px">${c.type}</span></td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt)}</td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt*G.rate,0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+  // Always show totals from full unfiltered set
+  totalsFooter('tfoot-divs', _divsRows, 6);
+}
+
+// ── Broker Interest ───────────────────────────────────────────────────
+let _biRows = [];
+function renderBI() {
+  _biRows = G.data.cashTxns.filter(c => BI_TYPES.includes(c.type));
+  filterBI();
+}
+function filterBI() {
+  const q  = document.getElementById('filter-bi').value.toLowerCase();
+  const tp = document.getElementById('filter-bi-type').value;
+  const rows = _biRows.filter(c =>
+    (!q  || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)) &&
+    (!tp || c.type === tp)
+  );
+  document.getElementById('count-bi').textContent = `${rows.length} transakcí`;
+  const tbody = document.querySelector('#tbl-bi tbody');
+  tbody.innerHTML = rows.map(c => {
+    const amt = parseFloat(c.amount||0);
+    const lbl = BI_LABELS[c.type] || { short: 'BI', cs: c.type };
+    return `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${c.date}</td>
+      <td class="left">${c.symbol||'—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${(c.desc||'').slice(0,50)}</td>
+      <td style="text-align:left">${typeBadge(lbl.short)}&nbsp;<span style="color:var(--muted2);font-family:var(--sans);font-size:10px">${lbl.cs}</span></td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt)}</td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt*G.rate,0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+  totalsFooter('tfoot-bi', _biRows, 6);
+}
+
+// ── Other Fees ────────────────────────────────────────────────────────
+let _ofRows = [];
+function renderOF() {
+  _ofRows = G.data.cashTxns.filter(c => OF_TYPES.includes(c.type));
+  filterOF();
+}
+function filterOF() {
+  const q = document.getElementById('filter-of').value.toLowerCase();
+  const rows = _ofRows.filter(c =>
+    !q || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)
+  );
+  document.getElementById('count-of').textContent = `${rows.length} transakcí`;
+  const tbody = document.querySelector('#tbl-of tbody');
+  const VAT = 0.21;
+  tbody.innerHTML = rows.map(c => {
+    const amt     = parseFloat(c.amount||0);
+    const vat     = amt * VAT;
+    const total   = amt + vat;
+    const totalCZK= total * G.rate;
+    return `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${c.date}</td>
+      <td class="left">${c.symbol||'—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${(c.desc||'').slice(0,50)}</td>
+      <td style="text-align:left">${typeBadge('OF')}&nbsp;<span style="color:var(--muted2);font-family:var(--sans);font-size:10px">${c.type}</span></td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt)}</td>
+      <td style="color:var(--color-text-warning,#f59e0b)">${vat>=0?'+':''}${fmtN(vat)}</td>
+      <td class="${colorClass(total)}">${total>=0?'+':''}${fmtN(total)}</td>
+      <td class="${colorClass(totalCZK)}">${totalCZK>=0?'+':''}${fmtN(totalCZK,0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+
+  // Custom totals footer for OF (DPH columns)
+  const tfoot = document.getElementById('tfoot-of');
+  const sumAmt   = _ofRows.reduce((s,c) => s + parseFloat(c.amount||0), 0);
+  const sumVat   = sumAmt * VAT;
+  const sumTotal = sumAmt + sumVat;
+  const sumCZK   = sumTotal * G.rate;
+  tfoot.innerHTML = `<tr>
+    <td colspan="4">Celkem za období</td>
+    <td class="${colorClass(sumAmt)}">${sumAmt>=0?'+':''}${fmtN(sumAmt)}</td>
+    <td style="color:var(--color-text-warning,#f59e0b)">${sumVat>=0?'+':''}${fmtN(sumVat)}</td>
+    <td class="${colorClass(sumTotal)} tot">${sumTotal>=0?'+':''}${fmtN(sumTotal)}</td>
+    <td class="${colorClass(sumCZK)} tot">${sumCZK>=0?'+':''}${fmtN(sumCZK,0)}</td>
+  </tr>`;
+}
+
+// ── Deposits / Withdrawals ────────────────────────────────────────────
+let _depRows = [];
+function renderDep() {
+  _depRows = G.data.cashTxns.filter(c => DEP_TYPES.includes(c.type));
+  filterDep();
+}
+function filterDep() {
+  const q = document.getElementById('filter-dep').value.toLowerCase();
+  const rows = _depRows.filter(c =>
+    !q || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)
+  );
+  document.getElementById('count-dep').textContent = `${rows.length} transakcí`;
+  const tbody = document.querySelector('#tbl-dep tbody');
+  tbody.innerHTML = rows.map(c => {
+    const amt = parseFloat(c.amount||0);
+    return `<tr>
+      <td class="left" style="color:var(--muted2);font-family:var(--sans)">${c.date}</td>
+      <td class="left">${c.symbol||'—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${(c.desc||'').slice(0,50)}</td>
+      <td style="text-align:left">${typeBadge('DW')}&nbsp;<span style="color:var(--muted2);font-family:var(--sans);font-size:10px">${c.type}</span></td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt)}</td>
+      <td class="${colorClass(amt)}">${amt>=0?'+':''}${fmtN(amt*G.rate,0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+  totalsFooter('tfoot-dep', _depRows, 6);
+}
+
+// ── Derivatives ───────────────────────────────────────────────────────
+let _derRows = [];
+function renderDer() {
+  _derRows = G.data.derivatives || [];
+  filterDer();
+}
+function filterDer() {
+  const q    = document.getElementById('filter-der').value.toLowerCase();
+  const pc   = document.getElementById('filter-der-pc').value;
+  const side = document.getElementById('filter-der-side').value;
+  const rows = _derRows.filter(d =>
+    (!q    || d.symbol.toLowerCase().includes(q) || d.underlying.toLowerCase().includes(q)) &&
+    (!pc   || d.putCall === pc) &&
+    (!side || d.side === side)
+  );
+  document.getElementById('count-der').textContent = `${rows.length} pozic`;
+
+  // Update column header with last day of report
+  const lastDay = G.data?.account?.to || '';
+  const th = document.getElementById('th-under-price');
+  if (th) th.textContent = `Cena podkladu ke dni ${lastDay}`;
+
+  const tbody = document.querySelector('#tbl-der tbody');
+  const r = G.rate;
+  tbody.innerHTML = rows.map(d => {
+    const mktV   = parseFloat(d.mktVal  || 0);
+    const unr    = parseFloat(d.unreal  || 0);
+    const cost   = parseFloat(d.costBasis || 0);
+    const markP  = parseFloat(d.markPrice || 0);
+    const pc_label = d.putCall === 'C'
+      ? `<span style="color:#60a5fa;font-weight:600">Call</span>`
+      : `<span style="color:#f87171;font-weight:600">Put</span>`;
+    const side_style = d.side === 'Long' ? 'color:var(--green)' : 'color:var(--red)';
+
+    // Underlying price: from XML if available, else editable input
+    const xmlPrice = d.underlyingPrice ? parseFloat(d.underlyingPrice) : null;
+    const storedKey = `underPrice_${d.conid}`;
+    const storedVal = G.manualUnderPrices?.[storedKey] || '';
+    const underPriceCell = xmlPrice != null
+      ? `<td style="font-family:var(--mono);background:rgba(59,130,246,0.15);color:#93c5fd;font-weight:600;text-align:right">${fmtN(xmlPrice, 2)}</td>`
+      : `<td style="padding:4px 8px;background:rgba(245,158,11,0.18)">
+           <input type="number" step="0.01" min="0"
+             value="${storedVal}"
+             placeholder="zadat..."
+             style="width:90px;font-family:var(--mono);font-size:11px;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:5px;color:#fcd34d;padding:3px 6px;text-align:right;font-weight:600"
+             onchange="G.manualUnderPrices=G.manualUnderPrices||{};G.manualUnderPrices['${storedKey}']=this.value"
+             title="Cena podkladu není v reportu — zadejte ručně">
+         </td>`;
+
+    return `<tr>
+      <td class="left">${d.currency}</td>
+      <td class="left" style="font-size:10px">${d.symbol}</td>
+      <td style="font-family:var(--mono);font-size:10px">${d.conid}</td>
+      <td class="left">${d.underlying}</td>
+      ${underPriceCell}
+      <td>${d.expiry}</td>
+      <td style="text-align:center">${pc_label}</td>
+      <td>${fmtN(d.strike, 0)}</td>
+      <td style="${side_style}">${fmtN(d.qty, 0)}</td>
+      <td>${d.multiplier}</td>
+      <td class="${colorClass(cost)}">${fmtN(cost)}</td>
+      <td>${fmtN(markP, 4)}</td>
+      <td>${fmtN(markP * r, 2)}</td>
+      <td class="${colorClass(unr)}">${unr >= 0 ? '+' : ''}${fmtN(unr)}</td>
+      <td class="${colorClass(unr)}">${unr >= 0 ? '+' : ''}${fmtN(unr * r, 0)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="15"><div class="empty"><div class="empty-icon">🔍</div>Žádné opční pozice</div></td></tr>';
+
+  // Totals footer
+  const tfoot = document.getElementById('tfoot-der');
+  const sumCost = _derRows.reduce((s,d) => s + parseFloat(d.costBasis||0), 0);
+  const sumUnr  = _derRows.reduce((s,d) => s + parseFloat(d.unreal||0), 0);
+  tfoot.innerHTML = `<tr>
+    <td colspan="10">Celkem za období</td>
+    <td class="${colorClass(sumCost)}">${fmtN(sumCost)}</td>
+    <td colspan="2"></td>
+    <td class="${colorClass(sumUnr)} tot">${sumUnr >= 0 ? '+' : ''}${fmtN(sumUnr)}</td>
+    <td class="${colorClass(sumUnr)} tot">${sumUnr >= 0 ? '+' : ''}${fmtN(sumUnr * r, 0)}</td>
+  </tr>`;
+}
+
+// ── Zpracuj deriváty ──────────────────────────────────────────────────
+function zpracujDerivaty() {
+  const out = document.getElementById('der-output');
+  if (!out) return;
+  const r = G.data?.changeInNAV ? G.rate : G.rate;
+
+  // Collect underlying prices from the top table inputs + xml
+  const derRows = G.data.derivatives || [];
+  const underMap = {};
+  derRows.forEach(d => {
+    const key = `underPrice_${d.conid}`;
+    const xmlP = d.underlyingPrice ? parseFloat(d.underlyingPrice) : null;
+    const manP = G.manualUnderPrices?.[key] ? parseFloat(G.manualUnderPrices[key]) : null;
+    // Also read from live DOM inputs in case user typed without blur
+    const inp = document.querySelector(`input[onchange*="${key}"]`);
+    const domP = inp && inp.value ? parseFloat(inp.value) : null;
+    underMap[d.underlying] = underMap[d.underlying] || xmlP || manP || domP || null;
+    // Per-conid override takes priority
+    if (manP || domP) underMap[key] = manP || domP;
+  });
+  const getUnder = d => {
+    const key = `underPrice_${d.conid}`;
+    return G.manualUnderPrices?.[key]
+      ? parseFloat(G.manualUnderPrices[key])
+      : (d.underlyingPrice ? parseFloat(d.underlyingPrice) : underMap[d.underlying]);
+  };
+
+  const mkSection = (title, rows, buildRow, buildFoot) => {
+    if (!rows.length) return `
+      <div style="margin-top:24px">
+        <div class="der-section-title">${title}</div>
+        <p style="color:var(--muted);font-size:12px;padding:12px 0">Žádné pozice tohoto typu v reportu.</p>
+      </div>`;
+    return `
+      <div style="margin-top:24px">
+        <div class="der-section-title">${title}</div>
+        <div class="table-wrap">
+          <table>${buildRow(rows)}${buildFoot(rows)}</table>
+        </div>
+      </div>`;
+  };
+
+  const th = (...cols) => `<thead><tr>${cols.map(c =>
+    `<th${c.title ? ` title="${c.title}"` : ''}>${c.label}</th>`).join('')}</tr></thead>`;
+
+  const tf = (cells) => `<tfoot><tr>${cells.map(c =>
+    `<td${c.span ? ` colspan="${c.span}"` : ''} class="${c.cls||''}">${c.v}</td>`).join('')}</tr></tfoot>`;
+
+  // ── Long Call ──
+  const lcRows = derRows.filter(d => d.putCall === 'C' && parseFloat(d.qty||0) > 0);
+  const lcSection = mkSection('Long Call — závazky a pohledávky', lcRows,
+    (rows) => {
+      let sStrikeUSD=0, sStrikeCZK=0, sMktUSD=0, sMktCZK=0;
+      const body = rows.map(d => {
+        const qty    = parseFloat(d.qty||0);
+        const mult   = parseFloat(d.multiplier||1);
+        const strike = parseFloat(d.strike||0);
+        const underP = getUnder(d);
+        const strikeUSD = qty * mult * strike;
+        const strikeCZK = strikeUSD * r;
+        const mktUSD    = underP != null ? qty * mult * underP : null;
+        const mktCZK    = mktUSD != null ? mktUSD * r : null;
+        sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
+        if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
+        return `<tr>
+          <td class="left">${d.currency}</td>
+          <td class="left" style="font-size:10px">${d.symbol}</td>
+          <td style="font-family:var(--mono);font-size:10px">${d.conid}</td>
+          <td class="left">${d.underlying}</td>
+          <td style="background:rgba(59,130,246,0.12);color:#93c5fd;font-weight:600;font-family:var(--mono)">
+            ${underP != null ? fmtN(underP,2) : '<span style="color:var(--amber)">nezadáno</span>'}
+          </td>
+          <td>${fmtN(qty,0)}</td>
+          <td>${mult}</td>
+          <td>${fmtN(strike,0)}</td>
+          <td class="neg">${fmtN(strikeUSD,0)}</td>
+          <td class="neg">${fmtN(strikeCZK,0)}</td>
+          <td>${underP != null ? fmtN(underP,2) : '—'}</td>
+          <td class="${mktUSD!=null?'pos':''}">${mktUSD!=null ? fmtN(mktUSD,0) : '—'}</td>
+          <td class="${mktCZK!=null?'pos':''}">${mktCZK!=null ? fmtN(mktCZK,0) : '—'}</td>
+        </tr>`;
+      }).join('');
+      const head = th(
+        {label:'Měna'},{label:'Symbol'},{label:'Contract ID'},{label:'Podklad'},
+        {label:'Cena podkladu'},{label:'Množství'},{label:'Multiplier'},{label:'Strike'},
+        {label:'Strike USD celkem (Závazek)',title:'Množství × Multiplier × Strike'},
+        {label:'Strike CZK celkem (Závazek)',title:'Strike USD × kurz'},
+        {label:'Tržní cena v měně'},{label:'Tržní cena celkem USD (Pohledávka)',title:'Množství × Tržní cena × Multiplier'},
+        {label:'Tržní cena celkem CZK (Pohledávka)',title:'Tržní cena celkem USD × kurz'}
+      );
+      const foot = tf([
+        {span:8,v:'Celkem'},{cls:'neg tot',v:fmtN(sStrikeUSD,0)},{cls:'neg tot',v:fmtN(sStrikeCZK,0)},
+        {v:''},{cls:'pos tot',v:sMktUSD?fmtN(sMktUSD,0):'—'},{cls:'pos tot',v:sMktCZK?fmtN(sMktCZK,0):'—'}
+      ]);
+      return head + `<tbody>${body}</tbody>` + foot;
+    }, () => '');
+
+  // ── Short Call ──
+  const scRows = derRows.filter(d => d.putCall === 'C' && parseFloat(d.qty||0) < 0);
+  const scSection = mkSection('Short Call — závazky a pohledávky', scRows,
+    (rows) => {
+      let sStrikeUSD=0, sStrikeCZK=0, sMktUSD=0, sMktCZK=0;
+      const body = rows.map(d => {
+        const qty    = parseFloat(d.qty||0);           // záporné číslo
+        const mult   = parseFloat(d.multiplier||1);
+        const strike = parseFloat(d.strike||0);
+        const underP = getUnder(d);
+        const strikeUSD = Math.abs(qty) * mult * strike;     // pohledávka
+        const strikeCZK = strikeUSD * r;
+        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * -1 : null;  // závazek (záporný)
+        const mktCZK    = mktUSD != null ? mktUSD * r : null;
+        sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
+        if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
+        return `<tr>
+          <td class="left">${d.currency}</td>
+          <td class="left" style="font-size:10px">${d.symbol}</td>
+          <td style="font-family:var(--mono);font-size:10px">${d.conid}</td>
+          <td class="left">${d.underlying}</td>
+          <td>${fmtN(qty,0)}</td>
+          <td>${mult}</td>
+          <td>${fmtN(strike,0)}</td>
+          <td class="pos">${fmtN(strikeUSD,0)}</td>
+          <td class="pos">${fmtN(strikeCZK,0)}</td>
+          <td>${underP != null ? fmtN(underP,2) : '—'}</td>
+          <td class="${mktUSD!=null?'neg':''}">${mktUSD!=null ? fmtN(mktUSD,0) : '—'}</td>
+          <td class="${mktCZK!=null?'neg':''}">${mktCZK!=null ? fmtN(mktCZK,0) : '—'}</td>
+        </tr>`;
+      }).join('');
+      const head = th(
+        {label:'Měna'},{label:'Symbol'},{label:'Contract ID'},{label:'Podklad'},
+        {label:'Množství'},{label:'Multiplier'},{label:'Strike'},
+        {label:'Strike USD celkem (Pohledávka)',title:'|Množství| × Multiplier × Strike'},
+        {label:'Strike CZK celkem (Pohledávka)',title:'Strike USD × kurz'},
+        {label:'Tržní cena v měně (cena podkladu)'},
+        {label:'Tržní cena celkem USD (Závazek)',title:'|Množství| × Tržní cena × Multiplier × -1'},
+        {label:'Tržní cena celkem CZK (Závazek)',title:'Tržní cena celkem USD × kurz'}
+      );
+      const foot = tf([
+        {span:7,v:'Celkem'},{cls:'pos tot',v:fmtN(sStrikeUSD,0)},{cls:'pos tot',v:fmtN(sStrikeCZK,0)},
+        {v:''},{cls:'neg tot',v:sMktUSD?fmtN(sMktUSD,0):'—'},{cls:'neg tot',v:sMktCZK?fmtN(sMktCZK,0):'—'}
+      ]);
+      return head + `<tbody>${body}</tbody>` + foot;
+    }, () => '');
+
+  // ── Long Put ──
+  const lpRows = derRows.filter(d => d.putCall === 'P' && parseFloat(d.qty||0) > 0);
+  const lpSection = mkSection('Long Put — závazky a pohledávky', lpRows,
+    (rows) => {
+      let sStrikeUSD=0, sStrikeCZK=0, sMktUSD=0, sMktCZK=0;
+      const body = rows.map(d => {
+        const qty    = parseFloat(d.qty||0);
+        const mult   = parseFloat(d.multiplier||1);
+        const strike = parseFloat(d.strike||0);
+        const underP = getUnder(d);
+        const strikeUSD = qty * mult * strike;          // pohledávka
+        const strikeCZK = strikeUSD * r;
+        const mktUSD    = underP != null ? qty * mult * underP : null;  // závazek
+        const mktCZK    = mktUSD != null ? mktUSD * r : null;
+        sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
+        if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
+        return `<tr>
+          <td class="left">${d.currency}</td>
+          <td class="left" style="font-size:10px">${d.symbol}</td>
+          <td style="font-family:var(--mono);font-size:10px">${d.conid}</td>
+          <td class="left">${d.underlying}</td>
+          <td>${fmtN(qty,0)}</td>
+          <td>${mult}</td>
+          <td>${fmtN(strike,0)}</td>
+          <td class="pos">${fmtN(strikeUSD,0)}</td>
+          <td class="pos">${fmtN(strikeCZK,0)}</td>
+          <td>${underP != null ? fmtN(underP,2) : '—'}</td>
+          <td class="${mktUSD!=null?'neg':''}">${mktUSD!=null ? fmtN(mktUSD,0) : '—'}</td>
+          <td class="${mktCZK!=null?'neg':''}">${mktCZK!=null ? fmtN(mktCZK,0) : '—'}</td>
+        </tr>`;
+      }).join('');
+      const head = th(
+        {label:'Měna'},{label:'Symbol'},{label:'Contract ID'},{label:'Podklad'},
+        {label:'Množství'},{label:'Multiplier'},{label:'Strike'},
+        {label:'Strike USD celkem (Pohledávka)',title:'Množství × Multiplier × Strike'},
+        {label:'Strike CZK celkem (Pohledávka)',title:'Strike USD × kurz'},
+        {label:'Tržní cena v měně (cena podkladu)'},
+        {label:'Tržní cena celkem USD (Závazek)',title:'Množství × Tržní cena × Multiplier'},
+        {label:'Tržní cena celkem CZK (Závazek)',title:'Tržní cena celkem USD × kurz'}
+      );
+      const foot = tf([
+        {span:7,v:'Celkem'},{cls:'pos tot',v:fmtN(sStrikeUSD,0)},{cls:'pos tot',v:fmtN(sStrikeCZK,0)},
+        {v:''},{cls:'neg tot',v:sMktUSD?fmtN(sMktUSD,0):'—'},{cls:'neg tot',v:sMktCZK?fmtN(sMktCZK,0):'—'}
+      ]);
+      return head + `<tbody>${body}</tbody>` + foot;
+    }, () => '');
+
+  // ── Short Put ──
+  const spRows = derRows.filter(d => d.putCall === 'P' && parseFloat(d.qty||0) < 0);
+  const spSection = mkSection('Short Put — závazky a pohledávky', spRows,
+    (rows) => {
+      let sStrikeUSD=0, sStrikeCZK=0, sMktUSD=0, sMktCZK=0;
+      const body = rows.map(d => {
+        const qty    = parseFloat(d.qty||0);           // záporné číslo
+        const mult   = parseFloat(d.multiplier||1);
+        const strike = parseFloat(d.strike||0);
+        const underP = getUnder(d);
+        const strikeUSD = Math.abs(qty) * mult * strike;          // závazek
+        const strikeCZK = strikeUSD * r;
+        const mktUSD    = underP != null ? Math.abs(qty) * mult * underP * -1 : null;  // pohledávka (záporný závazek)
+        const mktCZK    = mktUSD != null ? mktUSD * r : null;
+        sStrikeUSD += strikeUSD; sStrikeCZK += strikeCZK;
+        if (mktUSD != null) { sMktUSD += mktUSD; sMktCZK += mktCZK; }
+        return `<tr>
+          <td class="left">${d.currency}</td>
+          <td class="left" style="font-size:10px">${d.symbol}</td>
+          <td style="font-family:var(--mono);font-size:10px">${d.conid}</td>
+          <td class="left">${d.underlying}</td>
+          <td>${fmtN(qty,0)}</td>
+          <td>${mult}</td>
+          <td>${fmtN(strike,0)}</td>
+          <td class="neg">${fmtN(strikeUSD,0)}</td>
+          <td class="neg">${fmtN(strikeCZK,0)}</td>
+          <td>${underP != null ? fmtN(underP,2) : '—'}</td>
+          <td class="${mktUSD!=null?'pos':''}">${mktUSD!=null ? fmtN(mktUSD,0) : '—'}</td>
+          <td class="${mktCZK!=null?'pos':''}">${mktCZK!=null ? fmtN(mktCZK,0) : '—'}</td>
+        </tr>`;
+      }).join('');
+      const head = th(
+        {label:'Měna'},{label:'Symbol'},{label:'Contract ID'},{label:'Podklad'},
+        {label:'Množství'},{label:'Multiplier'},{label:'Strike'},
+        {label:'Strike USD celkem (Závazek)',title:'|Množství| × Multiplier × Strike'},
+        {label:'Strike CZK celkem (Závazek)',title:'Strike USD × kurz'},
+        {label:'Tržní cena v měně (cena podkladu)'},
+        {label:'Tržní cena celkem USD (Pohledávka)',title:'|Množství| × Tržní cena × Multiplier × -1'},
+        {label:'Tržní cena celkem CZK (Pohledávka)',title:'Tržní cena celkem USD × kurz'}
+      );
+      const foot = tf([
+        {span:7,v:'Celkem'},{cls:'neg tot',v:fmtN(sStrikeUSD,0)},{cls:'neg tot',v:fmtN(sStrikeCZK,0)},
+        {v:''},{cls:'pos tot',v:sMktUSD?fmtN(sMktUSD,0):'—'},{cls:'pos tot',v:sMktCZK?fmtN(sMktCZK,0):'—'}
+      ]);
+      return head + `<tbody>${body}</tbody>` + foot;
+    }, () => '');
+
+  // ── Rekapitulace ──
+  // Compute totals for each option type independently
+  const calcTotals = (rows, isShort) => {
+    let strikeUSD=0, strikeCZK=0, mktUSD=0, mktCZK=0, hasMkt=false;
+    rows.forEach(d => {
+      const qty    = parseFloat(d.qty||0);
+      const mult   = parseFloat(d.multiplier||1);
+      const strike = parseFloat(d.strike||0);
+      const underP = getUnder(d);
+      const absQty = Math.abs(qty);
+      strikeUSD += absQty * mult * strike;
+      strikeCZK += absQty * mult * strike * r;
+      if (underP != null) {
+        mktUSD += absQty * mult * underP;
+        mktCZK += absQty * mult * underP * r;
+        hasMkt = true;
+      }
+    });
+    return { strikeUSD, strikeCZK, mktUSD: hasMkt ? mktUSD : null, mktCZK: hasMkt ? mktCZK : null };
+  };
+
+  // Long Call:  Strike = Závazek,  Tržní = Pohledávka
+  // Short Call: Strike = Pohledávka, Tržní = Závazek (×-1 → abs)
+  // Long Put:   Strike = Pohledávka, Tržní = Závazek
+  // Short Put:  Strike = Závazek,  Tržní = Pohledávka (×-1 → abs)
+  const lcT = calcTotals(lcRows, false);
+  const scT = calcTotals(scRows, true);
+  const lpT = calcTotals(lpRows, false);
+  const spT = calcTotals(spRows, true);
+
+  const fv = v => v != null ? fmtN(Math.abs(v), 0) : '—';
+
+  // Per-type: [label, pohledávkaUSD, pohledávkaCZK, závazekUSD, závazekCZK]
+  const typeRows = [
+    ['Long Call',  lcT.mktUSD,  lcT.mktCZK,  lcT.strikeUSD, lcT.strikeCZK],
+    ['Short Call', scT.strikeUSD, scT.strikeCZK, scT.mktUSD, scT.mktCZK],
+    ['Long Put',   lpT.strikeUSD, lpT.strikeCZK, lpT.mktUSD,  lpT.mktCZK],
+    ['Short Put',  spT.mktUSD,  spT.mktCZK,  spT.strikeUSD, spT.strikeCZK],
+  ];
+
+  const sumPohUSD = typeRows.reduce((s,[,p]) => s + (p||0), 0);
+  const sumPohCZK = typeRows.reduce((s,[,,p]) => s + (p||0), 0);
+  const sumZavUSD = typeRows.reduce((s,[,,,z]) => s + (z||0), 0);
+  const sumZavCZK = typeRows.reduce((s,[,,,,z]) => s + (z||0), 0);
+  const diffUSD   = sumPohUSD - sumZavUSD;
+  const diffCZK   = sumPohCZK - sumZavCZK;
+
+  const recapSection = `
+    <div style="margin-top:28px">
+      <div class="der-section-title">Rekapitulace</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">Typ opce</th>
+            <th>Pohledávky USD</th>
+            <th>Pohledávky CZK</th>
+            <th>Závazky USD</th>
+            <th>Závazky CZK</th>
+          </tr></thead>
+          <tbody>
+            ${typeRows.map(([label, pUSD, pCZK, zUSD, zCZK]) => `<tr>
+              <td class="left" style="font-weight:500">${label}</td>
+              <td class="pos">${fv(pUSD)}</td>
+              <td class="pos">${fv(pCZK)}</td>
+              <td class="neg">${fv(zUSD)}</td>
+              <td class="neg">${fv(zCZK)}</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="border-top:1px solid var(--border2)">
+              <td class="left" style="font-weight:600">Pohledávky celkem</td>
+              <td class="pos tot">${fmtN(sumPohUSD,0)}</td>
+              <td class="pos tot">${fmtN(sumPohCZK,0)}</td>
+              <td></td><td></td>
+            </tr>
+            <tr>
+              <td class="left" style="font-weight:600">Závazky celkem</td>
+              <td></td><td></td>
+              <td class="neg tot">${fmtN(sumZavUSD,0)}</td>
+              <td class="neg tot">${fmtN(sumZavCZK,0)}</td>
+            </tr>
+            <tr style="border-top:2px solid var(--border2)">
+              <td class="left" style="font-weight:600">Rozdíl (Pohledávky − Závazky)</td>
+              <td class="${diffUSD>=0?'pos':'neg'} tot" style="font-size:13px">${diffUSD>=0?'+':''}${fmtN(diffUSD,0)}</td>
+              <td class="${diffCZK>=0?'pos':'neg'} tot" style="font-size:13px">${diffCZK>=0?'+':''}${fmtN(diffCZK,0)}</td>
+              <td></td><td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>`;
+
+  out.innerHTML = lcSection + scSection + lpSection + spSection + recapSection;
+}
+
+// ── Positions ────────────────────────────────────────────────────────
+let _posRows = [];
+function renderPositions() {
+  _posRows = G.data.positions;
+  filterPos();
+}
+function filterPos() {
+  const q  = document.getElementById('filter-pos').value.toLowerCase();
+  const tp = document.getElementById('filter-pos-type').value;
+  const rows = _posRows.filter(p =>
+    (!q  || p.symbol.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)) &&
+    (!tp || p.type === tp)
+  );
+  document.getElementById('count-pos').textContent = `${rows.length} pozic`;
+  const tbody = document.querySelector('#tbl-pos tbody');
+  tbody.innerHTML = rows.map(p => {
+    const ur = parseFloat(p.unreal||0);
+    return `<tr>
+      <td class="left">${p.symbol}</td>
+      <td style="text-align:left;font-family:var(--mono);font-size:11px;color:var(--muted2)">${p.isin||'—'}</td>
+      <td style="text-align:left;color:var(--muted2);font-family:var(--sans);font-size:11px">${p.desc.slice(0,30)}</td>
+      <td>${typeBadge(p.type)}</td>
+      <td>${fmtN(p.qty,0)}</td>
+      <td>${fmtN(p.openP,2)}</td>
+      <td>${fmtN(p.markP,2)}</td>
+      <td>${fmtN(p.mktVal,0)}</td>
+      <td>${fmtN(parseFloat(p.mktVal||0)*G.rate,0)}</td>
+      <td>${fmtN(p.cost,0)}</td>
+      <td class="${colorClass(ur)}">${ur>=0?'+':''}${fmtN(ur,2)}</td>
+      <td class="${colorClass(ur)}">${ur>=0?'+':''}${fmtN(ur*G.rate,0)}</td>
+      <td>${fmtN(p.pctNav,2)}%</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="13"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
+}
+
+// ── Tab switching ────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const tabs = ['summary','positions','trades','pnl','derivatives','dividends','brokerinterest','otherfees','deposits'];
+  document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+// ── Sortable columns ─────────────────────────────────────────────────
+const _sortState = {};
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows  = [...tbody.querySelectorAll('tr')];
+  const key   = tableId + '_' + colIdx;
+  _sortState[key] = _sortState[key] === 'asc' ? 'desc' : 'asc';
+  const asc = _sortState[key] === 'asc';
+
+  rows.sort((a, b) => {
+    const av = a.cells[colIdx]?.textContent.trim().replace(/[+$Kč %,]/g,'') || '';
+    const bv = b.cells[colIdx]?.textContent.trim().replace(/[+$Kč %,]/g,'') || '';
+    const an = parseFloat(av.replace(/\s/g,'')), bn = parseFloat(bv.replace(/\s/g,''));
+    if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
+    return asc ? av.localeCompare(bv, 'cs') : bv.localeCompare(av, 'cs');
+  });
+
+  table.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+  });
+  const th = table.querySelectorAll('th')[colIdx];
+  if (th) th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ── XLSX Export ──────────────────────────────────────────────────────
+function exportXLSX() {
+  if (!G.data) return;
+  const { account, trades, positions, cashTxns, pnl, derivatives, summary, changeInNAV } = G.data;
+  const r = G.rate;
+
+  const VAT = 0.21;
+
+  // ── 1. Přehled ──
+  const totalMV   = positions.reduce((s,p) => s + parseFloat(p.mktVal||0), 0);
+  const totalUnr  = positions.reduce((s,p) => s + parseFloat(p.unreal||0), 0);
+  const totalReal = pnl.reduce((s,p) => s + parseFloat(p.totalReal||0), 0);
+  const divs = parseFloat(summary.dividends||0);
+  const wh   = parseFloat(summary.withholding||0);
+  const comm = parseFloat(summary.commissions||0);
+  const cash = parseFloat(summary.endCash||0);
+  const twrPct    = changeInNAV ? changeInNAV.twr : null;
+  const simpleRet = changeInNAV ? ((changeInNAV.endingValue - changeInNAV.startingValue) / Math.abs(changeInNAV.startingValue)) * 100 : null;
+  const sheetPrehled = [
+    ['Metrika', 'USD', 'CZK'],
+    ['Tržní hodnota portfolia', +totalMV.toFixed(2), +(totalMV*r).toFixed(2)],
+    ['Nerealizovaný P&L', +totalUnr.toFixed(2), +(totalUnr*r).toFixed(2)],
+    ['Realizovaný P&L', +totalReal.toFixed(2), +(totalReal*r).toFixed(2)],
+    ['Dividendy hrubé', +divs.toFixed(2), +(divs*r).toFixed(2)],
+    ['Srážková daň', +wh.toFixed(2), +(wh*r).toFixed(2)],
+    ['Dividendy čisté', +(divs+wh).toFixed(2), +((divs+wh)*r).toFixed(2)],
+    ['Komise celkem', +comm.toFixed(2), +(comm*r).toFixed(2)],
+    ['Cash na účtu', +cash.toFixed(2), +(cash*r).toFixed(2)],
+    [],
+    ['Výkonnost', '%'],
+    ['TWR (Time-Weighted Return)', twrPct != null ? +twrPct.toFixed(4) : ''],
+    ['Prostý výnos', simpleRet != null ? +simpleRet.toFixed(4) : ''],
+  ];
+
+  // ── 2. Pozice ──
+  const sheetPozice = [
+    ['Symbol','ISIN','Popis','Typ','Množství','Ot. cena','Akt. cena','Trž. hodnota USD','Trž. hodnota CZK','Náklady USD','Nerealizovaný USD','Nerealizovaný CZK','% NAV'],
+    ...positions.map(p => [
+      p.symbol, p.isin||'', p.desc, p.type,
+      +parseFloat(p.qty||0).toFixed(0),
+      +parseFloat(p.openP||0).toFixed(4),
+      +parseFloat(p.markP||0).toFixed(4),
+      +parseFloat(p.mktVal||0).toFixed(2),
+      +(parseFloat(p.mktVal||0)*r).toFixed(2),
+      +parseFloat(p.cost||0).toFixed(2),
+      +parseFloat(p.unreal||0).toFixed(2),
+      +(parseFloat(p.unreal||0)*r).toFixed(2),
+      +parseFloat(p.pctNav||0).toFixed(2),
+    ]),
+  ];
+
+  // ── 3. Obchody ──
+  const sheetObchody = [
+    ['Datum','Symbol','Popis','Typ','Strana','Množství','Cena USD','Proceeds USD','Komise USD','Net cash USD','P&L USD','P&L CZK'],
+    ...trades.map(t => [
+      t.date, t.symbol, t.desc, t.type, t.side,
+      +parseFloat(t.qty||0).toFixed(4),
+      +parseFloat(t.price||0).toFixed(4),
+      +parseFloat(t.proceeds||0).toFixed(2),
+      +parseFloat(t.comm||0).toFixed(4),
+      +parseFloat(t.net||0).toFixed(2),
+      +parseFloat(t.pnl||0).toFixed(4),
+      +(parseFloat(t.pnl||0)*r).toFixed(2),
+    ]),
+  ];
+
+  // ── 4. P&L ──
+  const sheetPnl = [
+    ['Symbol','Popis','Typ','Real. zisk ST USD','Real. ztráta ST USD','Real. celkem USD','Real. celkem CZK',
+     'Nerealizovaný USD','Nerealizovaný CZK','Total USD','Total CZK',
+     'Ocenění začátek USD','Ocenění konec USD','Rozdíl ocenění USD',
+     'Ocenění začátek CZK','Ocenění konec CZK','Rozdíl ocenění CZK'],
+    ...pnl.map(p => {
+      const startV = parseFloat(p.startVal||0);
+      const endV   = parseFloat(p.endVal||0);
+      const diff   = endV - startV;
+      return [
+        p.symbol, p.desc, p.type,
+        +parseFloat(p.realST||0).toFixed(2),
+        +parseFloat(p.realSTL||0).toFixed(2),
+        +parseFloat(p.totalReal||0).toFixed(2),
+        +(parseFloat(p.totalReal||0)*r).toFixed(2),
+        +parseFloat(p.unreal||0).toFixed(2),
+        +(parseFloat(p.unreal||0)*r).toFixed(2),
+        +parseFloat(p.total||0).toFixed(2),
+        +(parseFloat(p.total||0)*r).toFixed(2),
+        +startV.toFixed(2), +endV.toFixed(2), +diff.toFixed(2),
+        +(startV*r).toFixed(2), +(endV*r).toFixed(2), +(diff*r).toFixed(2),
+      ];
+    }),
+  ];
+
+  // ── 5. Deriváty — sestaveno níže jako sheetDerFull ──
+
+  // ── 6. Dividendy & Daně ──
+  const DIV_TYPES = ['Dividends','Withholding Tax','Payment In Lieu Of Dividends'];
+  const divRows = cashTxns.filter(c => DIV_TYPES.includes(c.type));
+  const sheetDividendy = [
+    ['Datum','Symbol','Popis','Typ','Částka USD','Částka CZK'],
+    ...divRows.map(c => [
+      c.date, c.symbol||'', c.desc, c.type,
+      +parseFloat(c.amount||0).toFixed(2),
+      +(parseFloat(c.amount||0)*r).toFixed(2),
+    ]),
+  ];
+
+  // ── 7. Úroky ──
+  const BI_TYPES_X = ['Broker Interest Paid','Broker Interest Received','Bond Interest Paid','Bond Interest Received'];
+  const biRows = cashTxns.filter(c => BI_TYPES_X.includes(c.type));
+  const sheetUroky = [
+    ['Datum','Symbol','Popis','Typ','Částka USD','Částka CZK'],
+    ...biRows.map(c => [
+      c.date, c.symbol||'', c.desc, c.type,
+      +parseFloat(c.amount||0).toFixed(2),
+      +(parseFloat(c.amount||0)*r).toFixed(2),
+    ]),
+  ];
+
+  // ── 8. Poplatky (s DPH) ──
+  const ofRows = cashTxns.filter(c => c.type === 'Other Fees');
+  const sheetPoplatky = [
+    ['Datum','Symbol','Popis','Typ','Částka USD','DPH 21 % USD','Celkem s DPH USD','Celkem s DPH CZK'],
+    ...ofRows.map(c => {
+      const amt   = parseFloat(c.amount||0);
+      const vat   = amt * VAT;
+      const total = amt + vat;
+      return [
+        c.date, c.symbol||'', c.desc, c.type,
+        +amt.toFixed(2), +vat.toFixed(2), +total.toFixed(2), +(total*r).toFixed(2),
+      ];
+    }),
+  ];
+
+  // ── 9. Vklady/výběry ──
+  const depRows = cashTxns.filter(c => c.type === 'Deposits/Withdrawals');
+  const sheetDeposits = [
+    ['Datum','Symbol','Popis','Typ','Částka USD','Částka CZK'],
+    ...depRows.map(c => [
+      c.date, c.symbol||'', c.desc, c.type,
+      +parseFloat(c.amount||0).toFixed(2),
+      +(parseFloat(c.amount||0)*r).toFixed(2),
+    ]),
+  ];
+
+  // ── Build workbook ──
+  if (typeof XLSX === 'undefined') {
+    alert('SheetJS knihovna není dostupná. Zkontrolujte připojení k internetu.');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const addSheet = (name, data) => {
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    // Apply number format with thousands separator to all numeric cells
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let R = range.s.r; R <= range.e.r; R++) {
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[addr];
+        if (!cell || cell.t !== 'n') continue;
+        // Choose format based on whether value has decimals
+        const v = cell.v;
+        const isInt = Number.isInteger(v) || Math.abs(v - Math.round(v)) < 0.005;
+        cell.z = isInt ? '#,##0' : '#,##0.00';
+      }
+    }
+
+    // Auto-width: find max char length per column across ALL rows
+    const maxCols = Math.max(...data.map(row => row.length));
+    const colWidths = Array.from({ length: maxCols }, (_, ci) => {
+      const maxLen = data.reduce((m, row) => {
+        const cell = row[ci];
+        const len  = cell != null ? String(cell).length : 0;
+        return Math.max(m, len);
+      }, 6);
+      return { wch: Math.min(maxLen + 4, 60) };
+    });
+    ws['!cols'] = colWidths;
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+
+  addSheet('Přehled',          sheetPrehled);
+  addSheet('Pozice',           sheetPozice);
+  addSheet('Obchody',          sheetObchody);
+  addSheet('PnL',              sheetPnl);
+  // ── Deriváty — vše na jednom listu ──
+  const derRows = derivatives || [];
+
+  const getUnderXlsx = d => {
+    const key = `underPrice_${d.conid}`;
+    const manP = G.manualUnderPrices?.[key] ? parseFloat(G.manualUnderPrices[key]) : null;
+    const inp  = document.querySelector(`input[onchange*="${key}"]`);
+    const domP = inp && inp.value ? parseFloat(inp.value) : null;
+    return manP || domP || (d.underlyingPrice ? parseFloat(d.underlyingPrice) : null);
+  };
+
+  const buildOptRows = rows => rows.map(d => {
+    const qty    = parseFloat(d.qty||0);
+    const mult   = parseFloat(d.multiplier||1);
+    const strike = parseFloat(d.strike||0);
+    const underP = getUnderXlsx(d);
+    const absQty = Math.abs(qty);
+    const strikeUSD = absQty * mult * strike;
+    const strikeCZK = strikeUSD * r;
+    const mktUSD    = underP != null ? absQty * mult * underP : null;
+    const mktCZK    = mktUSD != null ? mktUSD * r : null;
+    return [
+      d.currency, d.symbol, d.conid, d.underlying,
+      qty, mult, +strike,
+      +strikeUSD.toFixed(2), +strikeCZK.toFixed(2),
+      underP != null ? +underP.toFixed(4) : '',
+      mktUSD != null ? +mktUSD.toFixed(2) : '',
+      mktCZK != null ? +mktCZK.toFixed(2) : '',
+    ];
+  });
+
+  const optHdr = (strikeLabel, mktLabel) => [
+    'Měna','Symbol','Contract ID','Podklad','Množství','Multiplier','Strike',
+    `Strike USD celkem (${strikeLabel})`, `Strike CZK celkem (${strikeLabel})`,
+    'Tržní cena v měně',
+    `Tržní cena celkem USD (${mktLabel})`, `Tržní cena celkem CZK (${mktLabel})`,
+  ];
+
+  const optSumRow = rows => {
+    const sS  = rows.reduce((s,row) => s + (typeof row[7]==='number'?row[7]:0), 0);
+    const sZ  = rows.reduce((s,row) => s + (typeof row[8]==='number'?row[8]:0), 0);
+    const sM  = rows.reduce((s,row) => s + (typeof row[10]==='number'?row[10]:0), 0);
+    const sMc = rows.reduce((s,row) => s + (typeof row[11]==='number'?row[11]:0), 0);
+    return ['Celkem','','','','','','', +sS.toFixed(2), +sZ.toFixed(2), '',
+      sM ? +sM.toFixed(2) : '', sMc ? +sMc.toFixed(2) : ''];
+  };
+
+  const calcTotalsXlsx = rows => {
+    let sUSD=0, sCZK=0, mUSD=0, mCZK=0, hasMkt=false;
+    rows.forEach(row => {
+      sUSD += typeof row[7]==='number' ? row[7] : 0;
+      sCZK += typeof row[8]==='number' ? row[8] : 0;
+      if (typeof row[10]==='number') { mUSD += row[10]; mCZK += (row[11]||0); hasMkt=true; }
+    });
+    return { sUSD, sCZK, mUSD: hasMkt?mUSD:null, mCZK: hasMkt?mCZK:null };
+  };
+
+  const lcR = derRows.filter(d => d.putCall==='C' && parseFloat(d.qty||0) > 0);
+  const scR = derRows.filter(d => d.putCall==='C' && parseFloat(d.qty||0) < 0);
+  const lpR = derRows.filter(d => d.putCall==='P' && parseFloat(d.qty||0) > 0);
+  const spR = derRows.filter(d => d.putCall==='P' && parseFloat(d.qty||0) < 0);
+
+  const lcRows2 = buildOptRows(lcR);
+  const scRows2 = buildOptRows(scR);
+  const lpRows2 = buildOptRows(lpR);
+  const spRows2 = buildOptRows(spR);
+
+  const lcT = calcTotalsXlsx(lcRows2);
+  const scT = calcTotalsXlsx(scRows2);
+  const lpT = calcTotalsXlsx(lpRows2);
+  const spT = calcTotalsXlsx(spRows2);
+
+  const sumPohUSD = [lcT.mUSD||0, scT.sUSD, lpT.sUSD, spT.mUSD||0].reduce((a,b)=>a+b,0);
+  const sumPohCZK = [lcT.mCZK||0, scT.sCZK, lpT.sCZK, spT.mCZK||0].reduce((a,b)=>a+b,0);
+  const sumZavUSD = [lcT.sUSD, scT.mUSD||0, lpT.mUSD||0, spT.sUSD].reduce((a,b)=>a+b,0);
+  const sumZavCZK = [lcT.sCZK, scT.mCZK||0, lpT.mCZK||0, spT.sCZK].reduce((a,b)=>a+b,0);
+
+  // Compose single derivatives sheet: pozice + prázdný řádek + každý typ + rekapitulace
+  const sheetDerFull = [
+    // ── Sekce 1: Otevřené pozice ──
+    ['OTEVŘENÉ POZICE OPCÍ'],
+    ['Měna','Symbol','Contract ID','Podklad','Expirace','Typ','Strike','Množství','Multiplier',
+     'Pořizovací cena USD','Akt. cena USD','Akt. cena CZK','Nerealizovaný P&L USD','Nerealizovaný P&L CZK'],
+    ...derivatives.map(d => {
+      const markP = parseFloat(d.markPrice||0);
+      const unr   = parseFloat(d.unreal||0);
+      return [
+        d.currency, d.symbol, d.conid, d.underlying, d.expiry,
+        d.putCall==='C' ? 'Call' : 'Put',
+        +parseFloat(d.strike||0),
+        +parseFloat(d.qty||0),
+        +parseFloat(d.multiplier||1),
+        +parseFloat(d.costBasis||0).toFixed(2),
+        +markP.toFixed(4), +(markP*r).toFixed(2),
+        +unr.toFixed(2), +(unr*r).toFixed(2),
+      ];
+    }),
+    [],
+    // ── Sekce 2: Long Call ──
+    ['LONG CALL'],
+    optHdr('Závazek','Pohledávka'),
+    ...(lcRows2.length ? [...lcRows2, optSumRow(lcRows2)] : [['Žádné Long Call pozice']]),
+    [],
+    // ── Sekce 3: Short Call ──
+    ['SHORT CALL'],
+    optHdr('Pohledávka','Závazek'),
+    ...(scRows2.length ? [...scRows2, optSumRow(scRows2)] : [['Žádné Short Call pozice']]),
+    [],
+    // ── Sekce 4: Long Put ──
+    ['LONG PUT'],
+    optHdr('Pohledávka','Závazek'),
+    ...(lpRows2.length ? [...lpRows2, optSumRow(lpRows2)] : [['Žádné Long Put pozice']]),
+    [],
+    // ── Sekce 5: Short Put ──
+    ['SHORT PUT'],
+    optHdr('Závazek','Pohledávka'),
+    ...(spRows2.length ? [...spRows2, optSumRow(spRows2)] : [['Žádné Short Put pozice']]),
+    [],
+    // ── Sekce 6: Rekapitulace ──
+    ['REKAPITULACE'],
+    ['Typ','Pohledávky USD','Pohledávky CZK','Závazky USD','Závazky CZK'],
+    ['Long Call',  lcT.mUSD!=null?+lcT.mUSD.toFixed(2):'', lcT.mCZK!=null?+lcT.mCZK.toFixed(2):'', +lcT.sUSD.toFixed(2), +lcT.sCZK.toFixed(2)],
+    ['Short Call', +scT.sUSD.toFixed(2), +scT.sCZK.toFixed(2), scT.mUSD!=null?+scT.mUSD.toFixed(2):'', scT.mCZK!=null?+scT.mCZK.toFixed(2):''],
+    ['Long Put',   +lpT.sUSD.toFixed(2), +lpT.sCZK.toFixed(2), lpT.mUSD!=null?+lpT.mUSD.toFixed(2):'', lpT.mCZK!=null?+lpT.mCZK.toFixed(2):''],
+    ['Short Put',  spT.mUSD!=null?+spT.mUSD.toFixed(2):'', spT.mCZK!=null?+spT.mCZK.toFixed(2):'', +spT.sUSD.toFixed(2), +spT.sCZK.toFixed(2)],
+    ['Pohledávky celkem', +sumPohUSD.toFixed(2), +sumPohCZK.toFixed(2), '', ''],
+    ['Závazky celkem', '', '', +sumZavUSD.toFixed(2), +sumZavCZK.toFixed(2)],
+    ['Rozdíl (Pohledávky − Závazky)', +(sumPohUSD-sumZavUSD).toFixed(2), +(sumPohCZK-sumZavCZK).toFixed(2), '', ''],
+  ];
+
+  addSheet('Deriváty', sheetDerFull);
+  addSheet('Dividendy a Daně', sheetDividendy);
+  addSheet('Úroky',            sheetUroky);
+  addSheet('Poplatky',         sheetPoplatky);
+  addSheet('Vklady a výběry',  sheetDeposits);
+
+  const from = (account.from||'').replace(/\./g,'');
+  const to   = (account.to||'').replace(/\./g,'');
+  XLSX.writeFile(wb, `ReportReader_${from}-${to}.xlsx`);
+}
+// ── Print / PDF ───────────────────────────────────────────────────────
+async function printPDF() {
+  if (!G.data) return;
+
+  // Load jsPDF + html2canvas
+  if (typeof window.jspdf === 'undefined') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }
+  if (typeof window.html2canvas === 'undefined') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  }
+
+  const btn = document.querySelector('button[onclick="printPDF()"]');
+  const origText = btn?.textContent;
+  if (btn) btn.textContent = 'Generuji PDF…';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const a = G.data.account;
+    const r = G.rate;
+
+    // Build HTML content for PDF — one section per tab
+    const TABS = [
+      ['panel-summary',        'Přehled'],
+      ['panel-positions',      'Pozice'],
+      ['panel-trades',         'Obchody'],
+      ['panel-pnl',            'P&L'],
+      ['panel-derivatives',    'Deriváty'],
+      ['panel-dividends',      'Dividendy & Daně'],
+      ['panel-brokerinterest', 'Úroky'],
+      ['panel-otherfees',      'Poplatky'],
+      ['panel-deposits',       'Vklady / výběry'],
+    ];
+
+    const headerHTML = `
+      <div style="background:#0a0e1a;color:#fff;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;font-family:Arial,sans-serif;font-size:11px;margin-bottom:0">
+        <strong style="font-size:13px">ReportReader</strong>
+        <span>${a.name} · ${a.id}</span>
+        <span>USD/CZK ${r.toFixed(4)}</span>
+      </div>
+      <div style="background:#1d4ed8;color:#fff;padding:4px 12px;font-family:Arial,sans-serif;font-size:10px;text-align:center;margin-bottom:12px">
+        Report za období ${a.from} – ${a.to}
+      </div>`;
+
+    const footerHTML = `
+      <div style="font-family:Arial,sans-serif;font-size:8px;color:#64748b;border-top:1px solid #e2e8f0;padding:4px 12px;margin-top:8px;text-align:right">
+        <span>Generováno: ${new Date().toLocaleDateString('cs-CZ')}</span>
+      </div>`;
+
+    const sectionCSS = `
+      body { font-family: Arial, sans-serif; font-size: 9px; color: #0f172a; margin: 0; padding: 0; background: #fff; }
+      h2 { font-size: 12px; color: #1d4ed8; border-bottom: 2px solid #1d4ed8; padding-bottom: 3px; margin: 0 0 8px 0; font-family: Arial, sans-serif; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 8px; font-size: 8px; }
+      th { background: #0a0e1a; color: #fff; padding: 3px 5px; text-align: left; font-size: 8px; }
+      td { padding: 2px 5px; border-bottom: 1px solid #e2e8f0; }
+      tr:nth-child(even) td { background: #f1f4f9; }
+      .pos { color: #059669; }
+      .neg { color: #dc2626; }
+      .kv-row { display: flex; padding: 3px 0; border-bottom: 1px solid #f1f4f9; }
+      .kv-label { flex: 1; color: #64748b; }
+      .kv-val { font-weight: bold; min-width: 120px; text-align: right; }
+    `;
+
+    // Build one HTML page per tab
+    const pages = [];
+    for (const [id, label] of TABS) {
+      const panel = document.getElementById(id);
+      if (!panel) continue;
+
+      // Clone panel, make it visible, apply print-friendly styles
+      const clone = panel.cloneNode(true);
+      // Remove filter bars, buttons, chart wraps, canvases
+      clone.querySelectorAll('.filter-bar,.chart-wrap,.charts-row,.chart-toolbar,.chart-toolbar-below,.chart-legend,.chart-title,.btn,canvas,#der-output button').forEach(el => el.remove());
+      // Remove empty table-wraps
+      clone.querySelectorAll('.table-wrap').forEach(el => { if (!el.querySelector('table')) el.remove(); });
+
+      const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${sectionCSS}</style></head><body>
+        ${headerHTML}
+        <div style="padding:0 12px">
+          <h2>${label}</h2>
+          ${clone.innerHTML}
+        </div>
+        ${footerHTML}
+      </body></html>`;
+
+      pages.push({ label, html });
+    }
+
+    // Render each page via html2canvas → jsPDF
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    for (let i = 0; i < pages.length; i++) {
+      if (i > 0) doc.addPage();
+
+      // Render HTML to canvas via iframe
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:1122px;height:794px;border:none;visibility:hidden';
+      document.body.appendChild(iframe);
+
+      await new Promise(res => {
+        iframe.onload = res;
+        iframe.srcdoc = pages[i].html;
+      });
+
+      // Wait for fonts/images to settle
+      await new Promise(res => setTimeout(res, 300));
+
+      const canvas = await html2canvas(iframe.contentDocument.body, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 1122,
+        windowWidth: 1122,
+        logging: false,
+      });
+
+      document.body.removeChild(iframe);
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const imgW = pageW;
+      const imgH = (canvas.height / canvas.width) * imgW;
+
+      // If content taller than page, scale to fit
+      const scaleH = imgH > pageH ? pageH / imgH : 1;
+      doc.addImage(imgData, 'JPEG', 0, 0, imgW * scaleH, imgH * scaleH);
+
+      if (btn) btn.textContent = `Generuji PDF… ${i+1}/${pages.length}`;
+    }
+
+    const from = (a.from||'').replace(/\./g,'-');
+    const to   = (a.to||'').replace(/\./g,'-');
+    doc.save(`ReportReader_${from}_${to}.pdf`);
+
+  } finally {
+    if (btn) btn.textContent = origText;
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+</script>
+
+<!-- SheetJS for proper XLSX export (loaded from CDN, optional) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="console.log('SheetJS not loaded, CSV fallback will be used')"></script>
+
+</body>
+</html>

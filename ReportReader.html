@@ -521,6 +521,55 @@ tfoot td.tot { color: var(--amber); }
   font-style: italic;
 }
 
+/* ── Mobile ── */
+@media (max-width: 700px) {
+  body { font-size: 12px; }
+
+  /* Header: wraps into two rows — brand + account, then actions */
+  .header {
+    height: auto; flex-wrap: wrap; gap: 8px;
+    padding: 10px 12px;
+    position: static;          /* only the tab bar stays pinned on phones */
+  }
+  .header-sep { display: none; }
+  .header-account {
+    flex: 1 1 calc(100% - 120px);
+    white-space: normal; font-size: 11px; line-height: 1.35;
+  }
+  .header .btn, .header-rate { padding: 6px 10px; font-size: 11px; }
+  .btn-open { margin-left: 0; }
+  #btn-theme { padding: 4px 8px !important; }
+
+  .tabs { padding: 0 6px; gap: 0; position: sticky; top: 0; z-index: 90; }
+  .tab  { padding: 10px 12px; }
+  .content { padding: 12px; }
+
+  /* Cards: two per row, more compact */
+  .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .card { padding: 10px 12px; border-radius: 10px; }
+  .card-label { font-size: 9.5px; margin-bottom: 4px; }
+  .card-value { font-size: 15px; overflow-wrap: anywhere; }
+  .card-sub   { font-size: 10px; }
+
+  /* Filters fill the width */
+  .filter-bar { gap: 8px; }
+  .filter-bar input, .filter-bar select { flex: 1 1 140px; min-width: 0; width: auto; font-size: 13px; }
+  .filter-count { width: 100%; margin-left: 0; text-align: right; }
+
+  /* Tables scroll sideways inside their frame */
+  .table-wrap { max-height: 70vh; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+  thead th { padding: 8px 10px; }
+  td, tfoot td { padding: 8px 10px; }
+
+  .charts-row { gap: 20px; }
+  .chart-wrap { padding: 12px 8px 8px; }
+  .chart-sep { display: none; }
+
+  .drop-zone { padding: 36px 20px; }
+  .modal-box { padding: 24px 20px; }
+  #chart-zoom-modal { padding: 8px !important; }
+}
+
 /* Print */
 @media print {
   @page { size: A4 landscape; margin: 12mm 10mm; }
@@ -742,6 +791,9 @@ tfoot td.tot { color: var(--amber); }
           <option value="FOP">Futures opce (FOP)</option>
           <option value="BOND">Dluhopisy (BOND)</option>
         </select>
+        <select id="filter-trades-month" onchange="filterTrades()" title="Měsíc">
+          <option value="">Všechny měsíce</option>
+        </select>
         <select id="filter-trades-side" onchange="filterTrades()">
           <option value="">BUY + SELL</option>
           <option value="BUY">BUY</option>
@@ -919,6 +971,9 @@ tfoot td.tot { color: var(--amber); }
     <div class="tab-panel" id="panel-dividends">
       <div class="filter-bar">
         <input type="text" id="filter-divs" placeholder="Hledat symbol…" oninput="filterDivs()">
+        <select id="filter-divs-month" onchange="filterDivs()" title="Měsíc">
+          <option value="">Všechny měsíce</option>
+        </select>
         <select id="filter-divs-type" onchange="filterDivs()">
           <option value="">Všechny typy</option>
           <option value="Dividends">Dividendy</option>
@@ -2531,16 +2586,19 @@ function drawPieChart(targetCanvas, targetLegend) {
 let _tradesRows = [];
 function renderTrades() {
   _tradesRows = G.data.trades;
+  fillMonthSelect('filter-trades-month', _tradesRows.map(t => t.rawDate));
   filterTrades();
 }
 function filterTrades() {
   const q  = document.getElementById('filter-trades').value.toLowerCase();
   const tp = document.getElementById('filter-trades-type').value;
   const sd = document.getElementById('filter-trades-side').value;
+  const mo = document.getElementById('filter-trades-month').value;
   const rows = _tradesRows.filter(t =>
     (!q  || t.symbol.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q)) &&
     (!tp || t.type === tp) &&
-    (!sd || t.side === sd)
+    (!sd || t.side === sd) &&
+    (!mo || (t.rawDate || '').startsWith(mo))
   );
   document.getElementById('count-trades').textContent = `${rows.length} obchodů`;
   const tbody = document.querySelector('#tbl-trades tbody');
@@ -2568,7 +2626,7 @@ function filterTrades() {
   const sumPnl  = rows.reduce((s,t) => s + parseFloat(t.pnl||0), 0);
   const sumPnlCZK = sumPnl * G.rate;
   tfoot.innerHTML = `<tr>
-    <td colspan="7">Celkem za období</td>
+    <td colspan="7">${mo ? 'Celkem ' + monthLabel(mo) : 'Celkem za období'}</td>
     <td class="${colorClass(sumComm)} tot">${sumComm>=0?'+':''}${fmtN(sumComm)}</td>
     <td class="${colorClass(sumNet)} tot">${sumNet>=0?'+':''}${fmtN(sumNet)}</td>
     <td class="${colorClass(sumPnl)} tot">${sumPnl>=0?'+':''}${fmtN(sumPnl)}</td>
@@ -2650,6 +2708,16 @@ function filterPnl() {
 const INC_KINDS = { div: 'Dividenda', wht: 'Srážková daň', stk: 'Prodej akcií', opt: 'Opce' };
 const monthLabel = m => new Date(+m.slice(0,4), +m.slice(4,6) - 1, 1)
   .toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' });
+
+// Fill a month <select> with the months present in rawDates (YYYYMMDD), keeping the selection
+function fillMonthSelect(id, rawDates) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  const months = [...new Set(rawDates.filter(Boolean).map(d => d.slice(0, 6)))].sort();
+  sel.innerHTML = '<option value="">Všechny měsíce</option>' +
+    months.map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
+  sel.value = months.includes(cur) ? cur : '';
+}
 
 // One row per income event, amounts in base currency.
 //   div/wht: dividend or withholding tax (amount)
@@ -2800,7 +2868,7 @@ const BI_LABELS = {
 const OF_TYPES  = ['Other Fees'];
 const DEP_TYPES = ['Deposits/Withdrawals'];
 
-function totalsFooter(tfootId, rows, cols) {
+function totalsFooter(tfootId, rows, cols, totalLabel = 'Celkem za období') {
   const tfoot = document.getElementById(tfootId);
   if (!tfoot) return;
   const sums = {};
@@ -2824,7 +2892,7 @@ function totalsFooter(tfootId, rows, cols) {
   }
   // Grand total
   html += `<tr>
-    <td colspan="${cols-2}">Celkem za období</td>
+    <td colspan="${cols-2}">${totalLabel}</td>
     <td class="${colorClass(grandUSD)} tot">${grandUSD>=0?'+':''}${fmtN(grandUSD)}</td>
     <td class="${colorClass(grandCZK)} tot">${grandCZK>=0?'+':''}${fmtN(grandCZK,0)}</td>
   </tr>`;
@@ -2834,14 +2902,18 @@ function totalsFooter(tfootId, rows, cols) {
 let _divsRows = [];
 function renderDivs() {
   _divsRows = G.data.cashTxns.filter(c => DIV_TYPES.includes(c.type));
+  fillMonthSelect('filter-divs-month', _divsRows.map(c => c.payDate));
   filterDivs();
 }
 function filterDivs() {
   const q  = document.getElementById('filter-divs').value.toLowerCase();
   const tp = document.getElementById('filter-divs-type').value;
+  const mo = document.getElementById('filter-divs-month').value;
+  const inMonth = c => !mo || (c.payDate || '').startsWith(mo);
   const rows = _divsRows.filter(c =>
     (!q  || (c.symbol||'').toLowerCase().includes(q) || (c.desc||'').toLowerCase().includes(q)) &&
-    (!tp || c.type === tp)
+    (!tp || c.type === tp) &&
+    inMonth(c)
   );
   document.getElementById('count-divs').textContent = `${rows.length} transakcí`;
   const tbody = document.querySelector('#tbl-divs tbody');
@@ -2857,7 +2929,8 @@ function filterDivs() {
     </tr>`;
   }).join('') || '<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div>Žádné výsledky</div></td></tr>';
   // Always show totals from full unfiltered set
-  totalsFooter('tfoot-divs', _divsRows, 6);
+  // Totals by type for the selected month (all types, ignoring the text filter)
+  totalsFooter('tfoot-divs', _divsRows.filter(inMonth), 6, mo ? 'Celkem ' + monthLabel(mo) : undefined);
 }
 
 // ── Broker Interest ───────────────────────────────────────────────────

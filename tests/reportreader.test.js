@@ -195,6 +195,50 @@ async function open(browser, opts, rate = '23') {
     await page.close();
   }
 
+  // ── Month filter in Trades and Dividends tabs ──
+  {
+    const { page, errors } = await open(browser, { income: true });
+    await page.click('.tab:has-text("Obchody")');
+    const opts = await page.$$eval('#filter-trades-month option', o => o.map(x => x.textContent));
+    check('month filter: trades months listed', JSON.stringify(opts) === JSON.stringify(['Všechny měsíce', 'prosinec 2025', 'leden 2026']), opts);
+    await page.selectOption('#filter-trades-month', '202512');
+    const dec = await page.$$eval('#tbl-trades tbody tr td:first-child', t => t.map(x => x.textContent.trim()));
+    const foot = await page.textContent('#tfoot-trades');
+    check('month filter: trades in December 2025 = 2, footer labelled', dec.length === 2 && dec.every(d => d.endsWith('12.2025')) && foot.includes('prosinec 2025'), [dec, foot]);
+    await page.click('.tab:has-text("Dividendy")');
+    await page.selectOption('#filter-divs-month', '202601');
+    const n = await page.$$eval('#tbl-divs tbody tr', t => t.length);
+    const tot = (await page.textContent('#tfoot-divs')).replace(/\s+/g, ' ');
+    check('month filter: January dividends + tax = 2 rows, total +8,14', n === 2 && tot.includes('leden 2026') && tot.includes('+8,14'), [n, tot]);
+    check('no page errors', errors.length === 0, errors);
+    await page.close();
+  }
+
+  // ── Phone width: no horizontal page scroll on any tab ──
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const xmlPath = path.join(OUT, 'mobile.xml');
+    fs.writeFileSync(xmlPath, fixture({ income: true }));
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+    await page.goto('file://' + PAGE);
+    await page.setInputFiles('#file-input', xmlPath);
+    await page.click('#rate-modal button');
+    const widths = {};
+    for (const tab of await page.$$eval('.tab', t => t.map(x => x.textContent.trim()))) {
+      await page.evaluate(t => [...document.querySelectorAll('.tab')].find(e => e.textContent.trim() === t).click(), tab);
+      widths[tab] = await page.evaluate(() => document.documentElement.scrollWidth);
+    }
+    check('mobile: page width stays 390 px on every tab', Object.values(widths).every(w => w <= 390), widths);
+    await page.click('.tab:has-text("Přehled")');
+    const cols = await page.evaluate(() => getComputedStyle(document.getElementById('cards-usd')).gridTemplateColumns.split(' ').length);
+    check('mobile: summary cards in two columns', cols === 2, cols);
+    check('no page errors', errors.length === 0, errors);
+    await ctx.close();
+  }
+
   // ── EUR base account → labels follow the base currency ──
   {
     const { page, errors, title } = await open(browser, { base: 'EUR' }, '25');

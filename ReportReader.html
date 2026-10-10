@@ -119,6 +119,9 @@ body {
   text-transform: uppercase;
 }
 
+.sample-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: -4px; }
+.sample-note { color: var(--muted); font-size: 11px; text-align: center; max-width: 480px; padding: 0 16px; margin-top: -12px; }
+
 /* Rate modal */
 #rate-modal {
   position: fixed; inset: 0; z-index: 2000;
@@ -622,6 +625,11 @@ tfoot td.tot { color: var(--amber); }
     <p>nebo klikněte pro výběr souboru<br>Flex Query report z Interactive Brokers</p>
     <input type="file" id="file-input" accept=".xml">
   </div>
+  <div class="sample-bar">
+    <button class="btn btn-primary" onclick="loadSample()">Vyzkoušet na ukázkových datech</button>
+    <button class="btn" onclick="downloadSample()" title="Stáhne ukázkový XML soubor, který pak můžete přetáhnout výše">Stáhnout ukázkový XML</button>
+  </div>
+  <div class="sample-note">Ukázka je smyšlený účet (leden–červen 2026): akcie v USD i EUR, dividendy, prodeje, opce, vklad a výběr.</div>
   <div style="margin-top:20px;color:var(--muted);font-size:12px;letter-spacing:.02em">
     &copy; Jiří Javorník — 2026
   </div>
@@ -1113,6 +1121,289 @@ tfoot td.tot { color: var(--amber); }
   </div><!-- .content -->
 </div><!-- #app -->
 
+<script id="sample-data">
+// ── Sample data: a synthetic, deterministic IB Flex Query report (Jan–Jun 2026) ──
+// Fictional account and numbers, for trying the page out. Same output on every run.
+function buildSampleFlexXML() {
+  let seed = 20260101;
+  const rnd = () => {                                   // mulberry32
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const r2 = v => Math.round(v * 100) / 100;
+  const r4 = v => Math.round(v * 10000) / 10000;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const xa = o => Object.entries(o).map(([k, v]) => `${k}="${esc(v)}"`).join(' ');
+
+  // Business days 2.1.–30.6.2026
+  const days = [];
+  for (let d = new Date(Date.UTC(2026, 0, 2)); d <= new Date(Date.UTC(2026, 5, 30)); d.setUTCDate(d.getUTCDate() + 1)) {
+    const w = d.getUTCDay();
+    if (w !== 0 && w !== 6) days.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+  }
+  const D = i => days[Math.min(i, days.length - 1)];
+  const first = days[0], last = days.at(-1);
+  const dayOf = ymd => days.find(d => d >= ymd) || last;
+
+  // Stocks: start price, daily volatility, drift, quantity and cost at period start
+  const STK = [
+    { sym: 'AAPL', name: 'APPLE INC',              ccy: 'USD', isin: 'US0378331005', p: 245, vol: .017, dr: .0007,  q: 40,  cost: 180 },
+    { sym: 'MSFT', name: 'MICROSOFT CORP',         ccy: 'USD', isin: 'US5949181045', p: 430, vol: .015, dr: .0006,  q: 20,  cost: 330 },
+    { sym: 'KO',   name: 'COCA-COLA CO',           ccy: 'USD', isin: 'US1912161007', p: 68,  vol: .009, dr: .0002,  q: 150, cost: 58 },
+    { sym: 'JNJ',  name: 'JOHNSON & JOHNSON',      ccy: 'USD', isin: 'US4781601046', p: 155, vol: .010, dr: -.0002, q: 60,  cost: 160 },
+    { sym: 'SPY',  name: 'SPDR S&P 500 ETF TRUST', ccy: 'USD', isin: 'US78462F1030', p: 600, vol: .009, dr: .0004,  q: 15,  cost: 520 },
+    { sym: 'SAP',  name: 'SAP SE',                 ccy: 'EUR', isin: 'DE0007164600', p: 240, vol: .016, dr: .0005,  q: 30,  cost: 190 },
+    { sym: 'ASML', name: 'ASML HOLDING NV',        ccy: 'EUR', isin: 'NL0010273215', p: 720, vol: .022, dr: -.0004, q: 8,   cost: 650 },
+  ];
+  const S = Object.fromEntries(STK.map(s => [s.sym, s]));
+  STK.forEach(s => {
+    let p = s.p; s.px = {};
+    days.forEach(d => { p *= 1 + s.dr + (rnd() - .5) * 2 * s.vol; s.px[d] = r2(p); });
+    s.lots = [{ q: s.q, price: s.cost }];
+    s.realized = 0;
+  });
+  let fx = 1.08; const eur = {};
+  days.forEach(d => { fx *= 1 + (rnd() - .5) * .006; eur[d] = r4(fx); });
+  const fxOn = (ccy, d) => ccy === 'EUR' ? eur[d] : 1;
+
+  let cash = 8000;                                      // base (USD)
+  const trades = [], cashTx = [];
+  let txn = 1000, conid = 500000;
+  const comm = { stk: 1, opt: .65 };
+  const sum = { dividends: 0, wht: 0, commissions: 0, interest: 0, fees: 0 };
+
+  // ── Stock trades (FIFO) ──
+  const stockTrade = (i, sym, qty) => {
+    const s = S[sym], d = D(i), price = s.px[d], f = fxOn(s.ccy, d);
+    const proceeds = r2(-qty * price), c = -comm.stk;
+    let pnl = 0;
+    if (qty > 0) s.lots.push({ q: qty, price });
+    else {
+      let left = -qty;
+      while (left > 0) {
+        const lot = s.lots[0], take = Math.min(lot.q, left);
+        pnl += (price - lot.price) * take;
+        lot.q -= take; left -= take;
+        if (!lot.q) s.lots.shift();
+      }
+      pnl = r2(pnl + c);
+      s.realized += pnl * f;
+    }
+    trades.push({ d, i, attrs: {
+      levelOfDetail: 'EXECUTION', symbol: sym, description: s.name, assetCategory: 'STK', currency: s.ccy,
+      fxRateToBase: f, buySell: qty > 0 ? 'BUY' : 'SELL', quantity: qty, tradePrice: price,
+      proceeds, ibCommission: c, ibCommissionCurrency: s.ccy, netCash: r2(proceeds + c),
+      fifoPnlRealized: pnl, dateTime: `${d};153000`, tradeDate: d, isin: s.isin, transactionID: ++txn } });
+    sum.commissions += c * f;
+    return { qty, f, net: (proceeds + c) * f };
+  };
+
+  // ── Options: open, then close / expire (or stay open) ──
+  const opts = [];
+  const optSym = (u, exp, pc, k) => `${u.padEnd(6)}${exp.slice(2)}${pc}${String(Math.round(k * 1000)).padStart(8, '0')}`;
+  const optTrade = (o, i, qty, prem, expiry = false) => {
+    const d = D(i), f = fxOn(o.ccy, d), c = expiry ? 0 : r2(-comm.opt * Math.abs(qty));
+    const proceeds = r2(-qty * prem * 100);
+    let pnl = 0;
+    if (o.openQty === 0) { o.openQty = qty; o.openPrem = prem; o.openComm = c; }
+    else {
+      // closing / expiry: (close − open premium) × open qty × 100, minus both commissions
+      pnl = r2((prem - o.openPrem) * o.openQty * 100 + o.openComm + c);
+      o.openQty += qty; o.realized += pnl * f;
+    }
+    trades.push({ d, i, attrs: {
+      levelOfDetail: 'EXECUTION', symbol: o.symbol, description: o.desc, assetCategory: 'OPT', currency: o.ccy,
+      fxRateToBase: f, buySell: qty > 0 ? 'BUY' : 'SELL', quantity: qty, tradePrice: prem, multiplier: 100,
+      proceeds, ibCommission: c, ibCommissionCurrency: o.ccy, netCash: r2(proceeds + c), fifoPnlRealized: pnl,
+      dateTime: `${d};${expiry ? '162000' : '154500'}`, tradeDate: d, underlyingSymbol: o.under, putCall: o.pc,
+      strike: o.k, expiry: o.exp, notes: expiry ? 'Ep' : '', transactionID: ++txn } });
+    sum.commissions += c * f;
+    return (proceeds + c) * f;
+  };
+  const newOpt = (under, ccy, pc, k, exp) => {
+    const o = { under, ccy, pc, k, exp, symbol: optSym(under, exp, pc, k), conid: ++conid,
+                desc: `${under} ${exp.slice(6)}${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][+exp.slice(4, 6) - 1]}${exp.slice(2, 4)} ${k} ${pc}`,
+                openQty: 0, openPrem: 0, openComm: 0, realized: 0 };
+    opts.push(o); return o;
+  };
+
+  // Event schedule by day index
+  const events = {};
+  const at = (i, fn) => (events[i] ||= []).push(fn);
+  const div = (ymd, sym, perShare, whtRate) => {
+    const i = days.indexOf(dayOf(ymd));
+    at(i, () => {
+      const s = S[sym], d = D(i), f = fxOn(s.ccy, d);
+      const q = s.lots.reduce((a, l) => a + l.q, 0);
+      if (!q) return;
+      const gross = r2(q * perShare), tax = r2(-gross * whtRate);
+      cashTx.push({ type: 'Dividends', symbol: sym, ccy: s.ccy, f, amount: gross, d,
+                    desc: `${sym}(${s.isin}) CASH DIVIDEND ${s.ccy} ${perShare} PER SHARE (Ordinary Dividend)` });
+      cashTx.push({ type: 'Withholding Tax', symbol: sym, ccy: s.ccy, f, amount: tax, d,
+                    desc: `${sym}(${s.isin}) CASH DIVIDEND ${s.ccy} ${perShare} PER SHARE - ${s.ccy === 'USD' ? 'US' : sym === 'SAP' ? 'DE' : 'NL'} TAX` });
+      sum.dividends += gross * f; sum.wht += tax * f;
+      cash += (gross + tax) * f;
+    });
+  };
+
+  // Stock trades
+  [[4, 'AAPL', 10], [17, 'MSFT', -5], [29, 'ASML', 4], [44, 'KO', -50], [59, 'JNJ', 20],
+   [69, 'SAP', -10], [84, 'AAPL', -15], [94, 'MSFT', 8], [109, 'ASML', -6], [117, 'KO', 40]]
+    .forEach(([i, sym, q]) => at(i, () => { cash += stockTrade(i, sym, q).net; }));
+
+  // Option trades (premium per share). Closed within the period:
+  const koC  = newOpt('KO',   'USD', 'C', 72,  '20260220');
+  const aaP  = newOpt('AAPL', 'USD', 'P', 230, '20260320');
+  const msC  = newOpt('MSFT', 'USD', 'C', 450, '20260417');
+  const jnP  = newOpt('JNJ',  'USD', 'P', 150, '20260515');
+  const koC2 = newOpt('KO',   'USD', 'C', 74,  '20260619');
+  at(7,   () => { cash += optTrade(koC, 7, -1, .85); });
+  at(26,  () => { cash += optTrade(koC, 26, 1, .20); });
+  at(30,  () => { cash += optTrade(aaP, 30, -1, 4.10); });
+  at(days.indexOf(dayOf('20260320')), () => { cash += optTrade(aaP, days.indexOf(dayOf('20260320')), 1, 0, true); });
+  at(52,  () => { cash += optTrade(msC, 52, 1, 9.50); });
+  at(68,  () => { cash += optTrade(msC, 68, -1, 14.20); });
+  at(71,  () => { cash += optTrade(jnP, 71, -2, 2.30); });
+  at(87,  () => { cash += optTrade(jnP, 87, 2, 3.90); });
+  at(90,  () => { cash += optTrade(koC2, 90, -2, .70); });
+  at(days.indexOf(dayOf('20260619')), () => { cash += optTrade(koC2, days.indexOf(dayOf('20260619')), 2, 0, true); });
+  // Still open at the end:
+  const aaC = newOpt('AAPL', 'USD', 'C', 260, '20260918');   // long call
+  const sapP = newOpt('SAP', 'EUR', 'P', 220, '20260918');   // short put in EUR
+  const msC2 = newOpt('MSFT', 'USD', 'C', 480, '20260821');  // covered call
+  const qqP = newOpt('QQQ', 'USD', 'P', 480, '20260918');    // underlying not held → price entered by hand
+  at(99,  () => { cash += optTrade(aaC, 99, 1, 12.00); });
+  at(104, () => { cash += optTrade(msC2, 104, -1, 6.40); });
+  at(111, () => { cash += optTrade(sapP, 111, -2, 6.00); });
+  at(114, () => { cash += optTrade(qqP, 114, 1, 7.50); });
+
+  // Dividends (per share, withholding rate)
+  div('20260213', 'AAPL', .26, .15);  div('20260515', 'AAPL', .26, .15);
+  div('20260312', 'MSFT', .91, .15);  div('20260611', 'MSFT', .91, .15);
+  div('20260401', 'KO', .53, .15);
+  div('20260310', 'JNJ', 1.30, .15);  div('20260609', 'JNJ', 1.30, .15);
+  div('20260331', 'SPY', 1.80, .15);  div('20260630', 'SPY', 1.85, .15);
+  div('20260520', 'SAP', 2.35, .26375);
+  div('20260218', 'ASML', 1.60, .15); div('20260506', 'ASML', 1.60, .15);
+
+  // Deposit, withdrawal, monthly interest and fees
+  const flow = (ymd, amount, desc) => {
+    const i = days.indexOf(dayOf(ymd));
+    at(i, () => { cashTx.push({ type: 'Deposits/Withdrawals', ccy: 'USD', f: 1, amount, d: D(i), desc }); cash += amount; });
+  };
+  flow('20260316', 10000, 'CASH RECEIPTS / ELECTRONIC FUND TRANSFERS');
+  flow('20260515', -3000, 'DISBURSEMENT INITIATED BY Ukazkovy Ucet');
+  for (let m = 1; m <= 6; m++) {
+    const lastDay = days.filter(d => +d.slice(4, 6) === m).at(-1), i = days.indexOf(lastDay);
+    const interest = r2(8 + rnd() * 9);
+    at(i, () => {
+      cashTx.push({ type: 'Broker Interest Received', ccy: 'USD', f: 1, amount: interest, d: lastDay,
+                    desc: `USD CREDIT INT FOR ${['JAN','FEB','MAR','APR','MAY','JUN'][m - 1]}-2026` });
+      cashTx.push({ type: 'Other Fees', ccy: 'USD', f: 1, amount: -10, d: lastDay,
+                    desc: `P*NYSE/NASDAQ MARKET DATA FOR ${['JAN','FEB','MAR','APR','MAY','JUN'][m - 1]} 2026` });
+      sum.interest += interest; sum.fees -= 10;
+      cash += interest - 10;
+    });
+  }
+
+  // ── Run the period day by day ──
+  const startCash = cash;
+  const equity = [];
+  days.forEach((d, i) => {
+    (events[i] || []).forEach(fn => fn());
+    const stocks = STK.reduce((a, s) => a + s.lots.reduce((x, l) => x + l.q, 0) * s.px[d] * fxOn(s.ccy, d), 0);
+    const options = opts.reduce((a, o) => a + o.openQty * o.openPrem * 100 * fxOn(o.ccy, d), 0);
+    equity.push({ d, cash: r2(cash), stock: r2(stocks), options: r2(options), total: r2(cash + stocks + options) });
+  });
+  let idx = 1;
+  const flows = Object.fromEntries(cashTx.filter(c => c.type === 'Deposits/Withdrawals').map(c => [c.d, c.amount]));
+  for (let i = 1; i < equity.length; i++) idx *= (equity[i].total - (flows[equity[i].d] || 0)) / equity[i - 1].total;
+  const twr = (idx - 1) * 100;
+
+  // ── End-of-period positions ──
+  const pos = [], mtm = [], fifo = [];
+  STK.forEach(s => {
+    const q = s.lots.reduce((a, l) => a + l.q, 0), mark = s.px[last], f = fxOn(s.ccy, last);
+    const costMoney = r2(s.lots.reduce((a, l) => a + l.q * l.price, 0));
+    if (q) pos.push({ levelOfDetail: 'SUMMARY', symbol: s.sym, description: s.name, assetCategory: 'STK', currency: s.ccy,
+      fxRateToBase: f, isin: s.isin, position: q, openPrice: r2(costMoney / q), markPrice: mark,
+      positionValue: r2(q * mark), costBasisMoney: costMoney, fifoPnlUnrealized: r2(q * mark - costMoney),
+      percentOfNAV: r2(q * mark * f / equity.at(-1).total * 100), side: 'Long' });
+    mtm.push({ symbol: s.sym, description: s.name, assetCategory: 'STK', currency: s.ccy,
+      prevCloseQuantity: s.q, prevClosePrice: s.p, closeQuantity: q, closePrice: mark });
+    fifo.push({ symbol: s.sym, description: s.name, assetCategory: 'STK',
+      realizedSTProfit: r2(Math.max(s.realized, 0)), realizedSTLoss: r2(Math.min(s.realized, 0)),
+      totalRealizedPnl: r2(s.realized), totalUnrealizedPnl: r2((q * mark - costMoney) * f),
+      totalFifoPnl: r2(s.realized + (q * mark - costMoney) * f) });
+  });
+  const marks = { [aaC.conid]: 15.80, [sapP.conid]: 4.10, [msC2.conid]: 5.20, [qqP.conid]: 5.90 };
+  opts.forEach(o => {
+    const f = fxOn(o.ccy, last);
+    if (o.openQty) {
+      const mark = marks[o.conid], val = r2(o.openQty * mark * 100), cost = r2(o.openQty * o.openPrem * 100 - o.openComm);
+      pos.push({ levelOfDetail: 'SUMMARY', symbol: o.symbol, description: o.desc, assetCategory: 'OPT', currency: o.ccy,
+        fxRateToBase: f, conid: o.conid, underlyingSymbol: o.under, expiry: o.exp, putCall: o.pc, strike: o.k,
+        multiplier: 100, position: o.openQty, openPrice: o.openPrem, markPrice: mark, positionValue: val,
+        costBasisMoney: cost, fifoPnlUnrealized: r2(val - cost), percentOfNAV: r2(val * f / equity.at(-1).total * 100),
+        side: o.openQty > 0 ? 'Long' : 'Short' });
+    }
+    if (o.realized || o.openQty) fifo.push({ symbol: o.symbol, description: o.desc, assetCategory: 'OPT',
+      realizedSTProfit: r2(Math.max(o.realized, 0)), realizedSTLoss: r2(Math.min(o.realized, 0)),
+      totalRealizedPnl: r2(o.realized), totalUnrealizedPnl: 0, totalFifoPnl: r2(o.realized) });
+  });
+
+  // ── XML ──
+  const el = (tag, o) => `<${tag} ${xa(o)}/>`;
+  const end = equity.at(-1), start = equity[0];
+  const sumFlows = cashTx.filter(c => c.type === 'Deposits/Withdrawals').reduce((a, c) => a + c.amount, 0);
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ukázková (smyšlená) data pro ReportReader — nejde o skutečný účet. -->
+<FlexQueryResponse queryName="Ukazka" type="AF">
+<FlexStatements count="1">
+<FlexStatement accountId="U0000000" fromDate="${first}" toDate="${last}" period="Custom" whenGenerated="20260701;080000">
+${el('AccountInformation', { accountId: 'U0000000', name: 'Ukázkový účet', currency: 'USD', accountType: 'Individual' })}
+${el('ChangeInNAV', { accountId: 'U0000000', currency: 'USD', startingValue: start.total, endingValue: end.total,
+  depositsWithdrawals: r2(sumFlows), mtm: r2(end.total - start.total - sumFlows), twr: r4(twr) })}
+<CashReport>
+${el('CashReportCurrency', { currency: 'BASE_SUMMARY', startingCash: r2(startCash), endingCash: end.cash,
+  dividends: r2(sum.dividends), withholdingTax: r2(sum.wht), commissions: r2(sum.commissions),
+  brokerInterest: r2(sum.interest), otherFees: r2(sum.fees), depositWithdrawals: r2(sumFlows) })}
+</CashReport>
+<Trades>
+${trades.sort((a, b) => a.i - b.i).map(t => el('Trade', t.attrs)).join('\n')}
+</Trades>
+<OpenPositions>
+${pos.map(p => el('OpenPosition', p)).join('\n')}
+</OpenPositions>
+<CashTransactions>
+${cashTx.map(c => el('CashTransaction', { type: c.type, ...(c.symbol ? { symbol: c.symbol } : {}), currency: c.ccy,
+  fxRateToBase: c.f, amount: c.amount, description: c.desc, dateTime: c.d, reportDate: c.d, transactionID: ++txn })).join('\n')}
+</CashTransactions>
+<FIFOPerformanceSummaryInBase>
+${fifo.map(f => el('FIFOPerformanceSummaryUnderlying', f)).join('\n')}
+</FIFOPerformanceSummaryInBase>
+<MTMPerformanceSummaryInBase>
+${mtm.map(m => el('MTMPerformanceSummaryUnderlying', m)).join('\n')}
+</MTMPerformanceSummaryInBase>
+<EquitySummaryInBase>
+${equity.map(e => el('EquitySummaryByReportDateInBase', { reportDate: e.d, cash: e.cash, stock: e.stock, options: e.options, total: e.total })).join('\n')}
+</EquitySummaryInBase>
+<PriorPeriodPositions>
+${days.map(d => el('PriorPeriodPosition', { symbol: 'SPY', assetCategory: 'STK', currency: 'USD', date: d, price: S.SPY.px[d] })).join('\n')}
+</PriorPeriodPositions>
+<ConversionRates>
+${days.map(d => el('ConversionRate', { reportDate: d, fromCurrency: 'EUR', toCurrency: 'USD', rate: eur[d] })).join('\n')}
+</ConversionRates>
+</FlexStatement>
+</FlexStatements>
+</FlexQueryResponse>
+`;
+}
+if (typeof module !== 'undefined') module.exports = buildSampleFlexXML;
+</script>
+
 <script>
 // ── State ──────────────────────────────────────────────────────────
 let G = { rate: 22.5, data: null, pendingData: null, manualUnderPrices: {} };
@@ -1230,6 +1521,19 @@ function handleFile(file) {
     alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
   }
   readXML(file);   // parse first so the rate dialog knows the account's base currency
+}
+
+// ── Sample data ─────────────────────────────────────────────────────
+function loadSample() {
+  const doc = new DOMParser().parseFromString(buildSampleFlexXML(), 'application/xml');
+  G.pendingData = parseDoc(doc);
+  askRate(false);
+}
+function downloadSample() {
+  const url = URL.createObjectURL(new Blob([buildSampleFlexXML()], { type: 'application/xml' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'ukazkovy-flex-report.xml' });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ── Rate modal ──────────────────────────────────────────────────────

@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Ukázková (smyšlená) data pro ReportReader — nejde o skutečný účet. -->
+<FlexQueryResponse queryName="Ukazka" type="AF">
+<FlexStatements count="1">
+<FlexStatement accountId="U0000000" fromDate="20260102" toDate="20260630" period="Custom" whenGenerated="20260701;080000">
+<AccountInformation accountId="U0000000" name="Ukázkový účet" currency="USD" accountType="Individual"/>
+<ChangeInNAV accountId="U0000000" currency="USD" startingValue="68703.01" endingValue="76681.95" depositsWithdrawals="7000" mtm="978.94" twr="1.214"/>
+<CashReport>
+<CashReportCurrency currency="BASE_SUMMARY" startingCash="8000" endingCash="17837.04" dividends="438.86" withholdingTax="-71.63" commissions="-20.75" brokerInterest="82.03" otherFees="-60" depositWithdrawals="7000"/>
+</CashReport>
+<Trades>
+<Trade levelOfDetail="EXECUTION" symbol="AAPL" description="APPLE INC" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="BUY" quantity="10" tradePrice="253.01" proceeds="-2530.1" ibCommission="-1" ibCommissionCurrency="USD" netCash="-2531.1" fifoPnlRealized="0" dateTime="20260108;153000" tradeDate="20260108" isin="US0378331005" transactionID="1001"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO    260220C00072000" description="KO 20FEB26 72 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" tradePrice="0.85" multiplier="100" proceeds="85" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="84.35" fifoPnlRealized="0" dateTime="20260113;154500" tradeDate="20260113" underlyingSymbol="KO" putCall="C" strike="72" expiry="20260220" notes="" transactionID="1002"/>
+<Trade levelOfDetail="EXECUTION" symbol="MSFT" description="MICROSOFT CORP" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-5" tradePrice="434.72" proceeds="2173.6" ibCommission="-1" ibCommissionCurrency="USD" netCash="2172.6" fifoPnlRealized="522.6" dateTime="20260127;153000" tradeDate="20260127" isin="US5949181045" transactionID="1003"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO    260220C00072000" description="KO 20FEB26 72 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" tradePrice="0.2" multiplier="100" proceeds="-20" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="-20.65" fifoPnlRealized="63.7" dateTime="20260209;154500" tradeDate="20260209" underlyingSymbol="KO" putCall="C" strike="72" expiry="20260220" notes="" transactionID="1004"/>
+<Trade levelOfDetail="EXECUTION" symbol="ASML" description="ASML HOLDING NV" assetCategory="STK" currency="EUR" fxRateToBase="1.0757" buySell="BUY" quantity="4" tradePrice="731.21" proceeds="-2924.84" ibCommission="-1" ibCommissionCurrency="EUR" netCash="-2925.84" fifoPnlRealized="0" dateTime="20260212;153000" tradeDate="20260212" isin="NL0010273215" transactionID="1005"/>
+<Trade levelOfDetail="EXECUTION" symbol="AAPL  260320P00230000" description="AAPL 20MAR26 230 P" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" tradePrice="4.1" multiplier="100" proceeds="410" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="409.35" fifoPnlRealized="0" dateTime="20260213;154500" tradeDate="20260213" underlyingSymbol="AAPL" putCall="P" strike="230" expiry="20260320" notes="" transactionID="1006"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO" description="COCA-COLA CO" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-50" tradePrice="70.06" proceeds="3503" ibCommission="-1" ibCommissionCurrency="USD" netCash="3502" fifoPnlRealized="602" dateTime="20260305;153000" tradeDate="20260305" isin="US1912161007" transactionID="1007"/>
+<Trade levelOfDetail="EXECUTION" symbol="MSFT  260417C00450000" description="MSFT 17APR26 450 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" tradePrice="9.5" multiplier="100" proceeds="-950" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="-950.65" fifoPnlRealized="0" dateTime="20260317;154500" tradeDate="20260317" underlyingSymbol="MSFT" putCall="C" strike="450" expiry="20260417" notes="" transactionID="1008"/>
+<Trade levelOfDetail="EXECUTION" symbol="AAPL  260320P00230000" description="AAPL 20MAR26 230 P" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" tradePrice="0" multiplier="100" proceeds="0" ibCommission="0" ibCommissionCurrency="USD" netCash="0" fifoPnlRealized="409.35" dateTime="20260320;162000" tradeDate="20260320" underlyingSymbol="AAPL" putCall="P" strike="230" expiry="20260320" notes="Ep" transactionID="1009"/>
+<Trade levelOfDetail="EXECUTION" symbol="JNJ" description="JOHNSON &amp; JOHNSON" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="BUY" quantity="20" tradePrice="146.7" proceeds="-2934" ibCommission="-1" ibCommissionCurrency="USD" netCash="-2935" fifoPnlRealized="0" dateTime="20260326;153000" tradeDate="20260326" isin="US4781601046" transactionID="1010"/>
+<Trade levelOfDetail="EXECUTION" symbol="MSFT  260417C00450000" description="MSFT 17APR26 450 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" tradePrice="14.2" multiplier="100" proceeds="1420" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="1419.35" fifoPnlRealized="468.7" dateTime="20260408;154500" tradeDate="20260408" underlyingSymbol="MSFT" putCall="C" strike="450" expiry="20260417" notes="" transactionID="1011"/>
+<Trade levelOfDetail="EXECUTION" symbol="SAP" description="SAP SE" assetCategory="STK" currency="EUR" fxRateToBase="1.078" buySell="SELL" quantity="-10" tradePrice="253.08" proceeds="2530.8" ibCommission="-1" ibCommissionCurrency="EUR" netCash="2529.8" fifoPnlRealized="629.8" dateTime="20260409;153000" tradeDate="20260409" isin="DE0007164600" transactionID="1012"/>
+<Trade levelOfDetail="EXECUTION" symbol="JNJ   260515P00150000" description="JNJ 15MAY26 150 P" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-2" tradePrice="2.3" multiplier="100" proceeds="460" ibCommission="-1.3" ibCommissionCurrency="USD" netCash="458.7" fifoPnlRealized="0" dateTime="20260413;154500" tradeDate="20260413" underlyingSymbol="JNJ" putCall="P" strike="150" expiry="20260515" notes="" transactionID="1013"/>
+<Trade levelOfDetail="EXECUTION" symbol="AAPL" description="APPLE INC" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-15" tradePrice="225.29" proceeds="3379.35" ibCommission="-1" ibCommissionCurrency="USD" netCash="3378.35" fifoPnlRealized="678.35" dateTime="20260430;153000" tradeDate="20260430" isin="US0378331005" transactionID="1014"/>
+<Trade levelOfDetail="EXECUTION" symbol="JNJ   260515P00150000" description="JNJ 15MAY26 150 P" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="2" tradePrice="3.9" multiplier="100" proceeds="-780" ibCommission="-1.3" ibCommissionCurrency="USD" netCash="-781.3" fifoPnlRealized="-322.6" dateTime="20260505;154500" tradeDate="20260505" underlyingSymbol="JNJ" putCall="P" strike="150" expiry="20260515" notes="" transactionID="1015"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO    260619C00074000" description="KO 19JUN26 74 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-2" tradePrice="0.7" multiplier="100" proceeds="140" ibCommission="-1.3" ibCommissionCurrency="USD" netCash="138.7" fifoPnlRealized="0" dateTime="20260508;154500" tradeDate="20260508" underlyingSymbol="KO" putCall="C" strike="74" expiry="20260619" notes="" transactionID="1016"/>
+<Trade levelOfDetail="EXECUTION" symbol="MSFT" description="MICROSOFT CORP" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="BUY" quantity="8" tradePrice="430.11" proceeds="-3440.88" ibCommission="-1" ibCommissionCurrency="USD" netCash="-3441.88" fifoPnlRealized="0" dateTime="20260514;153000" tradeDate="20260514" isin="US5949181045" transactionID="1017"/>
+<Trade levelOfDetail="EXECUTION" symbol="AAPL  260918C00260000" description="AAPL 18SEP26 260 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" tradePrice="12" multiplier="100" proceeds="-1200" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="-1200.65" fifoPnlRealized="0" dateTime="20260521;154500" tradeDate="20260521" underlyingSymbol="AAPL" putCall="C" strike="260" expiry="20260918" notes="" transactionID="1018"/>
+<Trade levelOfDetail="EXECUTION" symbol="MSFT  260821C00480000" description="MSFT 21AUG26 480 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="SELL" quantity="-1" tradePrice="6.4" multiplier="100" proceeds="640" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="639.35" fifoPnlRealized="0" dateTime="20260528;154500" tradeDate="20260528" underlyingSymbol="MSFT" putCall="C" strike="480" expiry="20260821" notes="" transactionID="1019"/>
+<Trade levelOfDetail="EXECUTION" symbol="ASML" description="ASML HOLDING NV" assetCategory="STK" currency="EUR" fxRateToBase="1.0853" buySell="SELL" quantity="-6" tradePrice="730.06" proceeds="4380.36" ibCommission="-1" ibCommissionCurrency="EUR" netCash="4379.36" fifoPnlRealized="479.36" dateTime="20260604;153000" tradeDate="20260604" isin="NL0010273215" transactionID="1020"/>
+<Trade levelOfDetail="EXECUTION" symbol="SAP   260918P00220000" description="SAP 18SEP26 220 P" assetCategory="OPT" currency="EUR" fxRateToBase="1.0835" buySell="SELL" quantity="-2" tradePrice="6" multiplier="100" proceeds="1200" ibCommission="-1.3" ibCommissionCurrency="EUR" netCash="1198.7" fifoPnlRealized="0" dateTime="20260608;154500" tradeDate="20260608" underlyingSymbol="SAP" putCall="P" strike="220" expiry="20260918" notes="" transactionID="1021"/>
+<Trade levelOfDetail="EXECUTION" symbol="QQQ   260918P00480000" description="QQQ 18SEP26 480 P" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="1" tradePrice="7.5" multiplier="100" proceeds="-750" ibCommission="-0.65" ibCommissionCurrency="USD" netCash="-750.65" fifoPnlRealized="0" dateTime="20260611;154500" tradeDate="20260611" underlyingSymbol="QQQ" putCall="P" strike="480" expiry="20260918" notes="" transactionID="1022"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO" description="COCA-COLA CO" assetCategory="STK" currency="USD" fxRateToBase="1" buySell="BUY" quantity="40" tradePrice="69.34" proceeds="-2773.6" ibCommission="-1" ibCommissionCurrency="USD" netCash="-2774.6" fifoPnlRealized="0" dateTime="20260616;153000" tradeDate="20260616" isin="US1912161007" transactionID="1023"/>
+<Trade levelOfDetail="EXECUTION" symbol="KO    260619C00074000" description="KO 19JUN26 74 C" assetCategory="OPT" currency="USD" fxRateToBase="1" buySell="BUY" quantity="2" tradePrice="0" multiplier="100" proceeds="0" ibCommission="0" ibCommissionCurrency="USD" netCash="0" fifoPnlRealized="138.7" dateTime="20260619;162000" tradeDate="20260619" underlyingSymbol="KO" putCall="C" strike="74" expiry="20260619" notes="Ep" transactionID="1024"/>
+</Trades>
+<OpenPositions>
+<OpenPosition levelOfDetail="SUMMARY" symbol="AAPL" description="APPLE INC" assetCategory="STK" currency="USD" fxRateToBase="1" isin="US0378331005" position="35" openPrice="200.86" markPrice="211.72" positionValue="7410.2" costBasisMoney="7030.1" fifoPnlUnrealized="380.1" percentOfNAV="9.66" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="MSFT" description="MICROSOFT CORP" assetCategory="STK" currency="USD" fxRateToBase="1" isin="US5949181045" position="23" openPrice="364.82" markPrice="432.39" positionValue="9944.97" costBasisMoney="8390.88" fifoPnlUnrealized="1554.09" percentOfNAV="12.97" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="KO" description="COCA-COLA CO" assetCategory="STK" currency="USD" fxRateToBase="1" isin="US1912161007" position="140" openPrice="61.24" markPrice="71.37" positionValue="9991.8" costBasisMoney="8573.6" fifoPnlUnrealized="1418.2" percentOfNAV="13.03" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="JNJ" description="JOHNSON &amp; JOHNSON" assetCategory="STK" currency="USD" fxRateToBase="1" isin="US4781601046" position="80" openPrice="156.68" markPrice="145.76" positionValue="11660.8" costBasisMoney="12534" fifoPnlUnrealized="-873.2" percentOfNAV="15.21" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="SPY" description="SPDR S&amp;P 500 ETF TRUST" assetCategory="STK" currency="USD" fxRateToBase="1" isin="US78462F1030" position="15" openPrice="520" markPrice="601.48" positionValue="9022.2" costBasisMoney="7800" fifoPnlUnrealized="1222.2" percentOfNAV="11.77" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="SAP" description="SAP SE" assetCategory="STK" currency="EUR" fxRateToBase="1.0864" isin="DE0007164600" position="20" openPrice="190" markPrice="272.31" positionValue="5446.2" costBasisMoney="3800" fifoPnlUnrealized="1646.2" percentOfNAV="7.72" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="ASML" description="ASML HOLDING NV" assetCategory="STK" currency="EUR" fxRateToBase="1.0864" isin="NL0010273215" position="6" openPrice="704.14" markPrice="750.47" positionValue="4502.82" costBasisMoney="4224.84" fifoPnlUnrealized="277.98" percentOfNAV="6.38" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="AAPL  260918C00260000" description="AAPL 18SEP26 260 C" assetCategory="OPT" currency="USD" fxRateToBase="1" conid="500006" underlyingSymbol="AAPL" expiry="20260918" putCall="C" strike="260" multiplier="100" position="1" openPrice="12" markPrice="15.8" positionValue="1580" costBasisMoney="1200.65" fifoPnlUnrealized="379.35" percentOfNAV="2.06" side="Long"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="SAP   260918P00220000" description="SAP 18SEP26 220 P" assetCategory="OPT" currency="EUR" fxRateToBase="1.0864" conid="500007" underlyingSymbol="SAP" expiry="20260918" putCall="P" strike="220" multiplier="100" position="-2" openPrice="6" markPrice="4.1" positionValue="-820" costBasisMoney="-1198.7" fifoPnlUnrealized="378.7" percentOfNAV="-1.16" side="Short"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="MSFT  260821C00480000" description="MSFT 21AUG26 480 C" assetCategory="OPT" currency="USD" fxRateToBase="1" conid="500008" underlyingSymbol="MSFT" expiry="20260821" putCall="C" strike="480" multiplier="100" position="-1" openPrice="6.4" markPrice="5.2" positionValue="-520" costBasisMoney="-639.35" fifoPnlUnrealized="119.35" percentOfNAV="-0.68" side="Short"/>
+<OpenPosition levelOfDetail="SUMMARY" symbol="QQQ   260918P00480000" description="QQQ 18SEP26 480 P" assetCategory="OPT" currency="USD" fxRateToBase="1" conid="500009" underlyingSymbol="QQQ" expiry="20260918" putCall="P" strike="480" multiplier="100" position="1" openPrice="7.5" markPrice="5.9" positionValue="590" costBasisMoney="750.65" fifoPnlUnrealized="-160.65" percentOfNAV="0.77" side="Long"/>
+</OpenPositions>
+<CashTransactions>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="12.81" description="USD CREDIT INT FOR JAN-2026" dateTime="20260130" reportDate="20260130" transactionID="1025"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR JAN 2026" dateTime="20260130" reportDate="20260130" transactionID="1026"/>
+<CashTransaction type="Dividends" symbol="AAPL" currency="USD" fxRateToBase="1" amount="13" description="AAPL(US0378331005) CASH DIVIDEND USD 0.26 PER SHARE (Ordinary Dividend)" dateTime="20260213" reportDate="20260213" transactionID="1027"/>
+<CashTransaction type="Withholding Tax" symbol="AAPL" currency="USD" fxRateToBase="1" amount="-1.95" description="AAPL(US0378331005) CASH DIVIDEND USD 0.26 PER SHARE - US TAX" dateTime="20260213" reportDate="20260213" transactionID="1028"/>
+<CashTransaction type="Dividends" symbol="ASML" currency="EUR" fxRateToBase="1.0748" amount="19.2" description="ASML(NL0010273215) CASH DIVIDEND EUR 1.6 PER SHARE (Ordinary Dividend)" dateTime="20260218" reportDate="20260218" transactionID="1029"/>
+<CashTransaction type="Withholding Tax" symbol="ASML" currency="EUR" fxRateToBase="1.0748" amount="-2.88" description="ASML(NL0010273215) CASH DIVIDEND EUR 1.6 PER SHARE - NL TAX" dateTime="20260218" reportDate="20260218" transactionID="1030"/>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="11.76" description="USD CREDIT INT FOR FEB-2026" dateTime="20260227" reportDate="20260227" transactionID="1031"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR FEB 2026" dateTime="20260227" reportDate="20260227" transactionID="1032"/>
+<CashTransaction type="Dividends" symbol="JNJ" currency="USD" fxRateToBase="1" amount="78" description="JNJ(US4781601046) CASH DIVIDEND USD 1.3 PER SHARE (Ordinary Dividend)" dateTime="20260310" reportDate="20260310" transactionID="1033"/>
+<CashTransaction type="Withholding Tax" symbol="JNJ" currency="USD" fxRateToBase="1" amount="-11.7" description="JNJ(US4781601046) CASH DIVIDEND USD 1.3 PER SHARE - US TAX" dateTime="20260310" reportDate="20260310" transactionID="1034"/>
+<CashTransaction type="Dividends" symbol="MSFT" currency="USD" fxRateToBase="1" amount="13.65" description="MSFT(US5949181045) CASH DIVIDEND USD 0.91 PER SHARE (Ordinary Dividend)" dateTime="20260312" reportDate="20260312" transactionID="1035"/>
+<CashTransaction type="Withholding Tax" symbol="MSFT" currency="USD" fxRateToBase="1" amount="-2.05" description="MSFT(US5949181045) CASH DIVIDEND USD 0.91 PER SHARE - US TAX" dateTime="20260312" reportDate="20260312" transactionID="1036"/>
+<CashTransaction type="Deposits/Withdrawals" currency="USD" fxRateToBase="1" amount="10000" description="CASH RECEIPTS / ELECTRONIC FUND TRANSFERS" dateTime="20260316" reportDate="20260316" transactionID="1037"/>
+<CashTransaction type="Dividends" symbol="SPY" currency="USD" fxRateToBase="1" amount="27" description="SPY(US78462F1030) CASH DIVIDEND USD 1.8 PER SHARE (Ordinary Dividend)" dateTime="20260331" reportDate="20260331" transactionID="1038"/>
+<CashTransaction type="Withholding Tax" symbol="SPY" currency="USD" fxRateToBase="1" amount="-4.05" description="SPY(US78462F1030) CASH DIVIDEND USD 1.8 PER SHARE - US TAX" dateTime="20260331" reportDate="20260331" transactionID="1039"/>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="11.8" description="USD CREDIT INT FOR MAR-2026" dateTime="20260331" reportDate="20260331" transactionID="1040"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR MAR 2026" dateTime="20260331" reportDate="20260331" transactionID="1041"/>
+<CashTransaction type="Dividends" symbol="KO" currency="USD" fxRateToBase="1" amount="53" description="KO(US1912161007) CASH DIVIDEND USD 0.53 PER SHARE (Ordinary Dividend)" dateTime="20260401" reportDate="20260401" transactionID="1042"/>
+<CashTransaction type="Withholding Tax" symbol="KO" currency="USD" fxRateToBase="1" amount="-7.95" description="KO(US1912161007) CASH DIVIDEND USD 0.53 PER SHARE - US TAX" dateTime="20260401" reportDate="20260401" transactionID="1043"/>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="15.91" description="USD CREDIT INT FOR APR-2026" dateTime="20260430" reportDate="20260430" transactionID="1044"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR APR 2026" dateTime="20260430" reportDate="20260430" transactionID="1045"/>
+<CashTransaction type="Dividends" symbol="ASML" currency="EUR" fxRateToBase="1.0838" amount="19.2" description="ASML(NL0010273215) CASH DIVIDEND EUR 1.6 PER SHARE (Ordinary Dividend)" dateTime="20260506" reportDate="20260506" transactionID="1046"/>
+<CashTransaction type="Withholding Tax" symbol="ASML" currency="EUR" fxRateToBase="1.0838" amount="-2.88" description="ASML(NL0010273215) CASH DIVIDEND EUR 1.6 PER SHARE - NL TAX" dateTime="20260506" reportDate="20260506" transactionID="1047"/>
+<CashTransaction type="Dividends" symbol="AAPL" currency="USD" fxRateToBase="1" amount="9.1" description="AAPL(US0378331005) CASH DIVIDEND USD 0.26 PER SHARE (Ordinary Dividend)" dateTime="20260515" reportDate="20260515" transactionID="1048"/>
+<CashTransaction type="Withholding Tax" symbol="AAPL" currency="USD" fxRateToBase="1" amount="-1.36" description="AAPL(US0378331005) CASH DIVIDEND USD 0.26 PER SHARE - US TAX" dateTime="20260515" reportDate="20260515" transactionID="1049"/>
+<CashTransaction type="Deposits/Withdrawals" currency="USD" fxRateToBase="1" amount="-3000" description="DISBURSEMENT INITIATED BY Ukazkovy Ucet" dateTime="20260515" reportDate="20260515" transactionID="1050"/>
+<CashTransaction type="Dividends" symbol="SAP" currency="EUR" fxRateToBase="1.0848" amount="47" description="SAP(DE0007164600) CASH DIVIDEND EUR 2.35 PER SHARE (Ordinary Dividend)" dateTime="20260520" reportDate="20260520" transactionID="1051"/>
+<CashTransaction type="Withholding Tax" symbol="SAP" currency="EUR" fxRateToBase="1.0848" amount="-12.4" description="SAP(DE0007164600) CASH DIVIDEND EUR 2.35 PER SHARE - DE TAX" dateTime="20260520" reportDate="20260520" transactionID="1052"/>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="17" description="USD CREDIT INT FOR MAY-2026" dateTime="20260529" reportDate="20260529" transactionID="1053"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR MAY 2026" dateTime="20260529" reportDate="20260529" transactionID="1054"/>
+<CashTransaction type="Dividends" symbol="JNJ" currency="USD" fxRateToBase="1" amount="104" description="JNJ(US4781601046) CASH DIVIDEND USD 1.3 PER SHARE (Ordinary Dividend)" dateTime="20260609" reportDate="20260609" transactionID="1055"/>
+<CashTransaction type="Withholding Tax" symbol="JNJ" currency="USD" fxRateToBase="1" amount="-15.6" description="JNJ(US4781601046) CASH DIVIDEND USD 1.3 PER SHARE - US TAX" dateTime="20260609" reportDate="20260609" transactionID="1056"/>
+<CashTransaction type="Dividends" symbol="MSFT" currency="USD" fxRateToBase="1" amount="20.93" description="MSFT(US5949181045) CASH DIVIDEND USD 0.91 PER SHARE (Ordinary Dividend)" dateTime="20260611" reportDate="20260611" transactionID="1057"/>
+<CashTransaction type="Withholding Tax" symbol="MSFT" currency="USD" fxRateToBase="1" amount="-3.14" description="MSFT(US5949181045) CASH DIVIDEND USD 0.91 PER SHARE - US TAX" dateTime="20260611" reportDate="20260611" transactionID="1058"/>
+<CashTransaction type="Dividends" symbol="SPY" currency="USD" fxRateToBase="1" amount="27.75" description="SPY(US78462F1030) CASH DIVIDEND USD 1.85 PER SHARE (Ordinary Dividend)" dateTime="20260630" reportDate="20260630" transactionID="1059"/>
+<CashTransaction type="Withholding Tax" symbol="SPY" currency="USD" fxRateToBase="1" amount="-4.16" description="SPY(US78462F1030) CASH DIVIDEND USD 1.85 PER SHARE - US TAX" dateTime="20260630" reportDate="20260630" transactionID="1060"/>
+<CashTransaction type="Broker Interest Received" currency="USD" fxRateToBase="1" amount="12.75" description="USD CREDIT INT FOR JUN-2026" dateTime="20260630" reportDate="20260630" transactionID="1061"/>
+<CashTransaction type="Other Fees" currency="USD" fxRateToBase="1" amount="-10" description="P*NYSE/NASDAQ MARKET DATA FOR JUN 2026" dateTime="20260630" reportDate="20260630" transactionID="1062"/>
+</CashTransactions>
+<FIFOPerformanceSummaryInBase>
+<FIFOPerformanceSummaryUnderlying symbol="AAPL" description="APPLE INC" assetCategory="STK" realizedSTProfit="678.35" realizedSTLoss="0" totalRealizedPnl="678.35" totalUnrealizedPnl="380.1" totalFifoPnl="1058.45"/>
+<FIFOPerformanceSummaryUnderlying symbol="MSFT" description="MICROSOFT CORP" assetCategory="STK" realizedSTProfit="522.6" realizedSTLoss="0" totalRealizedPnl="522.6" totalUnrealizedPnl="1554.09" totalFifoPnl="2076.69"/>
+<FIFOPerformanceSummaryUnderlying symbol="KO" description="COCA-COLA CO" assetCategory="STK" realizedSTProfit="602" realizedSTLoss="0" totalRealizedPnl="602" totalUnrealizedPnl="1418.2" totalFifoPnl="2020.2"/>
+<FIFOPerformanceSummaryUnderlying symbol="JNJ" description="JOHNSON &amp; JOHNSON" assetCategory="STK" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="-873.2" totalFifoPnl="-873.2"/>
+<FIFOPerformanceSummaryUnderlying symbol="SPY" description="SPDR S&amp;P 500 ETF TRUST" assetCategory="STK" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="1222.2" totalFifoPnl="1222.2"/>
+<FIFOPerformanceSummaryUnderlying symbol="SAP" description="SAP SE" assetCategory="STK" realizedSTProfit="678.92" realizedSTLoss="0" totalRealizedPnl="678.92" totalUnrealizedPnl="1788.43" totalFifoPnl="2467.36"/>
+<FIFOPerformanceSummaryUnderlying symbol="ASML" description="ASML HOLDING NV" assetCategory="STK" realizedSTProfit="520.25" realizedSTLoss="0" totalRealizedPnl="520.25" totalUnrealizedPnl="302" totalFifoPnl="822.25"/>
+<FIFOPerformanceSummaryUnderlying symbol="KO    260220C00072000" description="KO 20FEB26 72 C" assetCategory="OPT" realizedSTProfit="63.7" realizedSTLoss="0" totalRealizedPnl="63.7" totalUnrealizedPnl="0" totalFifoPnl="63.7"/>
+<FIFOPerformanceSummaryUnderlying symbol="AAPL  260320P00230000" description="AAPL 20MAR26 230 P" assetCategory="OPT" realizedSTProfit="409.35" realizedSTLoss="0" totalRealizedPnl="409.35" totalUnrealizedPnl="0" totalFifoPnl="409.35"/>
+<FIFOPerformanceSummaryUnderlying symbol="MSFT  260417C00450000" description="MSFT 17APR26 450 C" assetCategory="OPT" realizedSTProfit="468.7" realizedSTLoss="0" totalRealizedPnl="468.7" totalUnrealizedPnl="0" totalFifoPnl="468.7"/>
+<FIFOPerformanceSummaryUnderlying symbol="JNJ   260515P00150000" description="JNJ 15MAY26 150 P" assetCategory="OPT" realizedSTProfit="0" realizedSTLoss="-322.6" totalRealizedPnl="-322.6" totalUnrealizedPnl="0" totalFifoPnl="-322.6"/>
+<FIFOPerformanceSummaryUnderlying symbol="KO    260619C00074000" description="KO 19JUN26 74 C" assetCategory="OPT" realizedSTProfit="138.7" realizedSTLoss="0" totalRealizedPnl="138.7" totalUnrealizedPnl="0" totalFifoPnl="138.7"/>
+<FIFOPerformanceSummaryUnderlying symbol="AAPL  260918C00260000" description="AAPL 18SEP26 260 C" assetCategory="OPT" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="0" totalFifoPnl="0"/>
+<FIFOPerformanceSummaryUnderlying symbol="SAP   260918P00220000" description="SAP 18SEP26 220 P" assetCategory="OPT" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="0" totalFifoPnl="0"/>
+<FIFOPerformanceSummaryUnderlying symbol="MSFT  260821C00480000" description="MSFT 21AUG26 480 C" assetCategory="OPT" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="0" totalFifoPnl="0"/>
+<FIFOPerformanceSummaryUnderlying symbol="QQQ   260918P00480000" description="QQQ 18SEP26 480 P" assetCategory="OPT" realizedSTProfit="0" realizedSTLoss="0" totalRealizedPnl="0" totalUnrealizedPnl="0" totalFifoPnl="0"/>
+</FIFOPerformanceSummaryInBase>
+<MTMPerformanceSummaryInBase>
+<MTMPerformanceSummaryUnderlying symbol="AAPL" description="APPLE INC" assetCategory="STK" currency="USD" prevCloseQuantity="40" prevClosePrice="245" closeQuantity="35" closePrice="211.72"/>
+<MTMPerformanceSummaryUnderlying symbol="MSFT" description="MICROSOFT CORP" assetCategory="STK" currency="USD" prevCloseQuantity="20" prevClosePrice="430" closeQuantity="23" closePrice="432.39"/>
+<MTMPerformanceSummaryUnderlying symbol="KO" description="COCA-COLA CO" assetCategory="STK" currency="USD" prevCloseQuantity="150" prevClosePrice="68" closeQuantity="140" closePrice="71.37"/>
+<MTMPerformanceSummaryUnderlying symbol="JNJ" description="JOHNSON &amp; JOHNSON" assetCategory="STK" currency="USD" prevCloseQuantity="60" prevClosePrice="155" closeQuantity="80" closePrice="145.76"/>
+<MTMPerformanceSummaryUnderlying symbol="SPY" description="SPDR S&amp;P 500 ETF TRUST" assetCategory="STK" currency="USD" prevCloseQuantity="15" prevClosePrice="600" closeQuantity="15" closePrice="601.48"/>
+<MTMPerformanceSummaryUnderlying symbol="SAP" description="SAP SE" assetCategory="STK" currency="EUR" prevCloseQuantity="30" prevClosePrice="240" closeQuantity="20" closePrice="272.31"/>
+<MTMPerformanceSummaryUnderlying symbol="ASML" description="ASML HOLDING NV" assetCategory="STK" currency="EUR" prevCloseQuantity="8" prevClosePrice="720" closeQuantity="6" closePrice="750.47"/>
+</MTMPerformanceSummaryInBase>
+<EquitySummaryInBase>
+<EquitySummaryByReportDateInBase reportDate="20260102" cash="8000" stock="60703.01" options="0" total="68703.01"/>
+<EquitySummaryByReportDateInBase reportDate="20260105" cash="8000" stock="60855.17" options="0" total="68855.17"/>
+<EquitySummaryByReportDateInBase reportDate="20260106" cash="8000" stock="61137.79" options="0" total="69137.79"/>
+<EquitySummaryByReportDateInBase reportDate="20260107" cash="8000" stock="61558.73" options="0" total="69558.73"/>
+<EquitySummaryByReportDateInBase reportDate="20260108" cash="5468.9" stock="64564.2" options="0" total="70033.1"/>
+<EquitySummaryByReportDateInBase reportDate="20260109" cash="5468.9" stock="64477.95" options="0" total="69946.85"/>
+<EquitySummaryByReportDateInBase reportDate="20260112" cash="5468.9" stock="64347.78" options="0" total="69816.68"/>
+<EquitySummaryByReportDateInBase reportDate="20260113" cash="5553.25" stock="64474.3" options="-85" total="69942.55"/>
+<EquitySummaryByReportDateInBase reportDate="20260114" cash="5553.25" stock="64314.7" options="-85" total="69782.95"/>
+<EquitySummaryByReportDateInBase reportDate="20260115" cash="5553.25" stock="64095.8" options="-85" total="69564.05"/>
+<EquitySummaryByReportDateInBase reportDate="20260116" cash="5553.25" stock="63874.18" options="-85" total="69342.43"/>
+<EquitySummaryByReportDateInBase reportDate="20260119" cash="5553.25" stock="63877.44" options="-85" total="69345.69"/>
+<EquitySummaryByReportDateInBase reportDate="20260120" cash="5553.25" stock="63944.09" options="-85" total="69412.34"/>
+<EquitySummaryByReportDateInBase reportDate="20260121" cash="5553.25" stock="64014.53" options="-85" total="69482.78"/>
+<EquitySummaryByReportDateInBase reportDate="20260122" cash="5553.25" stock="64015.11" options="-85" total="69483.36"/>
+<EquitySummaryByReportDateInBase reportDate="20260123" cash="5553.25" stock="63754.12" options="-85" total="69222.37"/>
+<EquitySummaryByReportDateInBase reportDate="20260126" cash="5553.25" stock="63455.28" options="-85" total="68923.53"/>
+<EquitySummaryByReportDateInBase reportDate="20260127" cash="7725.85" stock="61150.77" options="-85" total="68791.62"/>
+<EquitySummaryByReportDateInBase reportDate="20260128" cash="7725.85" stock="61123.19" options="-85" total="68764.04"/>
+<EquitySummaryByReportDateInBase reportDate="20260129" cash="7725.85" stock="60804.38" options="-85" total="68445.23"/>
+<EquitySummaryByReportDateInBase reportDate="20260130" cash="7728.66" stock="60890.01" options="-85" total="68533.67"/>
+<EquitySummaryByReportDateInBase reportDate="20260202" cash="7728.66" stock="60667.59" options="-85" total="68311.25"/>
+<EquitySummaryByReportDateInBase reportDate="20260203" cash="7728.66" stock="60874.56" options="-85" total="68518.22"/>
+<EquitySummaryByReportDateInBase reportDate="20260204" cash="7728.66" stock="60851.08" options="-85" total="68494.74"/>
+<EquitySummaryByReportDateInBase reportDate="20260205" cash="7728.66" stock="60698.74" options="-85" total="68342.4"/>
+<EquitySummaryByReportDateInBase reportDate="20260206" cash="7728.66" stock="61007.37" options="-85" total="68651.03"/>
+<EquitySummaryByReportDateInBase reportDate="20260209" cash="7708.01" stock="61370.97" options="0" total="69078.98"/>
+<EquitySummaryByReportDateInBase reportDate="20260210" cash="7708.01" stock="61021.6" options="0" total="68729.61"/>
+<EquitySummaryByReportDateInBase reportDate="20260211" cash="7708.01" stock="61231.89" options="0" total="68939.9"/>
+<EquitySummaryByReportDateInBase reportDate="20260212" cash="4560.68" stock="64307.55" options="0" total="68868.23"/>
+<EquitySummaryByReportDateInBase reportDate="20260213" cash="4981.08" stock="64246.99" options="-410" total="68818.08"/>
+<EquitySummaryByReportDateInBase reportDate="20260216" cash="4981.08" stock="64109.3" options="-410" total="68680.38"/>
+<EquitySummaryByReportDateInBase reportDate="20260217" cash="4981.08" stock="64122.46" options="-410" total="68693.55"/>
+<EquitySummaryByReportDateInBase reportDate="20260218" cash="4998.62" stock="64047.99" options="-410" total="68636.62"/>
+<EquitySummaryByReportDateInBase reportDate="20260219" cash="4998.62" stock="63821.65" options="-410" total="68410.27"/>
+<EquitySummaryByReportDateInBase reportDate="20260220" cash="4998.62" stock="63848.47" options="-410" total="68437.1"/>
+<EquitySummaryByReportDateInBase reportDate="20260223" cash="4998.62" stock="63957.12" options="-410" total="68545.75"/>
+<EquitySummaryByReportDateInBase reportDate="20260224" cash="4998.62" stock="64169.97" options="-410" total="68758.59"/>
+<EquitySummaryByReportDateInBase reportDate="20260225" cash="4998.62" stock="64199.54" options="-410" total="68788.17"/>
+<EquitySummaryByReportDateInBase reportDate="20260226" cash="4998.62" stock="63829.74" options="-410" total="68418.37"/>
+<EquitySummaryByReportDateInBase reportDate="20260227" cash="5000.38" stock="64082.98" options="-410" total="68673.36"/>
+<EquitySummaryByReportDateInBase reportDate="20260302" cash="5000.38" stock="63946.23" options="-410" total="68536.61"/>
+<EquitySummaryByReportDateInBase reportDate="20260303" cash="5000.38" stock="63722.01" options="-410" total="68312.4"/>
+<EquitySummaryByReportDateInBase reportDate="20260304" cash="5000.38" stock="63612.62" options="-410" total="68203.01"/>
+<EquitySummaryByReportDateInBase reportDate="20260305" cash="8502.38" stock="59893.64" options="-410" total="67986.03"/>
+<EquitySummaryByReportDateInBase reportDate="20260306" cash="8502.38" stock="59843.18" options="-410" total="67935.56"/>
+<EquitySummaryByReportDateInBase reportDate="20260309" cash="8502.38" stock="60168.18" options="-410" total="68260.57"/>
+<EquitySummaryByReportDateInBase reportDate="20260310" cash="8568.68" stock="59937.16" options="-410" total="68095.84"/>
+<EquitySummaryByReportDateInBase reportDate="20260311" cash="8568.68" stock="60063.77" options="-410" total="68222.45"/>
+<EquitySummaryByReportDateInBase reportDate="20260312" cash="8580.28" stock="60086.32" options="-410" total="68256.6"/>
+<EquitySummaryByReportDateInBase reportDate="20260313" cash="8580.28" stock="60467.05" options="-410" total="68637.34"/>
+<EquitySummaryByReportDateInBase reportDate="20260316" cash="18580.28" stock="60203.01" options="-410" total="78373.3"/>
+<EquitySummaryByReportDateInBase reportDate="20260317" cash="17629.63" stock="60242.35" options="540" total="78411.99"/>
+<EquitySummaryByReportDateInBase reportDate="20260318" cash="17629.63" stock="59988.31" options="540" total="78157.94"/>
+<EquitySummaryByReportDateInBase reportDate="20260319" cash="17629.63" stock="59643.18" options="540" total="77812.81"/>
+<EquitySummaryByReportDateInBase reportDate="20260320" cash="17629.63" stock="59506.96" options="950" total="78086.6"/>
+<EquitySummaryByReportDateInBase reportDate="20260323" cash="17629.63" stock="59843.3" options="950" total="78422.93"/>
+<EquitySummaryByReportDateInBase reportDate="20260324" cash="17629.63" stock="59700.1" options="950" total="78279.74"/>
+<EquitySummaryByReportDateInBase reportDate="20260325" cash="17629.63" stock="59729.11" options="950" total="78308.74"/>
+<EquitySummaryByReportDateInBase reportDate="20260326" cash="14694.63" stock="62485.73" options="950" total="78130.37"/>
+<EquitySummaryByReportDateInBase reportDate="20260327" cash="14694.63" stock="62920.34" options="950" total="78564.97"/>
+<EquitySummaryByReportDateInBase reportDate="20260330" cash="14694.63" stock="62772.77" options="950" total="78417.4"/>
+<EquitySummaryByReportDateInBase reportDate="20260331" cash="14719.38" stock="62715.2" options="950" total="78384.58"/>
+<EquitySummaryByReportDateInBase reportDate="20260401" cash="14764.43" stock="62464.92" options="950" total="78179.36"/>
+<EquitySummaryByReportDateInBase reportDate="20260402" cash="14764.43" stock="62341.13" options="950" total="78055.56"/>
+<EquitySummaryByReportDateInBase reportDate="20260403" cash="14764.43" stock="62745.49" options="950" total="78459.92"/>
+<EquitySummaryByReportDateInBase reportDate="20260406" cash="14764.43" stock="62367.99" options="950" total="78082.42"/>
+<EquitySummaryByReportDateInBase reportDate="20260407" cash="14764.43" stock="62603.18" options="950" total="78317.61"/>
+<EquitySummaryByReportDateInBase reportDate="20260408" cash="16183.78" stock="62487.08" options="0" total="78670.86"/>
+<EquitySummaryByReportDateInBase reportDate="20260409" cash="18910.91" stock="59745.2" options="0" total="78656.1"/>
+<EquitySummaryByReportDateInBase reportDate="20260410" cash="18910.91" stock="59683.25" options="0" total="78594.16"/>
+<EquitySummaryByReportDateInBase reportDate="20260413" cash="19369.61" stock="59714.66" options="-460" total="78624.27"/>
+<EquitySummaryByReportDateInBase reportDate="20260414" cash="19369.61" stock="59812.12" options="-460" total="78721.73"/>
+<EquitySummaryByReportDateInBase reportDate="20260415" cash="19369.61" stock="59805.7" options="-460" total="78715.31"/>
+<EquitySummaryByReportDateInBase reportDate="20260416" cash="19369.61" stock="59930.66" options="-460" total="78840.27"/>
+<EquitySummaryByReportDateInBase reportDate="20260417" cash="19369.61" stock="60204.47" options="-460" total="79114.08"/>
+<EquitySummaryByReportDateInBase reportDate="20260420" cash="19369.61" stock="60246.56" options="-460" total="79156.17"/>
+<EquitySummaryByReportDateInBase reportDate="20260421" cash="19369.61" stock="60628.75" options="-460" total="79538.36"/>
+<EquitySummaryByReportDateInBase reportDate="20260422" cash="19369.61" stock="60497.25" options="-460" total="79406.85"/>
+<EquitySummaryByReportDateInBase reportDate="20260423" cash="19369.61" stock="60104.75" options="-460" total="79014.36"/>
+<EquitySummaryByReportDateInBase reportDate="20260424" cash="19369.61" stock="60353.19" options="-460" total="79262.8"/>
+<EquitySummaryByReportDateInBase reportDate="20260427" cash="19369.61" stock="60245.13" options="-460" total="79154.74"/>
+<EquitySummaryByReportDateInBase reportDate="20260428" cash="19369.61" stock="60146.39" options="-460" total="79056"/>
+<EquitySummaryByReportDateInBase reportDate="20260429" cash="19369.61" stock="60320.19" options="-460" total="79229.8"/>
+<EquitySummaryByReportDateInBase reportDate="20260430" cash="22753.87" stock="56988.11" options="-460" total="79281.98"/>
+<EquitySummaryByReportDateInBase reportDate="20260501" cash="22753.87" stock="57289.39" options="-460" total="79583.26"/>
+<EquitySummaryByReportDateInBase reportDate="20260504" cash="22753.87" stock="57564.62" options="-460" total="79858.49"/>
+<EquitySummaryByReportDateInBase reportDate="20260505" cash="21972.57" stock="57180.08" options="0" total="79152.65"/>
+<EquitySummaryByReportDateInBase reportDate="20260506" cash="21990.26" stock="56859.35" options="0" total="78849.61"/>
+<EquitySummaryByReportDateInBase reportDate="20260507" cash="21990.26" stock="56858.46" options="0" total="78848.71"/>
+<EquitySummaryByReportDateInBase reportDate="20260508" cash="22128.96" stock="57032.33" options="-140" total="79021.29"/>
+<EquitySummaryByReportDateInBase reportDate="20260511" cash="22128.96" stock="57133.24" options="-140" total="79122.2"/>
+<EquitySummaryByReportDateInBase reportDate="20260512" cash="22128.96" stock="57012.01" options="-140" total="79000.96"/>
+<EquitySummaryByReportDateInBase reportDate="20260513" cash="22128.96" stock="57307.03" options="-140" total="79295.99"/>
+<EquitySummaryByReportDateInBase reportDate="20260514" cash="18687.08" stock="60726.52" options="-140" total="79273.6"/>
+<EquitySummaryByReportDateInBase reportDate="20260515" cash="15694.82" stock="60484.52" options="-140" total="76039.34"/>
+<EquitySummaryByReportDateInBase reportDate="20260518" cash="15694.82" stock="60470.33" options="-140" total="76025.14"/>
+<EquitySummaryByReportDateInBase reportDate="20260519" cash="15694.82" stock="60507.86" options="-140" total="76062.68"/>
+<EquitySummaryByReportDateInBase reportDate="20260520" cash="15732.35" stock="60697.09" options="-140" total="76289.44"/>
+<EquitySummaryByReportDateInBase reportDate="20260521" cash="14531.7" stock="60971.47" options="1060" total="76563.18"/>
+<EquitySummaryByReportDateInBase reportDate="20260522" cash="14531.7" stock="61064.39" options="1060" total="76656.09"/>
+<EquitySummaryByReportDateInBase reportDate="20260525" cash="14531.7" stock="61210.01" options="1060" total="76801.71"/>
+<EquitySummaryByReportDateInBase reportDate="20260526" cash="14531.7" stock="61114.55" options="1060" total="76706.25"/>
+<EquitySummaryByReportDateInBase reportDate="20260527" cash="14531.7" stock="61368.06" options="1060" total="76959.76"/>
+<EquitySummaryByReportDateInBase reportDate="20260528" cash="15171.05" stock="61136.33" options="420" total="76727.38"/>
+<EquitySummaryByReportDateInBase reportDate="20260529" cash="15178.05" stock="60968.97" options="420" total="76567.02"/>
+<EquitySummaryByReportDateInBase reportDate="20260601" cash="15178.05" stock="61026.43" options="420" total="76624.48"/>
+<EquitySummaryByReportDateInBase reportDate="20260602" cash="15178.05" stock="60877.26" options="420" total="76475.31"/>
+<EquitySummaryByReportDateInBase reportDate="20260603" cash="15178.05" stock="60505.48" options="420" total="76103.53"/>
+<EquitySummaryByReportDateInBase reportDate="20260604" cash="19930.97" stock="56176.93" options="420" total="76527.9"/>
+<EquitySummaryByReportDateInBase reportDate="20260605" cash="19930.97" stock="56206.2" options="420" total="76557.17"/>
+<EquitySummaryByReportDateInBase reportDate="20260608" cash="21229.76" stock="56177.85" options="-880.2" total="76527.41"/>
+<EquitySummaryByReportDateInBase reportDate="20260609" cash="21318.16" stock="56313.09" options="-880.56" total="76750.69"/>
+<EquitySummaryByReportDateInBase reportDate="20260610" cash="21318.16" stock="56274.4" options="-877.32" total="76715.24"/>
+<EquitySummaryByReportDateInBase reportDate="20260611" cash="20585.3" stock="56228.01" options="-124.08" total="76689.24"/>
+<EquitySummaryByReportDateInBase reportDate="20260612" cash="20585.3" stock="56574.94" options="-127.8" total="77032.45"/>
+<EquitySummaryByReportDateInBase reportDate="20260615" cash="20585.3" stock="56774.23" options="-127.2" total="77232.34"/>
+<EquitySummaryByReportDateInBase reportDate="20260616" cash="17810.7" stock="59414.03" options="-127.2" total="77097.53"/>
+<EquitySummaryByReportDateInBase reportDate="20260617" cash="17810.7" stock="59124.93" options="-130.68" total="76804.95"/>
+<EquitySummaryByReportDateInBase reportDate="20260618" cash="17810.7" stock="59030.22" options="-128.4" total="76712.52"/>
+<EquitySummaryByReportDateInBase reportDate="20260619" cash="17810.7" stock="59095.15" options="10.28" total="76916.13"/>
+<EquitySummaryByReportDateInBase reportDate="20260622" cash="17810.7" stock="58878.72" options="11.84" total="76701.26"/>
+<EquitySummaryByReportDateInBase reportDate="20260623" cash="17810.7" stock="58945.19" options="11.72" total="76767.61"/>
+<EquitySummaryByReportDateInBase reportDate="20260624" cash="17810.7" stock="58618.21" options="13.16" total="76442.08"/>
+<EquitySummaryByReportDateInBase reportDate="20260625" cash="17810.7" stock="58799.19" options="10.52" total="76620.41"/>
+<EquitySummaryByReportDateInBase reportDate="20260626" cash="17810.7" stock="58772.58" options="7.52" total="76590.8"/>
+<EquitySummaryByReportDateInBase reportDate="20260629" cash="17810.7" stock="58750.46" options="4.88" total="76566.04"/>
+<EquitySummaryByReportDateInBase reportDate="20260630" cash="17837.04" stock="58838.59" options="6.32" total="76681.95"/>
+</EquitySummaryInBase>
+<PriorPeriodPositions>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260102" price="594.85"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260105" price="592.58"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260106" price="597.89"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260107" price="602.35"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260108" price="604.53"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260109" price="601.72"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260112" price="601.26"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260113" price="598.67"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260114" price="596.31"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260115" price="597.94"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260116" price="601.22"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260119" price="599.07"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260120" price="604.59"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260121" price="605.83"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260122" price="601.62"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260123" price="601.7"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260126" price="599.68"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260127" price="596.03"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260128" price="594.87"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260129" price="590.25"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260130" price="586.38"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260202" price="586.67"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260203" price="591.87"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260204" price="594.9"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260205" price="592.62"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260206" price="593.13"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260209" price="589"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260210" price="586.62"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260211" price="583.79"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260212" price="580.15"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260213" price="583.33"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260216" price="583.04"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260217" price="583.95"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260218" price="584.32"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260219" price="579.69"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260220" price="577.69"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260223" price="576.69"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260224" price="576.5"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260225" price="578.41"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260226" price="573.94"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260227" price="574.98"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260302" price="579.06"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260303" price="578.89"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260304" price="579.98"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260305" price="582.07"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260306" price="583.32"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260309" price="585.03"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260310" price="583.66"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260311" price="588.52"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260312" price="585.41"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260313" price="590.16"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260316" price="593.01"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260317" price="597.74"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260318" price="593.63"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260319" price="590.16"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260320" price="588.35"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260323" price="590.3"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260324" price="586.33"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260325" price="585.28"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260326" price="581.53"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260327" price="585.54"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260330" price="589.22"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260331" price="592.02"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260401" price="593.49"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260402" price="595.72"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260403" price="597.61"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260406" price="594.25"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260407" price="599.43"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260408" price="595.64"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260409" price="597.8"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260410" price="595.06"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260413" price="594.45"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260414" price="590.25"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260415" price="586.9"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260416" price="583.59"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260417" price="584.72"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260420" price="589.86"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260421" price="589.83"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260422" price="592.22"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260423" price="590.41"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260424" price="589.49"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260427" price="592.28"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260428" price="596.11"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260429" price="594.75"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260430" price="598.07"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260501" price="603.41"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260504" price="600.61"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260505" price="603.18"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260506" price="601.19"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260507" price="602.81"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260508" price="598.68"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260511" price="603.55"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260512" price="598.44"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260513" price="601.21"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260514" price="598.36"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260515" price="594.18"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260518" price="597.73"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260519" price="595.61"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260520" price="593.97"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260521" price="593.81"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260522" price="594.18"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260525" price="598.14"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260526" price="595.78"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260527" price="597.65"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260528" price="594.44"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260529" price="593.98"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260601" price="590.29"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260602" price="593.46"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260603" price="590.35"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260604" price="595.66"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260605" price="597.74"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260608" price="602.13"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260609" price="605.19"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260610" price="601.29"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260611" price="600.64"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260612" price="601.13"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260615" price="601.28"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260616" price="598.68"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260617" price="599.69"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260618" price="594.8"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260619" price="600.32"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260622" price="596.11"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260623" price="600.63"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260624" price="600.99"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260625" price="601.42"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260626" price="602.03"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260629" price="597.58"/>
+<PriorPeriodPosition symbol="SPY" assetCategory="STK" currency="USD" date="20260630" price="601.48"/>
+</PriorPeriodPositions>
+<ConversionRates>
+<ConversionRate reportDate="20260102" fromCurrency="EUR" toCurrency="USD" rate="1.0772"/>
+<ConversionRate reportDate="20260105" fromCurrency="EUR" toCurrency="USD" rate="1.0793"/>
+<ConversionRate reportDate="20260106" fromCurrency="EUR" toCurrency="USD" rate="1.0813"/>
+<ConversionRate reportDate="20260107" fromCurrency="EUR" toCurrency="USD" rate="1.0828"/>
+<ConversionRate reportDate="20260108" fromCurrency="EUR" toCurrency="USD" rate="1.0831"/>
+<ConversionRate reportDate="20260109" fromCurrency="EUR" toCurrency="USD" rate="1.0832"/>
+<ConversionRate reportDate="20260112" fromCurrency="EUR" toCurrency="USD" rate="1.0809"/>
+<ConversionRate reportDate="20260113" fromCurrency="EUR" toCurrency="USD" rate="1.0822"/>
+<ConversionRate reportDate="20260114" fromCurrency="EUR" toCurrency="USD" rate="1.079"/>
+<ConversionRate reportDate="20260115" fromCurrency="EUR" toCurrency="USD" rate="1.08"/>
+<ConversionRate reportDate="20260116" fromCurrency="EUR" toCurrency="USD" rate="1.0812"/>
+<ConversionRate reportDate="20260119" fromCurrency="EUR" toCurrency="USD" rate="1.0843"/>
+<ConversionRate reportDate="20260120" fromCurrency="EUR" toCurrency="USD" rate="1.0845"/>
+<ConversionRate reportDate="20260121" fromCurrency="EUR" toCurrency="USD" rate="1.0862"/>
+<ConversionRate reportDate="20260122" fromCurrency="EUR" toCurrency="USD" rate="1.0845"/>
+<ConversionRate reportDate="20260123" fromCurrency="EUR" toCurrency="USD" rate="1.0846"/>
+<ConversionRate reportDate="20260126" fromCurrency="EUR" toCurrency="USD" rate="1.0871"/>
+<ConversionRate reportDate="20260127" fromCurrency="EUR" toCurrency="USD" rate="1.0865"/>
+<ConversionRate reportDate="20260128" fromCurrency="EUR" toCurrency="USD" rate="1.0872"/>
+<ConversionRate reportDate="20260129" fromCurrency="EUR" toCurrency="USD" rate="1.0894"/>
+<ConversionRate reportDate="20260130" fromCurrency="EUR" toCurrency="USD" rate="1.0907"/>
+<ConversionRate reportDate="20260202" fromCurrency="EUR" toCurrency="USD" rate="1.0875"/>
+<ConversionRate reportDate="20260203" fromCurrency="EUR" toCurrency="USD" rate="1.0843"/>
+<ConversionRate reportDate="20260204" fromCurrency="EUR" toCurrency="USD" rate="1.0821"/>
+<ConversionRate reportDate="20260205" fromCurrency="EUR" toCurrency="USD" rate="1.0801"/>
+<ConversionRate reportDate="20260206" fromCurrency="EUR" toCurrency="USD" rate="1.0808"/>
+<ConversionRate reportDate="20260209" fromCurrency="EUR" toCurrency="USD" rate="1.0833"/>
+<ConversionRate reportDate="20260210" fromCurrency="EUR" toCurrency="USD" rate="1.0814"/>
+<ConversionRate reportDate="20260211" fromCurrency="EUR" toCurrency="USD" rate="1.0787"/>
+<ConversionRate reportDate="20260212" fromCurrency="EUR" toCurrency="USD" rate="1.0757"/>
+<ConversionRate reportDate="20260213" fromCurrency="EUR" toCurrency="USD" rate="1.0769"/>
+<ConversionRate reportDate="20260216" fromCurrency="EUR" toCurrency="USD" rate="1.0746"/>
+<ConversionRate reportDate="20260217" fromCurrency="EUR" toCurrency="USD" rate="1.0733"/>
+<ConversionRate reportDate="20260218" fromCurrency="EUR" toCurrency="USD" rate="1.0748"/>
+<ConversionRate reportDate="20260219" fromCurrency="EUR" toCurrency="USD" rate="1.0754"/>
+<ConversionRate reportDate="20260220" fromCurrency="EUR" toCurrency="USD" rate="1.0742"/>
+<ConversionRate reportDate="20260223" fromCurrency="EUR" toCurrency="USD" rate="1.0758"/>
+<ConversionRate reportDate="20260224" fromCurrency="EUR" toCurrency="USD" rate="1.0777"/>
+<ConversionRate reportDate="20260225" fromCurrency="EUR" toCurrency="USD" rate="1.079"/>
+<ConversionRate reportDate="20260226" fromCurrency="EUR" toCurrency="USD" rate="1.0802"/>
+<ConversionRate reportDate="20260227" fromCurrency="EUR" toCurrency="USD" rate="1.0791"/>
+<ConversionRate reportDate="20260302" fromCurrency="EUR" toCurrency="USD" rate="1.0779"/>
+<ConversionRate reportDate="20260303" fromCurrency="EUR" toCurrency="USD" rate="1.0765"/>
+<ConversionRate reportDate="20260304" fromCurrency="EUR" toCurrency="USD" rate="1.0764"/>
+<ConversionRate reportDate="20260305" fromCurrency="EUR" toCurrency="USD" rate="1.0758"/>
+<ConversionRate reportDate="20260306" fromCurrency="EUR" toCurrency="USD" rate="1.0749"/>
+<ConversionRate reportDate="20260309" fromCurrency="EUR" toCurrency="USD" rate="1.0776"/>
+<ConversionRate reportDate="20260310" fromCurrency="EUR" toCurrency="USD" rate="1.0756"/>
+<ConversionRate reportDate="20260311" fromCurrency="EUR" toCurrency="USD" rate="1.0788"/>
+<ConversionRate reportDate="20260312" fromCurrency="EUR" toCurrency="USD" rate="1.0791"/>
+<ConversionRate reportDate="20260313" fromCurrency="EUR" toCurrency="USD" rate="1.0808"/>
+<ConversionRate reportDate="20260316" fromCurrency="EUR" toCurrency="USD" rate="1.079"/>
+<ConversionRate reportDate="20260317" fromCurrency="EUR" toCurrency="USD" rate="1.0822"/>
+<ConversionRate reportDate="20260318" fromCurrency="EUR" toCurrency="USD" rate="1.0819"/>
+<ConversionRate reportDate="20260319" fromCurrency="EUR" toCurrency="USD" rate="1.0827"/>
+<ConversionRate reportDate="20260320" fromCurrency="EUR" toCurrency="USD" rate="1.0857"/>
+<ConversionRate reportDate="20260323" fromCurrency="EUR" toCurrency="USD" rate="1.0832"/>
+<ConversionRate reportDate="20260324" fromCurrency="EUR" toCurrency="USD" rate="1.0813"/>
+<ConversionRate reportDate="20260325" fromCurrency="EUR" toCurrency="USD" rate="1.0842"/>
+<ConversionRate reportDate="20260326" fromCurrency="EUR" toCurrency="USD" rate="1.0821"/>
+<ConversionRate reportDate="20260327" fromCurrency="EUR" toCurrency="USD" rate="1.083"/>
+<ConversionRate reportDate="20260330" fromCurrency="EUR" toCurrency="USD" rate="1.0833"/>
+<ConversionRate reportDate="20260331" fromCurrency="EUR" toCurrency="USD" rate="1.0849"/>
+<ConversionRate reportDate="20260401" fromCurrency="EUR" toCurrency="USD" rate="1.0856"/>
+<ConversionRate reportDate="20260402" fromCurrency="EUR" toCurrency="USD" rate="1.0883"/>
+<ConversionRate reportDate="20260403" fromCurrency="EUR" toCurrency="USD" rate="1.0884"/>
+<ConversionRate reportDate="20260406" fromCurrency="EUR" toCurrency="USD" rate="1.0872"/>
+<ConversionRate reportDate="20260407" fromCurrency="EUR" toCurrency="USD" rate="1.0844"/>
+<ConversionRate reportDate="20260408" fromCurrency="EUR" toCurrency="USD" rate="1.0812"/>
+<ConversionRate reportDate="20260409" fromCurrency="EUR" toCurrency="USD" rate="1.078"/>
+<ConversionRate reportDate="20260410" fromCurrency="EUR" toCurrency="USD" rate="1.0757"/>
+<ConversionRate reportDate="20260413" fromCurrency="EUR" toCurrency="USD" rate="1.0755"/>
+<ConversionRate reportDate="20260414" fromCurrency="EUR" toCurrency="USD" rate="1.0756"/>
+<ConversionRate reportDate="20260415" fromCurrency="EUR" toCurrency="USD" rate="1.0775"/>
+<ConversionRate reportDate="20260416" fromCurrency="EUR" toCurrency="USD" rate="1.0796"/>
+<ConversionRate reportDate="20260417" fromCurrency="EUR" toCurrency="USD" rate="1.0824"/>
+<ConversionRate reportDate="20260420" fromCurrency="EUR" toCurrency="USD" rate="1.0815"/>
+<ConversionRate reportDate="20260421" fromCurrency="EUR" toCurrency="USD" rate="1.0821"/>
+<ConversionRate reportDate="20260422" fromCurrency="EUR" toCurrency="USD" rate="1.0794"/>
+<ConversionRate reportDate="20260423" fromCurrency="EUR" toCurrency="USD" rate="1.0768"/>
+<ConversionRate reportDate="20260424" fromCurrency="EUR" toCurrency="USD" rate="1.0784"/>
+<ConversionRate reportDate="20260427" fromCurrency="EUR" toCurrency="USD" rate="1.0778"/>
+<ConversionRate reportDate="20260428" fromCurrency="EUR" toCurrency="USD" rate="1.0807"/>
+<ConversionRate reportDate="20260429" fromCurrency="EUR" toCurrency="USD" rate="1.0818"/>
+<ConversionRate reportDate="20260430" fromCurrency="EUR" toCurrency="USD" rate="1.0828"/>
+<ConversionRate reportDate="20260501" fromCurrency="EUR" toCurrency="USD" rate="1.0803"/>
+<ConversionRate reportDate="20260504" fromCurrency="EUR" toCurrency="USD" rate="1.0815"/>
+<ConversionRate reportDate="20260505" fromCurrency="EUR" toCurrency="USD" rate="1.0812"/>
+<ConversionRate reportDate="20260506" fromCurrency="EUR" toCurrency="USD" rate="1.0838"/>
+<ConversionRate reportDate="20260507" fromCurrency="EUR" toCurrency="USD" rate="1.0845"/>
+<ConversionRate reportDate="20260508" fromCurrency="EUR" toCurrency="USD" rate="1.0832"/>
+<ConversionRate reportDate="20260511" fromCurrency="EUR" toCurrency="USD" rate="1.0817"/>
+<ConversionRate reportDate="20260512" fromCurrency="EUR" toCurrency="USD" rate="1.0815"/>
+<ConversionRate reportDate="20260513" fromCurrency="EUR" toCurrency="USD" rate="1.0824"/>
+<ConversionRate reportDate="20260514" fromCurrency="EUR" toCurrency="USD" rate="1.0807"/>
+<ConversionRate reportDate="20260515" fromCurrency="EUR" toCurrency="USD" rate="1.0807"/>
+<ConversionRate reportDate="20260518" fromCurrency="EUR" toCurrency="USD" rate="1.0799"/>
+<ConversionRate reportDate="20260519" fromCurrency="EUR" toCurrency="USD" rate="1.0824"/>
+<ConversionRate reportDate="20260520" fromCurrency="EUR" toCurrency="USD" rate="1.0848"/>
+<ConversionRate reportDate="20260521" fromCurrency="EUR" toCurrency="USD" rate="1.0872"/>
+<ConversionRate reportDate="20260522" fromCurrency="EUR" toCurrency="USD" rate="1.0845"/>
+<ConversionRate reportDate="20260525" fromCurrency="EUR" toCurrency="USD" rate="1.0813"/>
+<ConversionRate reportDate="20260526" fromCurrency="EUR" toCurrency="USD" rate="1.0842"/>
+<ConversionRate reportDate="20260527" fromCurrency="EUR" toCurrency="USD" rate="1.0835"/>
+<ConversionRate reportDate="20260528" fromCurrency="EUR" toCurrency="USD" rate="1.0825"/>
+<ConversionRate reportDate="20260529" fromCurrency="EUR" toCurrency="USD" rate="1.0846"/>
+<ConversionRate reportDate="20260601" fromCurrency="EUR" toCurrency="USD" rate="1.0865"/>
+<ConversionRate reportDate="20260602" fromCurrency="EUR" toCurrency="USD" rate="1.0849"/>
+<ConversionRate reportDate="20260603" fromCurrency="EUR" toCurrency="USD" rate="1.0838"/>
+<ConversionRate reportDate="20260604" fromCurrency="EUR" toCurrency="USD" rate="1.0853"/>
+<ConversionRate reportDate="20260605" fromCurrency="EUR" toCurrency="USD" rate="1.0861"/>
+<ConversionRate reportDate="20260608" fromCurrency="EUR" toCurrency="USD" rate="1.0835"/>
+<ConversionRate reportDate="20260609" fromCurrency="EUR" toCurrency="USD" rate="1.0838"/>
+<ConversionRate reportDate="20260610" fromCurrency="EUR" toCurrency="USD" rate="1.0811"/>
+<ConversionRate reportDate="20260611" fromCurrency="EUR" toCurrency="USD" rate="1.0784"/>
+<ConversionRate reportDate="20260612" fromCurrency="EUR" toCurrency="USD" rate="1.0815"/>
+<ConversionRate reportDate="20260615" fromCurrency="EUR" toCurrency="USD" rate="1.081"/>
+<ConversionRate reportDate="20260616" fromCurrency="EUR" toCurrency="USD" rate="1.081"/>
+<ConversionRate reportDate="20260617" fromCurrency="EUR" toCurrency="USD" rate="1.0839"/>
+<ConversionRate reportDate="20260618" fromCurrency="EUR" toCurrency="USD" rate="1.082"/>
+<ConversionRate reportDate="20260619" fromCurrency="EUR" toCurrency="USD" rate="1.0831"/>
+<ConversionRate reportDate="20260622" fromCurrency="EUR" toCurrency="USD" rate="1.0818"/>
+<ConversionRate reportDate="20260623" fromCurrency="EUR" toCurrency="USD" rate="1.0819"/>
+<ConversionRate reportDate="20260624" fromCurrency="EUR" toCurrency="USD" rate="1.0807"/>
+<ConversionRate reportDate="20260625" fromCurrency="EUR" toCurrency="USD" rate="1.0829"/>
+<ConversionRate reportDate="20260626" fromCurrency="EUR" toCurrency="USD" rate="1.0854"/>
+<ConversionRate reportDate="20260629" fromCurrency="EUR" toCurrency="USD" rate="1.0876"/>
+<ConversionRate reportDate="20260630" fromCurrency="EUR" toCurrency="USD" rate="1.0864"/>
+</ConversionRates>
+</FlexStatement>
+</FlexStatements>
+</FlexQueryResponse>

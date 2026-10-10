@@ -3,7 +3,8 @@
   "private": true,
   "description": "ReportReader — viewer for Interactive Brokers Flex Query XML reports",
   "scripts": {
-    "test": "node tests/reportreader.test.js"
+    "test": "node tests/reportreader.test.js",
+    "sample": "node samples/build-sample.js"
   },
   "devDependencies": {
     "playwright": "1.56.1",

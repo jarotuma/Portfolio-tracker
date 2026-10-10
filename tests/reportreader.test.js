@@ -239,6 +239,38 @@ async function open(browser, opts, rate = '23') {
     await ctx.close();
   }
 
+  // ── Built-in sample data (button on the start screen) ──
+  {
+    const page = await browser.newPage({ acceptDownloads: true });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route('**/*', r => r.request().url().startsWith('file:') ? r.continue() : r.abort());
+    await page.goto('file://' + PAGE);
+    const dl = page.waitForEvent('download');
+    await page.click('button:has-text("Stáhnout ukázkový XML")');
+    const xml = fs.readFileSync(await (await dl).path(), 'utf8');
+    const committed = fs.readFileSync(path.join(__dirname, '..', 'samples', 'ukazkovy-flex-report.xml'), 'utf8');
+    check('sample: downloaded XML = samples/ukazkovy-flex-report.xml (run npm run sample after changing it)', xml === committed, xml.length);
+    await page.click('button:has-text("Vyzkoušet na ukázkových datech")');
+    await page.click('#rate-modal button');
+    await page.waitForSelector('#app.visible');
+    const months = await page.$$eval('#filter-inc-month option', o => o.length - 1);
+    check('sample: six months of income', months === 6, months);
+    const s = await page.evaluate(() => ({
+      trades: G.data.trades.length, pos: G.data.positions.length, eur: G.data.positions.filter(p => p.currency === 'EUR').length,
+      manual: G.data.derivatives.filter(d => !d.underlyingPrice).length, vat: G.data.vatMode,
+      twrIb: G.data.changeInNAV.twr, twrDaily: dailyTWR(G.data.equitySeries, G.data.flowsByDate).at(-1),
+    }));
+    check('sample: trades, positions incl. EUR, one option needing a manual underlying price',
+      s.trades === 24 && s.pos === 11 && s.eur >= 3 && s.manual === 1, s);
+    check('sample: IB TWR in the file matches TWR from daily values', near(s.twrIb, s.twrDaily, 0.001), s);
+    await page.click('#btn-spx');
+    const bm = await page.evaluate(() => document.getElementById('chart-canvas')._chartMeta.allSeries.find(x => x.key === 'spx')?.vals);
+    check('sample: S&P 500 benchmark from the XML, starts at 0 %', bm && bm[0] === 0 && bm.every(v => v != null), bm && bm.slice(0, 3));
+    check('no page errors', errors.length === 0, errors);
+    await page.close();
+  }
+
   // ── EUR base account → labels follow the base currency ──
   {
     const { page, errors, title } = await open(browser, { base: 'EUR' }, '25');

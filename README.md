@@ -8,7 +8,7 @@ Nahrané reporty se ukládají, takže je nemusíte nahrávat pokaždé znovu. S
 
 - **V prohlížeči** (vždy): IndexedDB. Report se ukládá jako původní XML, komprimovaný (gzip), a při otevření se znovu zpracuje. Spolu s ním kurz, ruční příjmy (výplata, nájem), kurzy ČNB a nastavení daní.
 - **V účtu Claude** (jen ve zveřejněné stránce po přihlášení): totéž se zrcadlí do soukromé části databáze artefaktu `data/users/<vaše id>/…`, kterou nevidí nikdo jiný ani majitel stránky. Díky tomu jsou data na každém zařízení. Velké reporty se dělí na kousky (limit dokumentu je 256 KiB). Synchronizaci jde vypnout; při souběžných změnách na dvou zařízeních vyhrává novější zápis.
-- Zapisovat do účtu nemůže viz-only sdílení; stránka pak funguje jen s ukládáním v prohlížeči.
+- Pokud je stránka sdílená jen pro čtení, do účtu zapisovat nelze a funguje jen ukládání v prohlížeči.
 - Ukázková data se nikdy neukládají. Ukládání reportů lze vypnout na úvodní obrazovce.
 
 ## Příjmy po měsících

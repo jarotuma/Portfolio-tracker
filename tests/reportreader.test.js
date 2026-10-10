@@ -195,6 +195,54 @@ async function open(browser, opts, rate = '23') {
     await page.close();
   }
 
+  // ── Manual salary and rent per month ──
+  {
+    const { page, errors } = await open(browser, { income: true });
+    await page.evaluate(() => { localStorage.clear(); MANUAL.saved = {}; });
+    await page.click('.tab:has-text("Příjmy")');
+    const z = await page.evaluate(() => incomeByMonth([], ['202603', '202604']).map(r => [r.month, r.net, r.salary, r.rent]));
+    check('manual income: months without investment income get a row', JSON.stringify(z) === JSON.stringify([['202603', 0, 0, 0], ['202604', 0, 0, 0]]), z);
+    const jan = '[data-month="202601"]';
+    await page.fill(`.man-in${jan}[data-k="salary"]`, '60 000');
+    await page.press(`.man-in${jan}[data-k="salary"]`, 'Tab');
+    const focus = await page.evaluate(() => document.activeElement?.dataset?.k + document.activeElement?.dataset?.month);
+    check('manual income: Tab moves on to the rent field (focus not lost)', focus === 'rent202601', focus);
+    await page.keyboard.type('15000,50');
+    await page.keyboard.press('Tab');
+    const tot = await page.textContent('#inc-tot-202601');
+    // investments 170.94 × 23 = 3 931.62 + 60 000 + 15 000.50
+    check('manual income: monthly total = investments in Kč + salary + rent', near(parseFloat(tot.replace(/\s/g, '').replace(',', '.')), 78932, 1), tot);
+    const cards = (await page.textContent('#cards-inc')).replace(/\s+/g, ' ');
+    check('manual income: whole-period cards show salary 60 000 and rent', cards.includes('60 000 Kč') && cards.includes('15 001 Kč'), cards);
+    await page.click('#tbl-inc-month tbody tr:has-text("leden 2026") td.left');
+    const cardsJan = (await page.textContent('#cards-inc')).replace(/\s+/g, ' ');
+    check('manual income: selected month card "Příjem celkem" = 78 932 Kč', cardsJan.includes('Příjem celkem') && cardsJan.includes('78 932 Kč'), cardsJan);
+    const dec = await page.evaluate(() => ({ salary: _incMonths.find(m => m.month === '202512').salary }));
+    check('manual income: other month untouched', dec.salary === 0, dec);
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rr-income-manual')));
+    check('manual income: saved in the browser', saved?.['202601']?.salary === 60000 && saved?.['202601']?.rent === 15000.5, saved);
+    await page.reload();
+    await page.setInputFiles('#file-input', path.join(OUT, 'fx_calc_part_USD_inc.xml'));
+    await page.click('#rate-modal button');
+    await page.click('.tab:has-text("Příjmy")');
+    const again = await page.inputValue(`.man-in${jan}[data-k="salary"]`);
+    check('manual income: remembered after reload', again.replace(/\s/g, '') === '60000', again);
+    await page.fill(`.man-in${jan}[data-k="salary"]`, '');
+    await page.press(`.man-in${jan}[data-k="salary"]`, 'Tab');
+    const cleared = await page.evaluate(() => JSON.parse(localStorage.getItem('rr-income-manual'))['202601']);
+    check('manual income: emptying a field removes it', cleared.salary === undefined && cleared.rent === 15000.5, cleared);
+    const dl = page.waitForEvent('download');
+    await page.click('button:has-text("Excel export")');
+    const file = path.join(OUT, 'export_manual.xlsx');
+    await (await dl).saveAs(file);
+    const inc = XLSXN.utils.sheet_to_json(XLSXN.readFile(file).Sheets['Příjmy po měsících'], { header: 1 });
+    const hdr = inc[0], total = inc.find(r => r[0] === 'Celkem');
+    check('manual income: Excel has salary, rent and total columns', hdr.slice(-3).join() === 'Výplata Kč,Nájem Kč,Příjem celkem Kč' && total[11] === 15000.5, [hdr.slice(-3), total]);
+    check('no page errors', errors.length === 0, errors);
+    await page.evaluate(() => localStorage.clear());
+    await page.close();
+  }
+
   // ── Month filter in Trades and Dividends tabs ──
   {
     const { page, errors } = await open(browser, { income: true });
@@ -256,6 +304,13 @@ async function open(browser, opts, rate = '23') {
     await page.waitForSelector('#app.visible');
     const months = await page.$$eval('#filter-inc-month option', o => o.length - 1);
     check('sample: six months of income', months === 6, months);
+    await page.click('.tab:has-text("Příjmy")');
+    const demo = await page.evaluate(() => ({ s: _incMonths.map(m => m.salary).join(), r: _incMonths.map(m => m.rent).join() }));
+    check('sample: demo salary and rent filled in', demo.s === '62000,62000,98000,62000,62000,64000' && demo.r === '15000,15000,15000,16500,16500,16500', demo);
+    await page.fill('.man-in[data-month="202601"][data-k="salary"]', '1');
+    await page.press('.man-in[data-month="202601"][data-k="salary"]', 'Tab');
+    const leaked = await page.evaluate(() => localStorage.getItem('rr-income-manual'));
+    check('sample: edits are not saved to the browser', leaked === null, leaked);
     const s = await page.evaluate(() => ({
       trades: G.data.trades.length, pos: G.data.positions.length, eur: G.data.positions.filter(p => p.currency === 'EUR').length,
       manual: G.data.derivatives.filter(d => !d.underlyingPrice).length, vat: G.data.vatMode,
@@ -264,6 +319,7 @@ async function open(browser, opts, rate = '23') {
     check('sample: trades, positions incl. EUR, one option needing a manual underlying price',
       s.trades === 24 && s.pos === 11 && s.eur >= 3 && s.manual === 1, s);
     check('sample: IB TWR in the file matches TWR from daily values', near(s.twrIb, s.twrDaily, 0.001), s);
+    await page.click('.tab:has-text("Přehled")');
     await page.click('#btn-spx');
     const bm = await page.evaluate(() => document.getElementById('chart-canvas')._chartMeta.allSeries.find(x => x.key === 'spx')?.vals);
     check('sample: S&P 500 benchmark from the XML, starts at 0 %', bm && bm[0] === 0 && bm.every(v => v != null), bm && bm.slice(0, 3));

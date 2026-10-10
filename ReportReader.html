@@ -392,6 +392,10 @@ td.neutral { color: var(--text); }
 .tbl-inc td:nth-child(2) { text-align: right; font-family: var(--mono); }
 .tbl-inc tbody tr { cursor: pointer; }
 .tbl-inc tbody tr.selected { background: rgba(96,165,250,.12); }
+.tbl-inc th:first-child, .tbl-inc td:first-child { position: sticky; left: 0; z-index: 2; background: var(--surface); }
+.tbl-inc thead th:first-child { background: var(--surface2); z-index: 11; }
+.tbl-inc tfoot td:first-child { background: var(--surface2); }
+.tbl-inc tbody tr.selected td:first-child { background: var(--surface2); }
 
 /* Taxes */
 .tax-settings { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
@@ -400,6 +404,9 @@ td.neutral { color: var(--text); }
 .tax-sub { font-size: 11px; color: var(--muted2); line-height: 1.5; }
 .tax-rates-tbl td, .tax-rates-tbl th { text-align: center; }
 .tax-rates-tbl td:first-child { text-align: left; }
+.man-in { width: 96px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; color: var(--text);
+          font-family: var(--mono); font-size: 12px; padding: 4px 6px; text-align: right; cursor: text; }
+.man-in:focus { outline: none; border-color: var(--accent); }
 .rate-in { width: 84px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; color: var(--text);
            font-family: var(--mono); font-size: 12px; padding: 4px 6px; text-align: right; }
 .rate-in.missing { border-color: var(--amber); }
@@ -924,10 +931,15 @@ tfoot td.tot { color: var(--amber); }
       <div class="cards-grid" id="cards-inc"></div>
 
       <div class="der-section-title">Přehled po měsících <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">— kliknutím na řádek vyberete měsíc</span></div>
+      <div class="tax-sub" id="inc-manual-note" style="margin:-4px 2px 8px"></div>
       <div class="table-wrap" style="margin-bottom:24px;max-height:none">
         <table id="tbl-inc-month" class="tbl-inc">
           <thead><tr>
             <th>Měsíc</th>
+            <th title="Zadejte ručně v Kč">Výplata Kč</th>
+            <th title="Zadejte ručně v Kč">Nájem Kč</th>
+            <th title="Dividendy čisté + zisk z akcií + zisk z opcí, v Kč">Investice Kč</th>
+            <th title="Výplata + nájem + investice">Příjem celkem Kč</th>
             <th title="Dividendy a platby místo dividend">Dividendy hrubé USD</th>
             <th>Srážková daň USD</th>
             <th title="Prodejní cena (proceeds) prodaných akcií">Tržby z prodeje akcií USD</th>
@@ -935,8 +947,7 @@ tfoot td.tot { color: var(--amber); }
             <th title="Prémie z prodaných opcí">Opční prémie přijaté USD</th>
             <th title="Prémie za koupené opce">Opční prémie placené USD</th>
             <th title="Realizovaný zisk/ztráta FIFO z obchodů s opcemi (vč. expirací)">Zisk z opcí USD</th>
-            <th title="Dividendy čisté + zisk z akcií + zisk z opcí">Čistý příjem USD</th>
-            <th>Čistý příjem CZK</th>
+            <th title="Dividendy čisté + zisk z akcií + zisk z opcí">Čistý příjem z investic USD</th>
           </tr></thead>
           <tbody></tbody>
           <tfoot id="tfoot-inc-month"></tfoot>
@@ -1503,6 +1514,12 @@ function tc(dark, light) {
   return document.documentElement.classList.contains('light') ? light : dark;
 }
 
+// Settings and rate data live in the viewer's browser only (wrapped: storage may be blocked)
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
 // ── Utils ───────────────────────────────────────────────────────────
 const fmtN = (v, d=2) => {
   const n = parseFloat(v);
@@ -1603,6 +1620,7 @@ function handleFile(file) {
     alert('Prosím vyberte XML soubor z Interactive Brokers.'); return;
   }
   G.sampleUnified = null;
+  G.isSample = false;
   readXML(file);   // parse first so the rate dialog knows the account's base currency
 }
 
@@ -1611,6 +1629,12 @@ function loadSample() {
   // The 2026 unified rate is not published yet; the sample uses an illustrative value
   // (labelled "ukázka", kept in memory only and dropped when a real report is opened).
   G.sampleUnified = { 2026: { USD: 21.20, EUR: 24.40 } };
+  G.isSample = true;
+  // demo salary and rent (in memory only), so the sample shows a complete overview
+  MANUAL.sample = {};
+  [['202601', 62000, 15000], ['202602', 62000, 15000], ['202603', 98000, 15000],
+   ['202604', 62000, 16500], ['202605', 62000, 16500], ['202606', 64000, 16500]]
+    .forEach(([m, salary, rent]) => { MANUAL.sample[m] = { salary, rent }; });
   const doc = new DOMParser().parseFromString(buildSampleFlexXML(), 'application/xml');
   G.pendingData = parseDoc(doc);
   askRate(false);
@@ -3161,11 +3185,32 @@ function incomeItems() {
   return items.sort((a, b) => a.raw.localeCompare(b.raw));
 }
 
-function incomeByMonth(items) {
+// Every month the report covers (from the daily equity series) — months without
+// any investment income still get a row so salary and rent can be entered for them
+function monthsInPeriod() {
+  const eq = G.data?.equitySeries || [];
+  if (!eq.length) return [];
+  const out = [];
+  let y = +eq[0].date.slice(0, 4), m = +eq[0].date.slice(4, 6);
+  const ye = +eq.at(-1).date.slice(0, 4), me = +eq.at(-1).date.slice(4, 6);
+  while (y < ye || (y === ye && m <= me)) {
+    out.push(String(y) + String(m).padStart(2, '0'));
+    if (++m > 12) { m = 1; y++; }
+  }
+  return out;
+}
+
+// Manually entered income (CZK) by month. Kept in the browser; the sample report uses
+// in-memory demo values instead so it never mixes with the user's own data.
+const MANUAL = { saved: store.get('rr-income-manual', {}), sample: {} };
+const manualStore = () => G.isSample ? MANUAL.sample : MANUAL.saved;
+
+function incomeByMonth(items, extraMonths = monthsInPeriod()) {
   const byMonth = {};
+  const blank = month => ({ month, divGross: 0, wht: 0, stkProceeds: 0, stkPnl: 0, optRecv: 0, optPaid: 0, optPnl: 0 });
+  extraMonths.forEach(m => { byMonth[m] ||= blank(m); });
   items.forEach(i => {
-    const r = byMonth[i.month] ||= { month: i.month, divGross: 0, wht: 0, stkProceeds: 0, stkPnl: 0,
-                                     optRecv: 0, optPaid: 0, optPnl: 0 };
+    const r = byMonth[i.month] ||= blank(i.month);
     if (i.kind === 'div')      r.divGross += i.amount;
     else if (i.kind === 'wht') r.wht += i.amount;
     else if (i.kind === 'stk') { r.stkProceeds += i.amount; r.stkPnl += i.pnl; }
@@ -3175,12 +3220,20 @@ function incomeByMonth(items) {
     }
   });
   const rows = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
-  rows.forEach(r => { r.net = r.divGross + r.wht + r.stkPnl + r.optPnl; });
+  rows.forEach(r => {
+    r.net = r.divGross + r.wht + r.stkPnl + r.optPnl;
+    const man = manualStore()[r.month] || {};
+    r.salary = +man.salary || 0;
+    r.rent   = +man.rent   || 0;
+  });
   return rows;
 }
 
 const INC_COLS = ['divGross','wht','stkProceeds','stkPnl','optRecv','optPaid','optPnl','net'];
-const sumIncome = rows => INC_COLS.reduce((a, k) => (a[k] = rows.reduce((s, r) => s + r[k], 0), a), {});
+const MAN_COLS = ['salary', 'rent'];
+const sumIncome = rows => [...INC_COLS, ...MAN_COLS].reduce((a, k) => (a[k] = rows.reduce((s, r) => s + r[k], 0), a), {});
+// Everything the month brought in, in CZK: investments (converted) + salary + rent
+const totalCzk = m => m.net * G.rate + m.salary + m.rent;
 
 let _incItems = [], _incMonths = [];
 function renderIncome() {
@@ -3201,13 +3254,14 @@ function selectIncomeMonth(m) {
   filterIncome();
 }
 
-function filterIncome() {
-  const month = document.getElementById('filter-inc-month').value;
-  const kind  = document.getElementById('filter-inc-kind').value;
-  const r = G.rate;
-  const sgn = v => (v >= 0 ? '+' : '') + fmtN(v);
+const fmtIn = v => (+v).toLocaleString('cs-CZ', { maximumFractionDigits: 2 });
+const parseMoney = v => parseFloat(String(v).replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'));
 
-  // Cards for the selected month (or whole period)
+function incSelectedMonth() { return document.getElementById('filter-inc-month').value; }
+
+function renderIncomeCards() {
+  const month = incSelectedMonth();
+  const r = G.rate;
   const t = sumIncome(_incMonths.filter(m => !month || m.month === month));
   document.getElementById('inc-period').textContent = month ? monthLabel(month) : 'Celé období';
   const card = (label, v, cls = colorClass(v), accent = false) => `
@@ -3216,6 +3270,13 @@ function filterIncome() {
       <div class="card-value ${cls}">${money(v, 2, cls !== '')}</div>
       <div class="card-sub">Kč ${fmtN(v * r, 0)}</div>
     </div>`;
+  const cardCzk = (label, v, sub, accent = false) => `
+    <div class="card"${accent ? ' style="border-left:3px solid var(--accent)"' : ''}>
+      <div class="card-label">${label}</div>
+      <div class="card-value">${fmtN(v, 0)} Kč</div>
+      <div class="card-sub">${sub}</div>
+    </div>`;
+  const invCzk = t.net * r;
   document.getElementById('cards-inc').innerHTML = [
     card('Dividendy hrubé', t.divGross),
     card('Srážková daň', t.wht, t.wht < 0 ? 'neg' : ''),
@@ -3224,11 +3285,61 @@ function filterIncome() {
     card('Zisk / ztráta z akcií', t.stkPnl),
     card('Opční prémie přijaté', t.optRecv),
     card('Zisk / ztráta z opcí', t.optPnl),
-    card('Čistý příjem', t.net, colorClass(t.net), true),
+    card('Čistý příjem z investic', t.net, colorClass(t.net), true),
+    cardCzk('Výplata', t.salary, 'zadáno ručně'),
+    cardCzk('Nájem', t.rent, 'zadáno ručně'),
+    cardCzk('Příjem celkem', invCzk + t.salary + t.rent,
+            `investice ${fmtN(invCzk, 0)} + výplata + nájem`, true),
   ].join('');
+}
 
-  // Monthly overview
-  const cells = m => `
+function renderIncomeFoot() {
+  const r = G.rate, sgn = v => (v >= 0 ? '+' : '') + fmtN(v);
+  const m = sumIncome(_incMonths);
+  document.getElementById('tfoot-inc-month').innerHTML = _incMonths.length ? `<tr>
+    <td>Celkem za období</td>
+    <td class="tot">${fmtN(m.salary, 0)}</td>
+    <td class="tot">${fmtN(m.rent, 0)}</td>
+    <td class="${colorClass(m.net)} tot">${(m.net >= 0 ? '+' : '') + fmtN(m.net * r, 0)}</td>
+    <td class="tot">${fmtN(m.net * r + m.salary + m.rent, 0)}</td>
+    <td class="${colorClass(m.divGross)}">${sgn(m.divGross)}</td>
+    <td class="${m.wht < 0 ? 'neg' : ''}">${fmtN(m.wht)}</td>
+    <td class="neutral">${fmtN(m.stkProceeds)}</td>
+    <td class="${colorClass(m.stkPnl)}">${sgn(m.stkPnl)}</td>
+    <td class="${colorClass(m.optRecv)}">${sgn(m.optRecv)}</td>
+    <td class="${m.optPaid < 0 ? 'neg' : ''}">${fmtN(m.optPaid)}</td>
+    <td class="${colorClass(m.optPnl)}">${sgn(m.optPnl)}</td>
+    <td class="${colorClass(m.net)}">${sgn(m.net)}</td></tr>` : '';
+}
+
+// A salary / rent amount was typed: save it and refresh only the sums, never the inputs
+// themselves, so Tab moves on to the next field without losing focus.
+function setManualIncome(inp) {
+  const { month, k } = inp.dataset;
+  const v = parseMoney(inp.value);
+  const st = manualStore();
+  const e = st[month] ||= {};
+  if (isFinite(v) && v !== 0) e[k] = v; else delete e[k];
+  if (!Object.keys(e).length) delete st[month];
+  if (!G.isSample) store.set('rr-income-manual', MANUAL.saved);
+  const row = _incMonths.find(m => m.month === month);
+  if (row) row[k] = e[k] || 0;
+  inp.value = e[k] ? fmtIn(e[k]) : '';
+  if (row) document.getElementById('inc-tot-' + month).textContent = fmtN(totalCzk(row), 0);
+  renderIncomeCards();
+  renderIncomeFoot();
+}
+
+function filterIncome() {
+  const month = document.getElementById('filter-inc-month').value;
+  const kind  = document.getElementById('filter-inc-kind').value;
+  const r = G.rate;
+  const sgn = v => (v >= 0 ? '+' : '') + fmtN(v);
+
+  renderIncomeCards();
+
+  // Monthly overview: month | salary | rent | investments Kč | total Kč | detail in base currency
+  const detail = m => `
       <td class="${colorClass(m.divGross)}">${sgn(m.divGross)}</td>
       <td class="${m.wht < 0 ? 'neg' : ''}">${fmtN(m.wht)}</td>
       <td class="neutral">${fmtN(m.stkProceeds)}</td>
@@ -3236,14 +3347,22 @@ function filterIncome() {
       <td class="${colorClass(m.optRecv)}">${sgn(m.optRecv)}</td>
       <td class="${m.optPaid < 0 ? 'neg' : ''}">${fmtN(m.optPaid)}</td>
       <td class="${colorClass(m.optPnl)}">${sgn(m.optPnl)}</td>
-      <td class="${colorClass(m.net)} tot">${sgn(m.net)}</td>
-      <td class="${colorClass(m.net)} tot">${(m.net >= 0 ? '+' : '') + fmtN(m.net * r, 0)}</td>`;
+      <td class="${colorClass(m.net)}">${sgn(m.net)}</td>`;
+  const manInput = (m, k, label) => `<td onclick="event.stopPropagation()"><input class="man-in" inputmode="decimal"
+      data-month="${m.month}" data-k="${k}" value="${m[k] ? fmtIn(m[k]) : ''}" placeholder="0" onchange="setManualIncome(this)"
+      aria-label="${label} ${monthLabel(m.month)}"></td>`;
   document.querySelector('#tbl-inc-month tbody').innerHTML = _incMonths.map(m => `
     <tr class="${m.month === month ? 'selected' : ''}" onclick="selectIncomeMonth('${m.month}')">
-      <td class="left">${monthLabel(m.month)}</td>${cells(m)}
-    </tr>`).join('') || '<tr><td colspan="10"><div class="empty"><div class="empty-icon">🔍</div>Žádné příjmy v reportu</div></td></tr>';
-  document.getElementById('tfoot-inc-month').innerHTML = _incMonths.length
-    ? `<tr><td>Celkem za období</td>${cells(sumIncome(_incMonths))}</tr>` : '';
+      <td class="left">${monthLabel(m.month)}</td>
+      ${manInput(m, 'salary', 'Výplata')}${manInput(m, 'rent', 'Nájem')}
+      <td class="${colorClass(m.net)}">${(m.net >= 0 ? '+' : '') + fmtN(m.net * r, 0)}</td>
+      <td class="tot" id="inc-tot-${m.month}">${fmtN(totalCzk(m), 0)}</td>
+      ${detail(m)}
+    </tr>`).join('') || '<tr><td colspan="13"><div class="empty"><div class="empty-icon">🔍</div>Žádné příjmy v reportu</div></td></tr>';
+  renderIncomeFoot();
+  document.getElementById('inc-manual-note').textContent = G.isSample
+    ? 'V ukázce jsou vyplněné ukázkové částky; v ukázce se nic neukládá.'
+    : 'Výplatu a nájem zadejte v Kč do tabulky. Ukládají se jen v tomto prohlížeči a nikam se neodesílají.';
 
   // Transactions of the selected month and kind
   const rows = _incItems.filter(i =>
@@ -3291,11 +3410,6 @@ const COUNTRY_CS = {
   CN: 'Čína', BM: 'Bermudy', KY: 'Kajmanské ostrovy', JE: 'Jersey', PL: 'Polsko', CZ: 'Česko',
 };
 
-// Settings and rate data live in the viewer's browser only (wrapped: storage may be blocked)
-const store = {
-  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-};
 const TAX = {
   method:   store.get('rr-tax-method', 'unified'),      // 'unified' | 'daily'
   all100k:  store.get('rr-tax-100k-all', false),
@@ -4547,10 +4661,12 @@ function exportXLSX() {
   // ── Příjmy po měsících ──
   const incItemsX = incomeItems();
   const incMonthsX = incomeByMonth(incItemsX);
-  const incRow = (label, m) => [label, ...INC_COLS.map(k => +m[k].toFixed(2)), +(m.net * r).toFixed(2)];
+  const incRow = (label, m) => [label, ...INC_COLS.map(k => +m[k].toFixed(2)), +(m.net * r).toFixed(2),
+    +m.salary.toFixed(2), +m.rent.toFixed(2), +(m.net * r + m.salary + m.rent).toFixed(2)];
   addSheet('Příjmy po měsících', [
     ['Měsíc','Dividendy hrubé USD','Srážková daň USD','Tržby z prodeje akcií USD','Zisk z akcií USD',
-     'Opční prémie přijaté USD','Opční prémie placené USD','Zisk z opcí USD','Čistý příjem USD','Čistý příjem CZK'],
+     'Opční prémie přijaté USD','Opční prémie placené USD','Zisk z opcí USD','Čistý příjem z investic USD','Čistý příjem z investic CZK',
+     'Výplata Kč','Nájem Kč','Příjem celkem Kč'],
     ...incMonthsX.map(m => incRow(monthLabel(m.month), m)),
     incRow('Celkem', sumIncome(incMonthsX)),
     [],
@@ -4770,6 +4886,8 @@ async function printPDF() {
 
       // Clone panel, make it visible, apply print-friendly styles
       const clone = panel.cloneNode(true);
+      // inputs (rates, salary, rent) print as plain numbers
+      clone.querySelectorAll('input.rate-in, input.man-in').forEach(i => i.replaceWith(document.createTextNode(i.getAttribute('value') || '')));
       // Remove filter bars, buttons, chart wraps, canvases
       clone.querySelectorAll('.filter-bar,.chart-wrap,.charts-row,.chart-toolbar,.chart-toolbar-below,.chart-legend,.chart-title,.btn,canvas,#der-output button').forEach(el => el.remove());
       // Remove empty table-wraps

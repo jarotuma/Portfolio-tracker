@@ -2,6 +2,10 @@
 
 `ReportReader.html` je samostatná stránka pro prohlížení **Flex Query XML reportů z Interactive Brokers**: přehled, pozice, obchody, P&L, deriváty, dividendy, úroky, poplatky a vklady s přepočtem do CZK, grafy a export do Excelu / PDF. Vše běží lokálně v prohlížeči — stačí soubor otevřít a přetáhnout do něj XML.
 
+## Příjmy po měsících
+
+Záložka **Příjmy** ukazuje dividendy, prodeje akcií a opce po měsících, s výběrem měsíce. K tomu si do tabulky můžete ručně zadat **výplatu** a **příjem z nájmu** (v Kč) za každý měsíc reportu — součet za měsíc i za celé období pak ukazuje celkový příjem (investice + výplata + nájem). Ručně zadané částky se ukládají jen v prohlížeči (localStorage), nikam se neodesílají a platí pro daný kalendářní měsíc i v dalších reportech. Jsou i v Excel exportu.
+
 ## Daně
 
 Záložka **Daně** připraví podklady pro daňové přiznání fyzické osoby za vybraný rok:
